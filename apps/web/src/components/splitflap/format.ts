@@ -55,6 +55,16 @@ function padLeft(line: string, cols: number): string {
   return clean.padStart(cols, ' ')
 }
 
+// Retire les lignes entièrement vides (espaces seulement) en fin de bloc.
+// Conserve au moins 1 ligne (une zone obligatoire ne disparaît pas). Ne touche
+// pas aux espaces internes : chaque ligne restante garde sa longueur `cols`.
+// ponytail: les lignes paddées à `cols` par alignLine restent alignées après trim.
+export function trimEmptyDisplayLines(lines: string[]): string[] {
+  let end = lines.length
+  while (end > 1 && lines[end - 1].trim().length === 0) end -= 1
+  return lines.slice(0, end)
+}
+
 // Aligne une ligne tronquée à `cols` selon `align` (padding dans la grille).
 export function alignLine(line: string, cols: number, align: TextAlign): string {
   if (align === 'right') return padLeft(line, cols)

@@ -64,17 +64,27 @@ assert(/^listener-[a-z0-9]{6}$/.test(l), `identity listener format: ${l}`)
 
 // Layout (tailles du panneau) : clamp client + défauts + wrapCentered rows.
 const { resolveVisual, DEFAULT_LAYOUT } = await import('./src/components/splitflap/visual')
-const { wrapCentered, wrapAligned, alignLine } = await import('./src/components/splitflap/format')
+const { wrapCentered, wrapAligned, alignLine, trimEmptyDisplayLines } = await import('./src/components/splitflap/format')
 const def = resolveVisual()
 assert(def.layout.titleScale === DEFAULT_LAYOUT.titleScale, 'layout défaut sans visual')
+assert(def.layout.boardColumns === 32, 'boardColumns défaut 32')
 const lay = resolveVisual({
-  layout: { titleScale: 10, secondaryScale: 999, noteScale: 90, tickerScale: 110, boardScale: 50, titleRows: 9, secondaryRows: -1 },
+  layout: { titleScale: 10, secondaryScale: 999, noteScale: 90, tickerScale: 110, boardScale: 50, titleRows: 9, secondaryRows: -1, boardColumns: 5 },
 })
 assert(lay.layout.titleScale === 50, 'client titleScale clamp 50')
 assert(lay.layout.secondaryScale === 200, 'client secondaryScale clamp 200')
 assert(lay.layout.boardScale === 70, 'client boardScale clamp 70')
 assert(lay.layout.titleRows === 3, 'client titleRows clamp 3')
 assert(lay.layout.secondaryRows === 0, 'client secondaryRows clamp 0')
+assert(lay.layout.boardColumns === 12, 'client boardColumns clamp 12')
+assert(resolveVisual({ layout: { boardColumns: 999 } }).layout.boardColumns === 64, 'boardColumns clamp 64')
+
+// trimEmptyDisplayLines : retire les lignes vides en fin de bloc, garde ≥1,
+// conserve les lignes à contenu (espaces internes intacts).
+assert(trimEmptyDisplayLines(['ABC', '          ']).length === 1, 'trim ligne vide en fin de bloc')
+assert(trimEmptyDisplayLines(['   ABC    '])[0] === '   ABC    ', 'trim conserve ligne avec contenu (padding intact)')
+assert(trimEmptyDisplayLines(['          ', '          ']).length === 1, 'trim garde ≥1 ligne si tout vide')
+assert(trimEmptyDisplayLines([]).length === 0, 'trim tableau vide → vide')
 // wrapCentered : texte court → 1 ligne ; long → borné par maxRows ; lignes ≤ cols.
 const one = wrapCentered('RADIO BLACKHOLE', 32, 3)
 assert(one.length === 1 && one[0].length === 32, 'wrapCentered court → 1 ligne paddée')
@@ -187,4 +197,31 @@ freqMon[topRow.lo + 1] = 250
 assert(spectrogramRowValue(freqMon, 0, 200, 20, 20000, srMon, fftMon) === 250, 'spectrogramRowValue agrège le max de la bande')
 assert(spectrogramRowValue(freqMon, 199, 200, 20, 20000, srMon, fftMon) === 0, 'spectrogramRowValue bande vide → 0')
 
-console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered, ticker+scroll, trim -30 dB, accents HotFX, audio monitor)')
+// Audio RX stats (débit WebRTC entrant) : computeAudioRx pur depuis un
+// RTCStatsReport fake + l'instantané précédent (delta bitrate / jitter / loss).
+const { computeAudioRx } = await import('./src/audio/audioReceiverStats')
+const fakeReport = (stats: object[]): RTCStatsReport =>
+  ({ forEach: (cb: (v: unknown) => void) => stats.forEach(cb) } as unknown as RTCStatsReport)
+assert(computeAudioRx(fakeReport([]), null).display.available === false, 'computeAudioRx rapport vide → indisponible')
+assert(
+  computeAudioRx(fakeReport([{ type: 'inbound-rtp', kind: 'video', bytesReceived: 10 }]), null).display.available === false,
+  'computeAudioRx inbound video ignoré (audio seul)',
+)
+const audioFirst = computeAudioRx(
+  fakeReport([{ type: 'inbound-rtp', kind: 'audio', bytesReceived: 1000, packetsReceived: 50, packetsLost: 0, jitter: 0.012, timestamp: 1000 }]),
+  null,
+)
+assert(
+  audioFirst.display.available === true && audioFirst.display.kbps === null && audioFirst.display.jitterMs === 12 && audioFirst.display.lossPct === 0,
+  'computeAudioRx premier poll → dispo, kbps null (pas de delta), jitter 12 ms, loss 0',
+)
+assert(audioFirst.snapshot?.bytesReceived === 1000, 'computeAudioRx snapshot mémorisé pour le prochain delta')
+const audioDelta = computeAudioRx(
+  fakeReport([{ type: 'inbound-rtp', kind: 'audio', bytesReceived: 6000, packetsReceived: 100, packetsLost: 1, jitter: 0.012, timestamp: 2000 }]),
+  audioFirst.snapshot,
+)
+assert(audioDelta.display.kbps === 40, 'computeAudioRx delta 5000 B / 1 s → 40 kbps')
+assert(audioDelta.display.lossPct === 1, 'computeAudioRx loss 1/101 → 1.0 %')
+assert(audioDelta.display.packetsReceived === 100 && audioDelta.display.packetsLost === 1, 'computeAudioRx compteurs cumulés')
+
+console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered+boardColumns+trim, ticker+scroll, trim -30 dB, accents HotFX, audio monitor, audio rx stats)')

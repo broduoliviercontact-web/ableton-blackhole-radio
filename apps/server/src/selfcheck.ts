@@ -185,6 +185,7 @@ async function main(): Promise<void> {
         boardScale: 50, // < 70 → 70
         titleRows: 9, // > 3 → 3
         secondaryRows: -1, // < 0 → 0
+        boardColumns: 5, // < 12 → 12
       },
     },
   })
@@ -193,6 +194,9 @@ async function main(): Promise<void> {
   assert(lay.visual?.layout?.boardScale === 70, 'boardScale clamp 70')
   assert(lay.visual?.layout?.titleRows === 3, 'titleRows clamp 3')
   assert(lay.visual?.layout?.secondaryRows === 0, 'secondaryRows clamp 0')
+  assert(lay.visual?.layout?.boardColumns === 12, 'boardColumns clamp 12')
+  const boardColsMax = parseBroadcastMessage({ type: 'track', mainTitle: 'BC', visual: { layout: { boardColumns: 999 } } })
+  assert(boardColsMax.visual?.layout?.boardColumns === 64, 'boardColumns clamp 64')
   const emptyLay = parseBroadcastMessage({ type: 'track', mainTitle: 'E', visual: { layout: {} } })
   assert(emptyLay.visual === undefined, 'layout vide → visual vide → undefined')
   let badLayoutKey = false

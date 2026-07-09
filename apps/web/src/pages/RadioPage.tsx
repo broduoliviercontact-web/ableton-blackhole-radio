@@ -3,6 +3,8 @@ import type { CSSProperties } from 'react'
 import { useLiveKitListen } from '../hooks/useLiveKitListen'
 import { useBroadcastMessage } from '../hooks/useBroadcastMessage'
 import { useListenerAudioAnalysis } from '../hooks/useListenerAudioAnalysis'
+import { useAudioReceiverStats } from '../audio/audioReceiverStats'
+import { AudioRxStats } from '../components/AudioRxStats'
 import { ListenerVolume } from '../components/ListenerVolume'
 import { AudioMonitorPanel } from '../components/audio-monitor/AudioMonitorPanel'
 import { getOrCreateIdentity } from '../utils/identity'
@@ -12,9 +14,7 @@ import {
   formatBroadcastMessage,
   wrapAligned,
   notePagesAligned,
-  SPLIT_FLAP_TITLE_COLS,
-  SPLIT_FLAP_SECONDARY_COLS,
-  SPLIT_FLAP_NOTE_COLS,
+  trimEmptyDisplayLines,
   SPLIT_FLAP_NOTE_ROWS,
 } from '../components/splitflap/format'
 import { resolveVisual, presetClass, accentColor, styleVars } from '../components/splitflap/visual'
@@ -61,8 +61,11 @@ export function RadioPage() {
     setListenerVolume,
     toggleMute,
     toggleTrimMinus30Db,
+    getAudioRxReport,
   } = useLiveKitListen(ROOM_NAME, myIdentity, audioHostRef, analyser)
   const { display: broadcast } = useBroadcastMessage()
+  // Débit audio WebRTC reçu (kbps / jitter / loss) — trafic réseau entrant, ≠ niveau.
+  const audioRx = useAudioReceiverStats(getAudioRxReport, phase === 'listening')
 
   const board = formatBroadcastMessage(broadcast)
   const visual = resolveVisual(broadcast?.visual)
@@ -81,6 +84,8 @@ export function RadioPage() {
 
   // Layout HotFX (zones + hauteurs dynamiques). null en mode internal.
   const hotfx = useHotFx ? hotfxLayout(board, visual) : null
+  // Largeur de grille commune (toutes les zones = même nombre de colonnes).
+  const cols = visual.layout.boardColumns
 
   // Mode note : scroll = défilement char-par-char dans les tuiles (vrai bandeau
   // de gare) ; paged = cycle de pages à pageDurationMs ; static = page 0 fixe.
@@ -89,7 +94,7 @@ export function RadioPage() {
     ? []
     : hotfx
       ? hotfx.notePages
-      : notePagesAligned(board.noteRaw, SPLIT_FLAP_NOTE_COLS, SPLIT_FLAP_NOTE_ROWS, visual.layout.noteAlign)
+      : notePagesAligned(board.noteRaw, cols, SPLIT_FLAP_NOTE_ROWS, visual.layout.noteAlign)
   const [notePage, setNotePage] = useState(0)
   useEffect(() => {
     setNotePage(0)
@@ -102,7 +107,7 @@ export function RadioPage() {
   const scrollRows = hotfx ? visual.noteRowsMax : SPLIT_FLAP_NOTE_ROWS
   const scrollLines = useScrollingTextWindow(
     board.noteRaw,
-    SPLIT_FLAP_NOTE_COLS,
+    cols,
     scrollRows,
     visual.noteScrollSpeedMs,
     visual.noteScrollStep,
@@ -110,9 +115,9 @@ export function RadioPage() {
     isScroll,
   )
   // Scroll + texte plus court que la zone : on aligne (noteAlign) au lieu de défiler.
-  const noteFitsScroll = isScroll && board.noteRaw.length <= scrollRows * SPLIT_FLAP_NOTE_COLS
+  const noteFitsScroll = isScroll && board.noteRaw.length <= scrollRows * cols
   const noteScrollDisplay = noteFitsScroll
-    ? wrapAligned(board.noteRaw, SPLIT_FLAP_NOTE_COLS, scrollRows, visual.layout.noteAlign)
+    ? wrapAligned(board.noteRaw, cols, scrollRows, visual.layout.noteAlign)
     : scrollLines
 
   const connected = phase === 'connecting' || phase === 'connected' || phase === 'listening'
@@ -125,14 +130,18 @@ export function RadioPage() {
       : 'offline'
   const statusLabel = statusKey === 'live' ? 'LIVE' : statusKey === 'connecting' ? 'CONNECTING' : 'OFFLINE'
 
-  const rawNoteLines = isScroll ? [] : visual.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0]
+  const rawNoteLines = trimEmptyDisplayLines(
+    isScroll ? [] : visual.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0],
+  )
   const noteHeight = hotfx ? (isScroll ? scrollRows : noteHeightFor(visual, rawNoteLines.length)) : SPLIT_FLAP_NOTE_ROWS
   // Lignes titre/secondaire selon les rows + alignement du layout (grille continue).
-  const titleLines = wrapAligned(board.titleRaw, SPLIT_FLAP_TITLE_COLS, visual.layout.titleRows, visual.layout.titleAlign)
-  const secondaryLines = board.secondaryRaw.trim()
-    ? wrapAligned(board.secondaryRaw, SPLIT_FLAP_SECONDARY_COLS, visual.layout.secondaryRows, visual.layout.secondaryAlign)
-    : [board.secondary]
-  const showSecondary = visual.layout.secondaryRows > 0
+  const titleLines = wrapAligned(board.titleRaw, cols, visual.layout.titleRows, visual.layout.titleAlign)
+  const hasSecondary = board.secondaryRaw.trim().length > 0
+  const secondaryLines = hasSecondary
+    ? wrapAligned(board.secondaryRaw, cols, visual.layout.secondaryRows, visual.layout.secondaryAlign)
+    : []
+  // Zone secondaire masquée si pas de contenu (≠ juste secondaryRows=0).
+  const showSecondary = visual.layout.secondaryRows > 0 && hasSecondary
   const brandLabel = broadcast?.brandLabel ?? 'RADIO BLACKHOLE'
   const accent = accentColor(visual)
   const fxClasses = [
@@ -165,7 +174,7 @@ export function RadioPage() {
               <HotFxSplitFlap
                 className="sf-hotfx sf-hotfx--title"
                 text={hotfx.titleText}
-                width={SPLIT_FLAP_TITLE_COLS}
+                width={cols}
                 height={hotfx.titleHeight}
                 durationMs={visual.hotfxDurationMs}
                 characters={visual.hotfxCharacters}
@@ -174,7 +183,7 @@ export function RadioPage() {
                 <HotFxSplitFlap
                   className="sf-hotfx sf-hotfx--secondary"
                   text={hotfx.secondaryText}
-                  width={SPLIT_FLAP_SECONDARY_COLS}
+                  width={cols}
                   height={hotfx.secondaryHeight}
                   durationMs={visual.hotfxDurationMs}
                   characters={visual.hotfxCharacters}
@@ -183,7 +192,7 @@ export function RadioPage() {
               <HotFxSplitFlap
                 className="sf-hotfx sf-hotfx--note"
                 text={isScroll ? noteScrollDisplay.join('\n') : rawNoteLines.join('\n')}
-                width={SPLIT_FLAP_NOTE_COLS}
+                width={cols}
                 height={noteHeight}
                 durationMs={visual.hotfxDurationMs}
                 characters={visual.hotfxCharacters}
@@ -243,6 +252,7 @@ export function RadioPage() {
                 />
               </div>
             )}
+            <AudioRxStats rx={audioRx} active={isLive} />
           </div>
         </div>
       </SplitFlapVisualProvider>

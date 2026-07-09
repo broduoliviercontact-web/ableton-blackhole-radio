@@ -43,11 +43,18 @@ hotfx-split-flap::part(divider) {
     0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
-/* Tailles par zone : la tuile HotFX = 1em, donc on pilote via font-size × density
-   × board-scale (base) × <zone>-scale (emphase). 32 cols × ~30px ≈ 960px. */
-.sf-hotfx--title { font-size: calc(30px * var(--sf-density-scale, 1) * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); }
-.sf-hotfx--secondary { font-size: calc(16px * var(--sf-density-scale, 1) * var(--sf-board-scale, 1) * var(--sf-secondary-scale, 1)); }
-.sf-hotfx--note { font-size: calc(24px * var(--sf-density-scale, 1) * var(--sf-board-scale, 1) * var(--sf-note-scale, 1)); }
+/* Grille commune : largeur de case UNIFORME across zones (override du 1em du
+   shadow) → toutes les zones ont le même nombre de colonnes, la même largeur de
+   case et le même axe. Le <zone>-scale grossit le glyph (font-size) et la hauteur
+   (1.2em), pas la largeur de case → colonnes alignées comme un vrai panneau de
+   gare. Mêmes bases que le moteur internal (24/15/18) pour que le glyph tienne
+   dans la case (monospace ~0.6em < 1 case). */
+hotfx-split-flap::part(char) {
+  width: calc(30px * var(--sf-density-scale, 1) * var(--sf-board-scale, 1));
+}
+.sf-hotfx--title { font-size: calc(24px * var(--sf-density-scale, 1) * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); }
+.sf-hotfx--secondary { font-size: calc(15px * var(--sf-density-scale, 1) * var(--sf-board-scale, 1) * var(--sf-secondary-scale, 1)); }
+.sf-hotfx--note { font-size: calc(18px * var(--sf-density-scale, 1) * var(--sf-board-scale, 1) * var(--sf-note-scale, 1)); }
 
 /* Flicker : scintillement pirate. Var --sf-flicker (0/1) active l'animation.
    --sf-flicker-amp = amplitude d'opacité (0–0.35). */
@@ -62,15 +69,18 @@ hotfx-split-flap::part(divider) {
   animation: sf-hotfx-flicker 4.5s linear infinite;
 }
 
-/* Aperçu performer : même panneau, plus petit. Reflète les scales live. */
-.sf-cabinet--preview .sf-hotfx--title { font-size: calc(13px * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); }
+/* Aperçu performer : même panneau, plus petit. Reflète les scales live.
+   Largeur de case uniforme (14px × board) comme l'internal preview. */
+.sf-cabinet--preview hotfx-split-flap::part(char) { width: calc(14px * var(--sf-board-scale, 1)); }
+.sf-cabinet--preview .sf-hotfx--title { font-size: calc(12px * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); }
 .sf-cabinet--preview .sf-hotfx--secondary { font-size: calc(8px * var(--sf-board-scale, 1) * var(--sf-secondary-scale, 1)); }
-.sf-cabinet--preview .sf-hotfx--note { font-size: calc(10px * var(--sf-board-scale, 1) * var(--sf-note-scale, 1)); }
+.sf-cabinet--preview .sf-hotfx--note { font-size: calc(9px * var(--sf-board-scale, 1) * var(--sf-note-scale, 1)); }
 
 @media (max-width: 760px) {
-  .sf-hotfx--title { font-size: calc(10px * var(--sf-density-scale, 1)); }
+  hotfx-split-flap::part(char) { width: 9px; }
+  .sf-hotfx--title { font-size: calc(9px * var(--sf-density-scale, 1)); }
   .sf-hotfx--secondary { font-size: calc(6px * var(--sf-density-scale, 1)); }
-  .sf-hotfx--note { font-size: calc(8px * var(--sf-density-scale, 1)); }
+  .sf-hotfx--note { font-size: calc(7px * var(--sf-density-scale, 1)); }
 }
 
 /* ponytail: prefers-reduced-motion — le wrapper HotFX passe duration à 1ms

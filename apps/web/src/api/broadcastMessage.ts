@@ -23,6 +23,7 @@ export interface BroadcastLayout {
   boardScale?: number
   titleRows?: number
   secondaryRows?: number
+  boardColumns?: number
   brandAlign?: TextAlign
   titleAlign?: TextAlign
   secondaryAlign?: TextAlign

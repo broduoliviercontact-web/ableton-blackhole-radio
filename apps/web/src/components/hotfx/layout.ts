@@ -1,12 +1,5 @@
 import type { ResolvedVisual } from '../splitflap/visual'
-import {
-  wrapAligned,
-  notePagesRawAligned,
-  SPLIT_FLAP_TITLE_COLS,
-  SPLIT_FLAP_SECONDARY_COLS,
-  SPLIT_FLAP_NOTE_COLS,
-  type SplitFlapBoard,
-} from '../splitflap/format'
+import { wrapAligned, notePagesRawAligned, trimEmptyDisplayLines, type SplitFlapBoard } from '../splitflap/format'
 
 export interface HotFxLayout {
   titleText: string
@@ -25,17 +18,18 @@ export interface HotFxLayout {
  *  → hauteur dynamique).
  */
 export function hotfxLayout(board: SplitFlapBoard, v: ResolvedVisual): HotFxLayout {
-  const tLines = wrapAligned(board.titleRaw, SPLIT_FLAP_TITLE_COLS, v.layout.titleRows, v.layout.titleAlign)
+  const cols = v.layout.boardColumns
+  const tLines = wrapAligned(board.titleRaw, cols, v.layout.titleRows, v.layout.titleAlign)
   const hasSecondary = board.secondaryRaw.trim().length > 0
   const secondaryRows = v.layout.secondaryRows
   return {
     titleText: tLines.join('\n'),
     titleHeight: tLines.length,
     secondaryText: hasSecondary
-      ? wrapAligned(board.secondaryRaw, SPLIT_FLAP_SECONDARY_COLS, secondaryRows, v.layout.secondaryAlign).join('\n')
+      ? wrapAligned(board.secondaryRaw, cols, secondaryRows, v.layout.secondaryAlign).join('\n')
       : '',
     secondaryHeight: hasSecondary ? secondaryRows : 0,
-    notePages: notePagesRawAligned(board.noteRaw, SPLIT_FLAP_NOTE_COLS, v.noteRowsMax, v.layout.noteAlign),
+    notePages: notePagesRawAligned(board.noteRaw, cols, v.noteRowsMax, v.layout.noteAlign).map(trimEmptyDisplayLines),
   }
 }
 

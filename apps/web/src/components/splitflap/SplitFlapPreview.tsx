@@ -6,9 +6,7 @@ import {
   formatBroadcastMessage,
   wrapAligned,
   notePagesAligned,
-  SPLIT_FLAP_TITLE_COLS,
-  SPLIT_FLAP_SECONDARY_COLS,
-  SPLIT_FLAP_NOTE_COLS,
+  trimEmptyDisplayLines,
   SPLIT_FLAP_NOTE_ROWS,
 } from './format'
 import { resolveVisual, presetClass, accentColor, styleVars } from './visual'
@@ -45,6 +43,7 @@ export function SplitFlapPreview({ message }: Props) {
   }
 
   const hotfx = useHotFx ? hotfxLayout(board, v) : null
+  const cols = v.layout.boardColumns
 
   // Mode note : scroll = défilement char-par-char ; paged = cycle ; static = fixe.
   const isScroll = v.noteMode === 'scroll'
@@ -52,7 +51,7 @@ export function SplitFlapPreview({ message }: Props) {
     ? []
     : hotfx
       ? hotfx.notePages
-      : notePagesAligned(board.noteRaw, SPLIT_FLAP_NOTE_COLS, SPLIT_FLAP_NOTE_ROWS, v.layout.noteAlign)
+      : notePagesAligned(board.noteRaw, cols, SPLIT_FLAP_NOTE_ROWS, v.layout.noteAlign)
   const [notePage, setNotePage] = useState(0)
   useEffect(() => {
     setNotePage(0)
@@ -64,7 +63,7 @@ export function SplitFlapPreview({ message }: Props) {
   const scrollRows = hotfx ? v.noteRowsMax : SPLIT_FLAP_NOTE_ROWS
   const scrollLines = useScrollingTextWindow(
     board.noteRaw,
-    SPLIT_FLAP_NOTE_COLS,
+    cols,
     scrollRows,
     v.noteScrollSpeedMs,
     v.noteScrollStep,
@@ -72,18 +71,21 @@ export function SplitFlapPreview({ message }: Props) {
     isScroll,
   )
   // Scroll + texte plus court que la zone : on aligne (noteAlign) au lieu de défiler.
-  const noteFitsScroll = isScroll && board.noteRaw.length <= scrollRows * SPLIT_FLAP_NOTE_COLS
+  const noteFitsScroll = isScroll && board.noteRaw.length <= scrollRows * cols
   const noteScrollDisplay = noteFitsScroll
-    ? wrapAligned(board.noteRaw, SPLIT_FLAP_NOTE_COLS, scrollRows, v.layout.noteAlign)
+    ? wrapAligned(board.noteRaw, cols, scrollRows, v.layout.noteAlign)
     : scrollLines
 
-  const rawNoteLines = isScroll ? [] : v.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0]
+  const rawNoteLines = trimEmptyDisplayLines(
+    isScroll ? [] : v.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0],
+  )
   const noteHeight = hotfx ? (isScroll ? scrollRows : noteHeightFor(v, rawNoteLines.length)) : SPLIT_FLAP_NOTE_ROWS
-  const titleLines = wrapAligned(board.titleRaw, SPLIT_FLAP_TITLE_COLS, v.layout.titleRows, v.layout.titleAlign)
-  const secondaryLines = board.secondaryRaw.trim()
-    ? wrapAligned(board.secondaryRaw, SPLIT_FLAP_SECONDARY_COLS, v.layout.secondaryRows, v.layout.secondaryAlign)
-    : [board.secondary]
-  const showSecondary = v.layout.secondaryRows > 0
+  const titleLines = wrapAligned(board.titleRaw, cols, v.layout.titleRows, v.layout.titleAlign)
+  const hasSecondary = board.secondaryRaw.trim().length > 0
+  const secondaryLines = hasSecondary
+    ? wrapAligned(board.secondaryRaw, cols, v.layout.secondaryRows, v.layout.secondaryAlign)
+    : []
+  const showSecondary = v.layout.secondaryRows > 0 && hasSecondary
   const brandLabel = message?.brandLabel ?? 'RADIO BLACKHOLE'
   const accent = accentColor(v)
   const fxClasses = [
@@ -107,7 +109,7 @@ export function SplitFlapPreview({ message }: Props) {
             <HotFxSplitFlap
               className="sf-hotfx sf-hotfx--title"
               text={hotfx.titleText}
-              width={SPLIT_FLAP_TITLE_COLS}
+              width={cols}
               height={hotfx.titleHeight}
               durationMs={v.hotfxDurationMs}
               characters={v.hotfxCharacters}
@@ -116,7 +118,7 @@ export function SplitFlapPreview({ message }: Props) {
               <HotFxSplitFlap
                 className="sf-hotfx sf-hotfx--secondary"
                 text={hotfx.secondaryText}
-                width={SPLIT_FLAP_SECONDARY_COLS}
+                width={cols}
                 height={hotfx.secondaryHeight}
                 durationMs={v.hotfxDurationMs}
                 characters={v.hotfxCharacters}
@@ -125,7 +127,7 @@ export function SplitFlapPreview({ message }: Props) {
             <HotFxSplitFlap
               className="sf-hotfx sf-hotfx--note"
               text={isScroll ? noteScrollDisplay.join('\n') : rawNoteLines.join('\n')}
-              width={SPLIT_FLAP_NOTE_COLS}
+              width={cols}
               height={noteHeight}
               durationMs={v.hotfxDurationMs}
               characters={v.hotfxCharacters}

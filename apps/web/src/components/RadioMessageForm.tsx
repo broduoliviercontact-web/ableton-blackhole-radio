@@ -131,6 +131,8 @@ const TIPS = {
   tickerScale: "Taille du bandeau roulant.",
   titleRows: "Nombre de lignes réservées au titre principal.",
   secondaryRows: "Nombre de lignes réservées à la ligne secondaire. 0 masque cette zone.",
+  boardColumns:
+    "Nombre de clapets/cases sur chaque ligne du panneau. Plus il y en a, plus le texte peut être long, mais les cases deviennent plus petites ou le panneau plus dense.",
   brandAlign: "Alignement du nom de radio dans le haut de la page publique.",
   titleAlign: "Alignement du grand titre dans les cases split-flap.",
   secondaryAlign: "Alignement de la ligne sous le titre.",
@@ -483,6 +485,17 @@ export function RadioMessageForm({ performerPassword }: Props) {
         {scaleField('noteScale', 'Note', 50, 200, TIPS.noteScale)}
         {scaleField('tickerScale', 'Ticker', 50, 200, TIPS.tickerScale)}
         {scaleField('boardScale', 'Panneau (base)', 70, 130, TIPS.boardScale)}
+        <label style={labelStyle}>
+          <FieldHead text="Nombre de cases par ligne (12–64)" tip={TIPS.boardColumns} />
+          <input
+            type="number"
+            min={12}
+            max={64}
+            value={visual.layout?.boardColumns ?? 32}
+            onChange={(e) => setLayout('boardColumns', e.target.value === '' ? undefined : Number(e.target.value))}
+            style={inputStyle}
+          />
+        </label>
         <label style={labelStyle}>
           <FieldHead text="Titre — lignes (1–3)" tip={TIPS.titleRows} />
           <input

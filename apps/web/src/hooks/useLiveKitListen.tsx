@@ -26,6 +26,9 @@ interface UseLiveKitListenResult {
   setListenerVolume: (volumePercent: number) => void
   toggleMute: () => void
   toggleTrimMinus30Db: () => void
+  // Rapport stats WebRTC du receiver audio entrant (inbound-rtp). Utilisé par
+  // useAudioReceiverStats pour afficher le débit reçu (kbps/jitter/loss).
+  getAudioRxReport: () => Promise<RTCStatsReport | undefined>
 }
 
 const MAX_ATTEMPTS = 3
@@ -278,6 +281,19 @@ export function useLiveKitListen(
     for (const el of audioEls.current.values()) el.volume = eff
   }, [])
 
+  // Stats WebRTC du premier receiver audio attaché (livekit-client expose
+  // getRTCStatsReport sur RemoteTrack). Fallback propre (undefined) si pas de
+  // piste ou getStats indisponible — le hook appelant affiche « RX — ».
+  const getAudioRxReport = useCallback(async (): Promise<RTCStatsReport | undefined> => {
+    const track = audioEls.current.keys().next().value as RemoteAudioTrack | undefined
+    if (!track) return undefined
+    try {
+      return await track.getRTCStatsReport()
+    } catch {
+      return undefined
+    }
+  }, [])
+
   // Nettoie le timer + la room au démontage (US-4.1) — pas de retry orphelin.
   useEffect(() => {
     return () => {
@@ -311,5 +327,6 @@ export function useLiveKitListen(
     setListenerVolume,
     toggleMute,
     toggleTrimMinus30Db,
+    getAudioRxReport,
   }
 }

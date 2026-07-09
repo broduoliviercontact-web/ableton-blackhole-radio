@@ -25,6 +25,7 @@ export interface ResolvedLayout {
   boardScale: number
   titleRows: number
   secondaryRows: number
+  boardColumns: number
   brandAlign: TextAlign
   titleAlign: TextAlign
   secondaryAlign: TextAlign
@@ -39,6 +40,7 @@ export const DEFAULT_LAYOUT: ResolvedLayout = {
   boardScale: 100,
   titleRows: 1,
   secondaryRows: 1,
+  boardColumns: 32,
   brandAlign: 'left',
   titleAlign: 'center',
   secondaryAlign: 'center',
@@ -142,6 +144,7 @@ function resolveLayout(l?: BroadcastLayout): ResolvedLayout {
     boardScale: clamp(l.boardScale, DEFAULT_LAYOUT.boardScale, 70, 130),
     titleRows: clamp(l.titleRows, DEFAULT_LAYOUT.titleRows, 1, 3),
     secondaryRows: clamp(l.secondaryRows, DEFAULT_LAYOUT.secondaryRows, 0, 2),
+    boardColumns: clamp(l.boardColumns, DEFAULT_LAYOUT.boardColumns, 12, 64),
     brandAlign: l.brandAlign ?? DEFAULT_LAYOUT.brandAlign,
     titleAlign: l.titleAlign ?? DEFAULT_LAYOUT.titleAlign,
     secondaryAlign: l.secondaryAlign ?? DEFAULT_LAYOUT.secondaryAlign,

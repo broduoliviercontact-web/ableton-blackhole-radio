@@ -23,6 +23,7 @@ export interface BroadcastLayout {
   boardScale?: number
   titleRows?: number
   secondaryRows?: number
+  boardColumns?: number
   brandAlign?: TextAlign
   titleAlign?: TextAlign
   secondaryAlign?: TextAlign
@@ -140,6 +141,7 @@ const visualSchema = z
         boardScale: z.coerce.number().optional(),
         titleRows: z.coerce.number().optional(),
         secondaryRows: z.coerce.number().optional(),
+        boardColumns: z.coerce.number().optional(),
         brandAlign: z.enum(['left', 'center', 'right']).optional(),
         titleAlign: z.enum(['left', 'center', 'right']).optional(),
         secondaryAlign: z.enum(['left', 'center', 'right']).optional(),
@@ -157,6 +159,7 @@ const visualSchema = z
         if (l.boardScale != null) out.boardScale = clampInt(l.boardScale, 70, 130)
         if (l.titleRows != null) out.titleRows = clampInt(l.titleRows, 1, 3)
         if (l.secondaryRows != null) out.secondaryRows = clampInt(l.secondaryRows, 0, 2)
+        if (l.boardColumns != null) out.boardColumns = clampInt(l.boardColumns, 12, 64)
         if (l.brandAlign) out.brandAlign = l.brandAlign
         if (l.titleAlign) out.titleAlign = l.titleAlign
         if (l.secondaryAlign) out.secondaryAlign = l.secondaryAlign

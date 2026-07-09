@@ -173,10 +173,23 @@ preview reproduit fidèlement la page publique. Override debug local :
 **Branding & tailles du panneau** : `brandLabel` (nom de la radio affiché dans
 le header public, ≠ `mainTitle` qui est le titre/piste ; fallback
 `RADIO BLACKHOLE`) et `visual.layout` (scales % par zone — titre/secondaire/
-note/ticker 50–200, panneau 70–130 ; lignes titre 1–3, secondaire 0–2). Les
-scales pilotent la taille des tuiles via des variables CSS (grille continue,
-colonnes alignées). Réinitialisable d'un clic. Anciens messages sans
-`brandLabel`/`layout` restent valides (défauts 100 %, 1 ligne).
+note/ticker 50–200, panneau 70–130 ; lignes titre 1–3, secondaire 0–2 ;
+`boardColumns` 12–64, défaut 32 = nombre de cases par ligne). Les scales
+pilotent la taille des tuiles via des variables CSS (grille continue,
+colonnes alignées). `boardColumns` fixe la largeur de grille commune à toutes
+les zones (title/secondary/note ont exactement le même nombre de colonnes).
+Réinitialisable d'un clic. Anciens messages sans `brandLabel`/`layout` restent
+valides (défauts 100 %, 1 ligne, 32 colonnes).
+
+**Grille HotFX alignée & lignes vides masquées** : toutes les zones HotFX
+partagent une largeur de case uniforme (`::part(char)` width = 30 px × density ×
+board-scale, indépendante du `<zone>-scale`) → même axe de départ, mêmes
+colonnes, plus de ligne courte flottante (vrai panneau de gare). Le
+`<zone>-scale` grossit le glyph et la hauteur, pas la largeur de case. Les lignes
+entièrement vides en fin de bloc sont retirées (`trimEmptyDisplayLines`) : un
+titre court n'affiche pas de 2ᵉ ligne vide, une note courte ne produit pas un
+grand bloc vide. La zone secondaire est masquée quand subtitle/artiste/album sont
+tous vides (≠ juste `secondaryRows=0`).
 
 **Alignement des textes** : `visual.layout` accepte quatre alignements
 (`brandAlign`/`titleAlign`/`secondaryAlign`/`noteAlign`, chacun `left|center|right`).
@@ -242,6 +255,17 @@ fuite AudioContext / rAF).
 > Limites : monitoring local navigateur (dBFS, pas LUFS broadcast). Sans remote
 > track → « EN ATTENTE AUDIO ». **Meyda** (spectral features propres) et
 > **Butterchurn** (visualizer WebGL MilkDrop) non intégrés — phase 2 si besoin.
+
+**Indicateur débit audio (listener)** : la barre de contrôles affiche en compact
+`RX 78 kbps · jitter 12 ms · loss 0.0 %` — le trafic réseau WebRTC **entrant**
+reçu par ce navigateur (≠ niveau sonore). Récupéré via
+`RemoteTrack.getRTCStatsReport()` (rapport `inbound-rtp` audio) pollé toutes
+les 1,5 s (`apps/web/src/audio/audioReceiverStats.ts`). Bitrate = delta
+`bytesReceived` / delta temps ; jitter en ms ; loss = `packetsLost /
+(packetsReceived + packetsLost)`. États : `EN ATTENTE AUDIO` (pas connecté) ·
+`RX —` (connecté mais stats indisponibles) · `RX 78 kbps …`. Le PAD -30 dB et le
+mute n'affectent pas ces stats (le flux réseau arrive toujours). Si le navigateur
+n'expose pas les stats receiver, fallback propre → `RX —`.
 
 ## Sécurité
 

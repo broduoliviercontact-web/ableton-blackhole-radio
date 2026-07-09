@@ -14,9 +14,9 @@ URLs :
       défaut = HotFX (sauf `?engine=internal`).
 - [ ] `/listen` affiche la même page radio que `/` (même composant RadioPage).
 - [ ] Aucun lien visible vers `/performer` sur la page publique.
-- [ ] Sans message publié : titre `RADIO BLACKHOLE` (centré), ligne secondaire
-      vide (tuiles vides, plus de « LIVE WEB AUDIO STREAM »), note
-      `EN ATTENTE DU MESSAGE PERFORMER.`, ticker
+- [ ] Sans message publié : titre `RADIO BLACKHOLE` (centré), **zone secondaire
+      masquée** (plus de ligne vide quand subtitle/artiste/album sont vides),
+      note `EN ATTENTE DU MESSAGE PERFORMER.`, ticker
       `RADIO BLACKHOLE · PIRATE WEBRTC STREAM · LISTEN LIVE`.
 
 ## Performer (gate)
@@ -80,6 +80,20 @@ URLs :
 - [ ] Alignement Note Gauche/Centre/Droite → la zone note se padpe pareil. En mode
       Déroulement avec une note plus courte que la zone, l’alignement s’applique
       au lieu de défiler (note longue → défilement normal conservé).
+- [ ] **Grille HotFX alignée** : publier un titre court + un secondaire + une note
+      avec moteur HotFX → les cases du titre, du secondaire et de la note
+      partagent le même axe de départ et les mêmes colonnes (plus de ligne courte
+      flottante décalée). Vérifier sur `/` et dans l’aperçu performer.
+- [ ] **boardColumns** : `/performer` — bloc « ③ Affichage public » → « Tailles du
+      panneau » → « Nombre de cases par ligne (12–64) ». Tester 24, 32 (défaut),
+      48 → l’aperçu réagit instantanément (plus de cases = texte plus long
+      possible, cases plus serrées). Publier → la page publique applique la même
+      largeur. Valeurs < 12 ou > 64 clampées côté serveur. Anciens messages sans
+      `boardColumns` → 32 (rétro-compat). Le panneau ne déborde pas sur mobile.
+- [ ] **Lignes vides masquées** : titre court (1 ligne) avec `titleRows=3` → une
+      seule ligne visible (pas de 2ᵉ/3ᵉ ligne vide). Note courte → pas de grand
+      bloc de cases vides. Secondary vide (pas de subtitle/artiste/album) → zone
+      secondaire absente, même si `secondaryRows=1`.
 - [ ] HotFX + accents français toujours OK : publier une note avec « café àù ç » →
       les lettres accentuées restent visibles (alphabet par défaut les contient).
 - [ ] Performer : bloc « ⑤ Détails avancés » → régler Duration HotFX, Alphabet, Gap,
@@ -147,6 +161,23 @@ LUFS broadcast). Panneau repliable sous le split-flap, rAF stoppé tant que ferm
       animations ralenties, pas de waterfall rapide.
 - [ ] Onglet du navigateur en arrière-plan : rAF en pause (pas de fuite CPU).
 - [ ] Recharger `/` : aucun AudioContext orphelin (nettoyage unmount).
+
+## Débit audio reçu (listener)
+
+Indicateur compact dans la barre de contrôles : `RX 78 kbps · jitter 12 ms ·
+loss 0.0 %` (trafic réseau WebRTC entrant, ≠ niveau sonore).
+
+- [ ] Sans flux / pas connecté → `EN ATTENTE AUDIO`.
+- [ ] Performer diffuse → listener « Listen live » → l’indicateur passe à
+      `RX —` puis affiche `RX <n> kbps · jitter <n> ms · loss <n.n> %` après ~1,5 s.
+- [ ] Les valeurs bougent (kbps ~ débit audio, jitter quelques ms, loss ~0 % sur
+      liaison saine). Tooltip au survol précise « trafic réseau entrant ».
+- [ ] « Stop » listener → l’indicateur repasse à `EN ATTENTE AUDIO` (reset).
+- [ ] Reconnect → les stats reviennent (nouveau receiver, même indicateur).
+- [ ] PAD -30 dB activé ou mute → les stats continuent (le flux réseau arrive
+      toujours ; mute = volume `<audio>` à 0, pas le transport).
+- [ ] Navigateur sans stats receiver exposées → fallback propre `RX —` (pas de
+      crash).
 
 ## Backend
 
