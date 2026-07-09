@@ -252,6 +252,17 @@ panneau est fermé ou l'onglet caché (rAF ne tourne pas en arrière-plan).
 `prefers-reduced-motion` → FPS réduit à 8. Nettoyage strict à l'unmount (pas de
 fuite AudioContext / rAF).
 
+**Panneau redimensionnable** : le panneau ouvert se redimensionne à la souris /
+au trackpad / au touch via une poignée `ns-resize` en bas (pointer capture, clamp
+220–760 px, défaut 360). Les 6 visualisations suivent la nouvelle hauteur sans
+flou — les canvas maison se recalculent via `ResizeObserver` (`useCanvasResolution`),
+et le spectrum `audioMotion-analyzer` réagit via son propre `ResizeObserver` sur le
+conteneur (config log 20 Hz–20 kHz et repères fréquence inchangés). Hauteur
+persistée localement dans `radio.audioMonitor.height` (aucune synchro backend).
+Boutons **Compact 260 / Normal 360 / Large 560** + clavier (↑ +20 px, ↓ −20 px,
+Home = min, End = max) sur la poignée (`apps/web/src/hooks/useResizablePanel.ts`).
+Masquer/Afficher conserve la hauteur ; panneau fermé → hauteur auto (header seul).
+
 > Limites : monitoring local navigateur (dBFS, pas LUFS broadcast). Sans remote
 > track → « EN ATTENTE AUDIO ». **Meyda** (spectral features propres) et
 > **Butterchurn** (visualizer WebGL MilkDrop) non intégrés — phase 2 si besoin.

@@ -100,9 +100,9 @@ function draw(canvas: HTMLCanvasElement, s: { pl: number; pr: number; rl: number
   })
 }
 
-const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4 }
+const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 auto', minHeight: 0 }
 const head: CSSProperties = { display: 'flex', justifyContent: 'space-between', fontSize: 11, letterSpacing: 1, color: '#9ca3af', textTransform: 'uppercase' }
 const accent: CSSProperties = { color: '#f5d76b', fontWeight: 700 }
-const canvasStyle: CSSProperties = { width: '100%', height: 220, background: '#0b0d12', border: '1px solid #23262f', display: 'block' }
+const canvasStyle: CSSProperties = { width: '100%', flex: '1 1 auto', minHeight: 0, background: '#0b0d12', border: '1px solid #23262f', display: 'block' }
 const grid: CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, fontSize: 11, color: '#9ca3af', fontFamily: 'ui-monospace, monospace' }
 const cell: CSSProperties = { display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #23262f', padding: '2px 0' }

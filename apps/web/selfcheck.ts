@@ -224,4 +224,13 @@ assert(audioDelta.display.kbps === 40, 'computeAudioRx delta 5000 B / 1 s → 40
 assert(audioDelta.display.lossPct === 1, 'computeAudioRx loss 1/101 → 1.0 %')
 assert(audioDelta.display.packetsReceived === 100 && audioDelta.display.packetsLost === 1, 'computeAudioRx compteurs cumulés')
 
-console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered+boardColumns+trim, ticker+scroll, trim -30 dB, accents HotFX, audio monitor, audio rx stats)')
+// useResizablePanel clampHeight : borne 220–760, arrondi, défaut sûr si NaN/Infinity.
+const { clampHeight, PANEL_MIN_HEIGHT, PANEL_MAX_HEIGHT, PANEL_DEFAULT_HEIGHT } = await import('./src/hooks/useResizablePanel')
+assert(PANEL_MIN_HEIGHT === 220 && PANEL_MAX_HEIGHT === 760 && PANEL_DEFAULT_HEIGHT === 360, 'panneau bornes 220/760 défaut 360')
+assert(clampHeight(360) === 360, 'clampHeight dans la borne → inchangé')
+assert(clampHeight(100) === 220, 'clampHeight sous le min → 220')
+assert(clampHeight(9999) === 760, 'clampHeight au-dessus du max → 760')
+assert(clampHeight(450.7) === 451, 'clampHeight arrondit')
+assert(clampHeight(NaN) === 360 && clampHeight(Infinity) === 760, 'clampHeight NaN → défaut, Infinity → max')
+
+console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered+boardColumns+trim, ticker+scroll, trim -30 dB, accents HotFX, audio monitor, audio rx stats, resizable panel clamp)')

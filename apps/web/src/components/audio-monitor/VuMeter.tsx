@@ -101,7 +101,7 @@ function draw(canvas: HTMLCanvasElement, l: number, r: number, pl: number, pr: n
   ctx.fillText('R', w / 2 + 6, h - 1)
 }
 
-const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4 }
+const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 auto', minHeight: 0 }
 const head: CSSProperties = { display: 'flex', justifyContent: 'space-between', fontSize: 11, letterSpacing: 1, color: '#9ca3af', textTransform: 'uppercase' }
 const sub: CSSProperties = { color: '#6b7280' }
-const canvasStyle: CSSProperties = { width: '100%', height: 220, background: '#0b0d12', border: '1px solid #23262f', display: 'block' }
+const canvasStyle: CSSProperties = { width: '100%', flex: '1 1 auto', minHeight: 0, background: '#0b0d12', border: '1px solid #23262f', display: 'block' }

@@ -104,9 +104,9 @@ export function Spectrogram({ analyser, active, maxFps }: Props) {
   )
 }
 
-const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4 }
+const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 auto', minHeight: 0 }
 const head: CSSProperties = { display: 'flex', justifyContent: 'space-between', fontSize: 11, letterSpacing: 1, color: '#9ca3af', textTransform: 'uppercase' }
 const sub: CSSProperties = { color: '#6b7280' }
-const stage: CSSProperties = { position: 'relative', width: '100%', height: 400 }
+const stage: CSSProperties = { position: 'relative', width: '100%', flex: '1 1 auto', minHeight: 0 }
 const canvasStyle: CSSProperties = { position: 'absolute', inset: 0, width: '100%', height: '100%', background: '#0b0d12', border: '1px solid #23262f', display: 'block' }
 const overlayStyle: CSSProperties = { position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }

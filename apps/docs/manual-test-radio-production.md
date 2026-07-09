@@ -161,6 +161,14 @@ LUFS broadcast). Panneau repliable sous le split-flap, rAF stoppé tant que ferm
       animations ralenties, pas de waterfall rapide.
 - [ ] Onglet du navigateur en arrière-plan : rAF en pause (pas de fuite CPU).
 - [ ] Recharger `/` : aucun AudioContext orphelin (nettoyage unmount).
+- [ ] **Panneau redimensionnable** : panneau ouvert → poignée `ns-resize` en bas.
+      Glisser vers le bas agrandit, vers le haut réduit (borne 220–760 px). Les 6
+      visualisations suivent la nouvelle taille sans flou (canvas recalculé,
+      spectrum audioMotion réagit). Boutons **Compact 260 / Normal 360 / Large 560**
+      appliquent une hauteur fixe. Clavier sur la poignée : ↑ +20 px, ↓ −20 px,
+      Home = min, End = max. Recharger `/` → la hauteur choisie est conservée
+      (localStorage `radio.audioMonitor.height`). Masquer/Afficher conserve aussi
+      la hauteur. Panneau fermé → hauteur auto (header seul), pas de resize.
 
 ## Débit audio reçu (listener)
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import type { ListenerAudioAnalyser } from '../../audio/listenerAnalysis'
+import { useResizablePanel, PANEL_MIN_HEIGHT, PANEL_MAX_HEIGHT } from '../../hooks/useResizablePanel'
 import { VuMeter } from './VuMeter'
 import { DbMeter } from './DbMeter'
 import { SpectrumAnalyzer } from './SpectrumAnalyzer'
@@ -35,6 +36,8 @@ export function AudioMonitorPanel({ analyser, active, defaultOpen = false }: Pro
   const [open, setOpen] = useState(defaultOpen)
   const [tab, setTab] = useState<Tab>('vu')
   const [reduced, setReduced] = useState(false)
+  const { height, panelRef, startResize, onPointerMove, endResize, onKey, setPresetHeight } =
+    useResizablePanel()
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
     setReduced(mq.matches)
@@ -46,7 +49,7 @@ export function AudioMonitorPanel({ analyser, active, defaultOpen = false }: Pro
   const status = active ? 'ANALYZING' : 'EN ATTENTE AUDIO'
 
   return (
-    <section style={panel}>
+    <section ref={panelRef} style={open ? { ...panel, height, display: 'flex', flexDirection: 'column', overflow: 'hidden' } : panel}>
       <header style={headerRow}>
         <span style={title}>AUDIO MONITOR</span>
         <span style={statusRow}>
@@ -83,11 +86,48 @@ export function AudioMonitorPanel({ analyser, active, defaultOpen = false }: Pro
           <p style={note}>
             Monitoring local navigateur — n’affecte pas le flux. ≠ meter LUFS broadcast.
           </p>
+          <div style={resizeBar}>
+            <div style={presets}>
+              {PRESETS.map((p) => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => setPresetHeight(p.h)}
+                  style={height === p.h ? presetActive : presetBtn}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <div
+              role="slider"
+              tabIndex={0}
+              aria-label="Redimensionner le panneau Audio Monitor"
+              aria-orientation="vertical"
+              aria-valuemin={PANEL_MIN_HEIGHT}
+              aria-valuemax={PANEL_MAX_HEIGHT}
+              aria-valuenow={height}
+              onPointerDown={startResize}
+              onPointerMove={onPointerMove}
+              onPointerUp={endResize}
+              onPointerCancel={endResize}
+              onKeyDown={onKey}
+              style={handle}
+            >
+              <span style={grip} />
+            </div>
+          </div>
         </>
       )}
     </section>
   )
 }
+
+const PRESETS: Array<{ label: string; h: number }> = [
+  { label: 'Compact', h: 260 },
+  { label: 'Normal', h: 360 },
+  { label: 'Large', h: 560 },
+]
 
 const panel: CSSProperties = {
   marginTop: 10,
@@ -106,5 +146,11 @@ const toggleBtn: CSSProperties = { marginLeft: 'auto', padding: '4px 10px', font
 const tabs: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }
 const tabStyle: CSSProperties = { padding: '4px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #2a2f3a', background: '#15181f', color: '#6b7280' }
 const tabActive: CSSProperties = { ...tabStyle, border: '1px solid var(--accent, #aa3bff)', background: 'var(--accent, #aa3bff)', color: '#0e1117' }
-const stage: CSSProperties = { marginTop: 6 }
+const stage: CSSProperties = { marginTop: 6, flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }
 const note: CSSProperties = { margin: '6px 0 0', fontSize: 10, color: '#5b6473' }
+const resizeBar: CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 6 }
+const presets: CSSProperties = { display: 'flex', gap: 4 }
+const presetBtn: CSSProperties = { padding: '2px 8px', fontSize: 10, fontWeight: 600, cursor: 'pointer', border: '1px solid #2a2f3a', background: '#15181f', color: '#6b7280' }
+const presetActive: CSSProperties = { ...presetBtn, border: '1px solid #3a3f4b', color: '#f5d76b' }
+const handle: CSSProperties = { flex: '1 1 auto', maxWidth: 160, height: 14, cursor: 'ns-resize', display: 'flex', alignItems: 'center', justifyContent: 'center', borderTop: '1px solid #23262f', touchAction: 'none', userSelect: 'none', outline: 'none' }
+const grip: CSSProperties = { width: 44, height: 4, borderRadius: 2, background: '#3a3f4b' }
