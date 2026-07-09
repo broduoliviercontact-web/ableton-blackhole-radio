@@ -7,12 +7,15 @@ import {
   type BroadcastType,
   type BroadcastVisual,
   type DisplayMode,
+  type HotfxHeightMode,
+  type PanelDensity,
+  type VisualEngine,
   type VisualNoteMode,
   type VisualPreset,
   type VisualTransition,
 } from '../api/broadcastMessage'
-import { SplitFlapPreview, type SplitFlapEngine } from './splitflap/SplitFlapPreview'
-import { parseColors } from './splitflap/visual'
+import { SplitFlapPreview } from './splitflap/SplitFlapPreview'
+import { DEFAULT_VISUAL, parseColors } from './splitflap/visual'
 
 interface Props {
   performerPassword: string
@@ -23,6 +26,9 @@ const MODES: DisplayMode[] = ['static', 'paged', 'scroll']
 const PRESETS: VisualPreset[] = ['pirate-industrial', 'airport-classic', 'terminal-amber', 'minimal-black']
 const TRANSITIONS: VisualTransition[] = ['flip', 'scramble', 'flip-scramble', 'instant']
 const NOTE_MODES: VisualNoteMode[] = ['paged', 'scroll', 'static']
+const ENGINES: VisualEngine[] = ['internal', 'hotfx']
+const HEIGHT_MODES: HotfxHeightMode[] = ['auto', 'fixed']
+const DENSITIES: PanelDensity[] = ['compact', 'normal', 'large']
 
 const PRESET_LABELS: Record<VisualPreset, string> = {
   'pirate-industrial': 'Pirate industrial',
@@ -41,17 +47,23 @@ const NOTE_MODE_LABELS: Record<VisualNoteMode, string> = {
   scroll: 'Déroulement',
   static: 'Statique',
 }
+const ENGINE_LABELS: Record<VisualEngine, string> = {
+  internal: 'Internal',
+  hotfx: 'HotFX',
+}
+const HEIGHT_LABELS: Record<HotfxHeightMode, string> = {
+  auto: 'Auto (suit le contenu)',
+  fixed: 'Fixe (remplit)',
+}
+const DENSITY_LABELS: Record<PanelDensity, string> = {
+  compact: 'Compact',
+  normal: 'Normal',
+  large: 'Large',
+}
 
 const empty: BroadcastInput = { type: 'track', mainTitle: '' }
 // Defaults = preset pirate-industrial (bouton « Réinitialiser visuel »).
-const DEFAULT_VISUAL_FORM: BroadcastVisual = {
-  preset: 'pirate-industrial',
-  transition: 'flip',
-  noteMode: 'paged',
-  scrambleDurationMs: 600,
-  staggerDelayMs: 12,
-  pageDurationMs: 6000,
-}
+const DEFAULT_VISUAL_FORM: BroadcastVisual = { ...DEFAULT_VISUAL }
 
 /**
  * Section « Radio Message » : publie le message + réglages visuels split-flap
@@ -67,8 +79,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
   const [status, setStatus] = useState<'idle' | 'publishing' | 'ok' | 'error'>('idle')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [published, setPublished] = useState<BroadcastMessage | null>(null)
-  // Moteur d'aperçu, local au performer : non persisté, non envoyé au backend.
-  const [previewEngine, setPreviewEngine] = useState<SplitFlapEngine>('internal')
+  const [previewNonce, setPreviewNonce] = useState(0)
 
   const set = <K extends keyof BroadcastInput>(key: K, value: BroadcastInput[K]) =>
     setForm((f) => ({ ...f, [key]: value }))
@@ -122,6 +133,8 @@ export function RadioMessageForm({ performerPassword }: Props) {
         publiable même sans live.
       </p>
 
+      {/* 1. Contenu radio */}
+      <h3 style={h3Style}>Contenu radio</h3>
       <div style={gridStyle}>
         <label style={labelStyle}>
           Type
@@ -205,8 +218,23 @@ export function RadioMessageForm({ performerPassword }: Props) {
         </label>
       </div>
 
+      {/* 2. Visualisation split-flap */}
       <h3 style={h3Style}>Visualisation split-flap</h3>
       <div style={gridStyle}>
+        <label style={labelStyle}>
+          Moteur split-flap
+          <select
+            value={visual.splitFlapEngine ?? 'internal'}
+            onChange={(e) => setVis('splitFlapEngine', e.target.value as VisualEngine)}
+            style={inputStyle}
+          >
+            {ENGINES.map((en) => (
+              <option key={en} value={en}>
+                {ENGINE_LABELS[en]}
+              </option>
+            ))}
+          </select>
+        </label>
         <label style={labelStyle}>
           Preset visuel
           <select
@@ -222,7 +250,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           </select>
         </label>
         <label style={labelStyle}>
-          Transition
+          Transition (moteur internal)
           <select
             value={visual.transition ?? 'flip'}
             onChange={(e) => setVis('transition', e.target.value as VisualTransition)}
@@ -250,13 +278,13 @@ export function RadioMessageForm({ performerPassword }: Props) {
           </select>
         </label>
         <label style={labelStyle}>
-          Scramble duration (ms)
+          Page duration (ms)
           <input
             type="number"
-            min={100}
-            max={3000}
-            value={visual.scrambleDurationMs ?? 600}
-            onChange={(e) => setVis('scrambleDurationMs', e.target.value === '' ? undefined : Number(e.target.value))}
+            min={2000}
+            max={30000}
+            value={visual.pageDurationMs ?? 6000}
+            onChange={(e) => setVis('pageDurationMs', e.target.value === '' ? undefined : Number(e.target.value))}
             style={inputStyle}
           />
         </label>
@@ -268,17 +296,6 @@ export function RadioMessageForm({ performerPassword }: Props) {
             max={200}
             value={visual.staggerDelayMs ?? 12}
             onChange={(e) => setVis('staggerDelayMs', e.target.value === '' ? undefined : Number(e.target.value))}
-            style={inputStyle}
-          />
-        </label>
-        <label style={labelStyle}>
-          Page duration (ms)
-          <input
-            type="number"
-            min={2000}
-            max={30000}
-            value={visual.pageDurationMs ?? 6000}
-            onChange={(e) => setVis('pageDurationMs', e.target.value === '' ? undefined : Number(e.target.value))}
             style={inputStyle}
           />
         </label>
@@ -307,6 +324,184 @@ export function RadioMessageForm({ performerPassword }: Props) {
         </button>
       </div>
 
+      {/* 3. Paramètres avancés (fermé par défaut) */}
+      <details style={detailsStyle}>
+        <summary style={summaryStyle}>Paramètres avancés (HotFX, hauteur, style industriel)</summary>
+
+        <h4 style={h4Style}>HotFX natif</h4>
+        <div style={gridStyle}>
+          <label style={labelStyle}>
+            Duration HotFX (ms/clapet)
+            <input
+              type="number"
+              min={30}
+              max={1000}
+              value={visual.hotfxDurationMs ?? 200}
+              onChange={(e) => setVis('hotfxDurationMs', e.target.value === '' ? undefined : Number(e.target.value))}
+              style={inputStyle}
+            />
+          </label>
+          <label style={labelStyle}>
+            Gap grille HotFX (px)
+            <input
+              type="number"
+              min={0}
+              max={12}
+              value={visual.hotfxGridGapPx ?? 3}
+              onChange={(e) => setVis('hotfxGridGapPx', e.target.value === '' ? undefined : Number(e.target.value))}
+              style={inputStyle}
+            />
+          </label>
+          <label style={fullLabelStyle}>
+            Alphabet HotFX (max 120 ; espace initial significatif)
+            <input
+              value={visual.hotfxCharacters ?? ''}
+              onChange={(e) => setVis('hotfxCharacters', e.target.value)}
+              maxLength={120}
+              style={inputStyle}
+            />
+          </label>
+        </div>
+
+        <h4 style={h4Style}>Hauteur des zones (HotFX)</h4>
+        <div style={gridStyle}>
+          <label style={labelStyle}>
+            Mode hauteur
+            <select
+              value={visual.hotfxHeightMode ?? 'auto'}
+              onChange={(e) => setVis('hotfxHeightMode', e.target.value as HotfxHeightMode)}
+              style={inputStyle}
+            >
+              {HEIGHT_MODES.map((m) => (
+                <option key={m} value={m}>
+                  {HEIGHT_LABELS[m]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label style={labelStyle}>
+            Note lignes min (1–8)
+            <input
+              type="number"
+              min={1}
+              max={8}
+              value={visual.noteRowsMin ?? 2}
+              onChange={(e) => setVis('noteRowsMin', e.target.value === '' ? undefined : Number(e.target.value))}
+              style={inputStyle}
+            />
+          </label>
+          <label style={labelStyle}>
+            Note lignes max (1–12)
+            <input
+              type="number"
+              min={1}
+              max={12}
+              value={visual.noteRowsMax ?? 5}
+              onChange={(e) => setVis('noteRowsMax', e.target.value === '' ? undefined : Number(e.target.value))}
+              style={inputStyle}
+            />
+          </label>
+        </div>
+
+        <h4 style={h4Style}>Style industriel</h4>
+        <div style={gridStyle}>
+          <label style={checkLabelStyle}>
+            <input
+              type="checkbox"
+              checked={visual.flicker ?? false}
+              onChange={(e) => setVis('flicker', e.target.checked)}
+            />
+            Flicker
+          </label>
+          <label style={labelStyle}>
+            Flicker intensity (0–100)
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={visual.flickerIntensity ?? 35}
+              onChange={(e) => setVis('flickerIntensity', e.target.value === '' ? undefined : Number(e.target.value))}
+              style={inputStyle}
+            />
+          </label>
+          <label style={checkLabelStyle}>
+            <input
+              type="checkbox"
+              checked={visual.edgeGlow ?? true}
+              onChange={(e) => setVis('edgeGlow', e.target.checked)}
+            />
+            Edge glow
+          </label>
+          <label style={labelStyle}>
+            Edge glow intensity (0–100)
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={visual.edgeGlowIntensity ?? 45}
+              onChange={(e) => setVis('edgeGlowIntensity', e.target.value === '' ? undefined : Number(e.target.value))}
+              style={inputStyle}
+            />
+          </label>
+          <label style={labelStyle}>
+            Tile contrast (0–100)
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={visual.tileContrast ?? 40}
+              onChange={(e) => setVis('tileContrast', e.target.value === '' ? undefined : Number(e.target.value))}
+              style={inputStyle}
+            />
+          </label>
+          <label style={checkLabelStyle}>
+            <input
+              type="checkbox"
+              checked={visual.panelNoise ?? false}
+              onChange={(e) => setVis('panelNoise', e.target.checked)}
+            />
+            Panel noise
+          </label>
+          <label style={labelStyle}>
+            Panel density
+            <select
+              value={visual.panelDensity ?? 'normal'}
+              onChange={(e) => setVis('panelDensity', e.target.value as PanelDensity)}
+              style={inputStyle}
+            >
+              {DENSITIES.map((d) => (
+                <option key={d} value={d}>
+                  {DENSITY_LABELS[d]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label style={labelStyle}>
+            Tile radius (0–8)
+            <input
+              type="number"
+              min={0}
+              max={8}
+              value={visual.tileRadius ?? 3}
+              onChange={(e) => setVis('tileRadius', e.target.value === '' ? undefined : Number(e.target.value))}
+              style={inputStyle}
+            />
+          </label>
+          <label style={labelStyle}>
+            Tile border width (1–4)
+            <input
+              type="number"
+              min={1}
+              max={4}
+              value={visual.tileBorderWidth ?? 1}
+              onChange={(e) => setVis('tileBorderWidth', e.target.value === '' ? undefined : Number(e.target.value))}
+              style={inputStyle}
+            />
+          </label>
+        </div>
+      </details>
+
+      {/* Actions */}
       <div style={rowStyle}>
         <button type="button" onClick={publish} disabled={!form.mainTitle.trim() || status === 'publishing'}>
           {status === 'publishing' ? 'Publication…' : 'Publier le message'}
@@ -319,27 +514,18 @@ export function RadioMessageForm({ performerPassword }: Props) {
         <p style={status === 'error' ? errorStyle : okStyle}>{status === 'error' ? `❌ ${feedback}` : `✅ ${feedback}`}</p>
       )}
 
+      {/* 4. Preview */}
       <div style={{ marginTop: 16 }}>
-        <p style={mutedStyle}>Aperçu public (rendu split-flap) :</p>
-        <div style={rowStyle}>
-          <label style={{ ...labelStyle, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            Moteur preview
-            <select
-              value={previewEngine}
-              onChange={(e) => setPreviewEngine(e.target.value as SplitFlapEngine)}
-              style={inputStyle}
-            >
-              <option value="internal">Internal</option>
-              <option value="hotfx">HotFX expérimental</option>
-            </select>
-          </label>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <p style={{ ...mutedStyle, margin: 0 }}>Aperçu public (rendu split-flap) :</p>
+          <button type="button" onClick={() => setPreviewNonce((n) => n + 1)} style={smallBtnStyle}>
+            ↻ Relancer preview
+          </button>
         </div>
-        <SplitFlapPreview message={previewMessage} engine={previewEngine} />
-        {previewEngine === 'hotfx' && (
-          <p style={mutedStyle}>
-            HotFX : test client-only, non persisté. Page publique : ajoute ?engine=hotfx à l’URL.
-          </p>
-        )}
+        <SplitFlapPreview key={previewNonce} message={previewMessage} />
+        <p style={mutedStyle}>
+          Preview non publiée — publier le message pour envoyer aux auditeurs.
+        </p>
         {published && (
           <p style={mutedStyle}>Dernier message publié · updatedAt : {published.updatedAt}</p>
         )}
@@ -351,6 +537,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
 const sectionStyle: CSSProperties = { borderTop: '1px solid #e5e7eb', marginTop: 16, paddingTop: 16 }
 const h2Style: CSSProperties = { fontSize: 18, margin: '0 0 8px' }
 const h3Style: CSSProperties = { fontSize: 15, margin: '12px 0 6px' }
+const h4Style: CSSProperties = { fontSize: 13, margin: '10px 0 4px', color: '#374151' }
 const mutedStyle: CSSProperties = { color: '#6b7280', fontSize: 14, margin: '0 0 8px' }
 const gridStyle: CSSProperties = {
   display: 'grid',
@@ -360,8 +547,19 @@ const gridStyle: CSSProperties = {
 }
 const labelStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, fontWeight: 600 }
 const fullLabelStyle: CSSProperties = { ...labelStyle, gridColumn: '1 / -1' }
+const checkLabelStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 6,
+  fontSize: 13,
+  fontWeight: 600,
+}
 const inputStyle: CSSProperties = { padding: '6px 8px', fontSize: 14, fontWeight: 400 }
 const textareaStyle: CSSProperties = { ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }
 const rowStyle: CSSProperties = { display: 'flex', gap: 8, marginTop: 8 }
 const okStyle: CSSProperties = { color: 'green', marginTop: 8 }
 const errorStyle: CSSProperties = { color: 'crimson', marginTop: 8 }
+const detailsStyle: CSSProperties = { marginTop: 8, marginBottom: 8, borderTop: '1px solid #e5e7eb', padding: '8px 0' }
+const summaryStyle: CSSProperties = { cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#374151' }
+const smallBtnStyle: CSSProperties = { padding: '4px 8px', fontSize: 12, cursor: 'pointer' }

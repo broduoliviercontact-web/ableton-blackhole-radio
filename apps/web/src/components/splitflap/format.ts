@@ -27,6 +27,9 @@ export interface SplitFlapBoard {
   secondary: string
   notePages: string[][]
   ticker: string
+  // Versions brutes (uppercase, fallback) pour le layout HotFX (wrap dynamique).
+  titleRaw: string
+  noteRaw: string
 }
 
 // Centre un texte dans `cols` (espaces de chaque côté). Tronque si trop long.
@@ -44,7 +47,7 @@ function padRight(line: string, cols: number): string {
 }
 
 // Wrap mot par mot sur `cols` caractères. ponytail: wrap simple, pas de césure fine.
-function wrapWords(text: string, cols: number): string[] {
+export function wrapWords(text: string, cols: number): string[] {
   const words = text.split(/\s+/).filter((w) => w.length > 0)
   const lines: string[] = []
   let cur = ''
@@ -79,6 +82,15 @@ function toPages(text: string, cols: number, rows: number): string[][] {
   return pages.length > 0 ? pages : [Array.from({ length: rows }, () => padRight('', cols))]
 }
 
+// Pages NON paddées (dernière page courte possible) — pour la hauteur
+// dynamique HotFX. Chaque ligne tronquée à `cols`, pas de lignes vides ajoutées.
+export function notePagesRaw(text: string, cols: number, rows: number): string[][] {
+  const lines = wrapWords(text.toUpperCase(), cols).map((l) => l.slice(0, cols))
+  const pages: string[][] = []
+  for (let i = 0; i < lines.length; i += rows) pages.push(lines.slice(i, i + rows))
+  return pages.length > 0 ? pages : [['']]
+}
+
 /**
  * Transforme un message en contenu du panneau split-flap : titre centré,
  * secondaire centré (ou ligne vide si pas de métadonnées), note paginée,
@@ -100,5 +112,7 @@ export function formatBroadcastMessage(message: SplitFlapInput | null): SplitFla
     secondary: secondaryRaw ? centerLine(secondaryRaw, SPLIT_FLAP_SECONDARY_COLS) : padRight('', SPLIT_FLAP_SECONDARY_COLS),
     notePages: toPages(noteRaw, SPLIT_FLAP_NOTE_COLS, SPLIT_FLAP_NOTE_ROWS),
     ticker: tickerRaw,
+    titleRaw,
+    noteRaw,
   }
 }

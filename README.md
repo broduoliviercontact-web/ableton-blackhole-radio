@@ -144,6 +144,28 @@ qu'aucun message n'est publié.
 > redémarrage de Render. L'affichage split-flap est rendu en HTML/CSS, sans
 > dépendance externe. Plus tard : Supabase / Redis / LiveKit room metadata.
 
+## Moteur split-flap & éditeur visuel
+
+Deux moteurs d'affichage split-flap, choisis par le performer (persistés dans
+`message.visual.splitFlapEngine`) :
+
+- **Internal** (défaut) — tuiles React + CSS 3D (flip mécanique, scramble, etc.).
+- **HotFX** — web component `<hotfx-split-flap>` (demi-clapets `clip-path`), plus
+  mécanique. **Vendored localement** (`apps/web/src/components/hotfx/`), licence
+  MIT — pas de CDN, pas de dépendance npm. Source :
+  [github.com/hot-page/fx](https://github.com/hot-page/fx).
+
+L'éditeur performer (`/performer`) expose un `visual` persistant : preset,
+transition, mode de note, pagination, couleurs, moteur, réglages HotFX natifs
+(duration/alphabet/grid-gap/hauteur auto-fix/min-max) et un style industriel
+(edge-glow, flicker, contraste, densité, noise, radius tuile, bordure). La
+preview reproduit fidèlement la page publique. Override debug local :
+`/?engine=hotfx` ou `/?engine=internal`.
+
+> Limites HotFX : uppercase forcé, alphabet Latin (accents → espace), animation
+> séquentielle (pas un scramble aléatoire), `duration` = ms par clapet (≠ durée
+> totale). `prefers-reduced-motion` → `duration` 1 ms (snap).
+
 ## Sécurité
 
 - `LIVEKIT_API_SECRET` n’est jamais exposé côté frontend.

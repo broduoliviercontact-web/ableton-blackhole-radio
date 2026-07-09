@@ -80,21 +80,23 @@
 /* Ligne = rangée de tuiles, pleine largeur, sillon mécanique. */
 .sf-line { display: flex; gap: 3px; justify-content: center; }
 
-/* Tuile + clapet 3D. Relief marqué (bordure + ombre) pour lire la grille. */
+/* Tuile + clapet 3D. Relief marqué (bordure + ombre) pour lire la grille.
+   Style paramétré : radius, bordure, contraste, density (vars du cabinet). */
 .sf-tile {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(var(--sf-bg-from), var(--sf-bg-to));
-  border: 1px solid var(--sf-border);
-  border-bottom-width: 2px;
-  border-radius: 3px;
+  border: var(--sf-tile-border-width, 1px) solid var(--sf-border);
+  border-bottom-width: calc(var(--sf-tile-border-width, 1px) + 1px);
+  border-radius: var(--sf-tile-radius, 3px);
   color: var(--sf-text);
   font-family: var(--mono);
   line-height: 1;
   position: relative;
   overflow: hidden;
   perspective: 600px;
+  filter: contrast(var(--sf-contrast, 1));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 /* Fente centrale du clapet */
@@ -139,11 +141,11 @@
 
 /* Tailles : largeur de tuile uniforme (colonnes alignées = vraie grille).
    Hauteur varie par zone (titre plus haut). Le titre et le ticker utilisent
-   la couleur d'accent du preset. */
-.sf-region .sf-tile { width: 30px; }
-.sf-region--title .sf-tile { font-size: 24px; height: 46px; color: var(--sf-accent); }
-.sf-region--secondary .sf-tile { font-size: 15px; height: 32px; }
-.sf-region--note .sf-tile { font-size: 18px; }
+   la couleur d'accent du preset. Density scale (compact/normal/large). */
+.sf-region .sf-tile { width: calc(30px * var(--sf-density-scale, 1)); }
+.sf-region--title .sf-tile { font-size: calc(24px * var(--sf-density-scale, 1)); height: calc(46px * var(--sf-density-scale, 1)); color: var(--sf-accent); }
+.sf-region--secondary .sf-tile { font-size: calc(15px * var(--sf-density-scale, 1)); height: calc(32px * var(--sf-density-scale, 1)); }
+.sf-region--note .sf-tile { font-size: calc(18px * var(--sf-density-scale, 1)); }
 
 @media (max-width: 760px) {
   .sf-region .sf-tile { width: 9px; }
@@ -215,4 +217,40 @@
   .sf-flipper--flip { animation: none; transform: rotateX(-180deg); }
   .sf-ticker__track { animation: none; padding-left: 0; }
   .sf-dot.live { animation: none; }
+  .sf-cabinet--flicker { animation: none; }
 }
+
+/* === Effets de style industriel (vars posées sur le cabinet par styleVars) === */
+
+/* Edge glow : halo accent sur les tuiles. */
+.sf-cabinet--glow .sf-tile {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 var(--sf-glow-spread, 8px) rgba(245, 215, 107, calc(var(--sf-edge-glow, 0) * 0.45)),
+    0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Flicker : scintillement pirate sur tout le panneau. --sf-flicker-amp = amplitude. */
+@keyframes sf-flicker {
+  0%, 100% { opacity: 1; }
+  45% { opacity: calc(1 - var(--sf-flicker-amp, 0.15)); }
+  47% { opacity: 1; }
+  72% { opacity: calc(1 - var(--sf-flicker-amp, 0.15) * 0.6); }
+  74% { opacity: 1; }
+}
+.sf-cabinet--flicker { animation: sf-flicker 4.5s linear infinite; }
+
+/* Panel noise : grain stylisé (fake — repeating gradient) en overlay.
+   ponytail: pas un vrai grain, juste une texture subtile. */
+.sf-cabinet--noise::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.15) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.15) 0 1px, transparent 1px 3px);
+  mix-blend-mode: overlay;
+}
+.sf-cabinet { position: relative; }

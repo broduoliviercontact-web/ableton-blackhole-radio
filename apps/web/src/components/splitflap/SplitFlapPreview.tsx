@@ -2,83 +2,103 @@ import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { SplitFlapDisplay } from './SplitFlapDisplay'
 import { RadioTicker } from './RadioTicker'
-import { formatBroadcastMessage, SPLIT_FLAP_TITLE_COLS, SPLIT_FLAP_SECONDARY_COLS, SPLIT_FLAP_NOTE_COLS, SPLIT_FLAP_NOTE_ROWS } from './format'
-import { resolveVisual, presetClass, accentColor } from './visual'
+import {
+  formatBroadcastMessage,
+  SPLIT_FLAP_TITLE_COLS,
+  SPLIT_FLAP_SECONDARY_COLS,
+  SPLIT_FLAP_NOTE_COLS,
+  SPLIT_FLAP_NOTE_ROWS,
+} from './format'
+import { resolveVisual, presetClass, accentColor, styleVars } from './visual'
 import { SplitFlapVisualProvider, type SplitFlapVisualSettings } from './SplitFlapContext'
 import { HotFxSplitFlap } from '../hotfx/HotFxSplitFlap'
+import { hotfxLayout, noteHeightFor } from '../hotfx/layout'
 import type { BroadcastInput, BroadcastMessage } from '../../api/broadcastMessage'
-
-export type SplitFlapEngine = 'internal' | 'hotfx'
 
 interface Props {
   message: BroadcastInput | BroadcastMessage | null
-  // Moteur de l'aperçu, local au performer (non persisté, non publié).
-  engine?: SplitFlapEngine
 }
 
 /**
- * Aperçu split-flap côté performer : reprend les mêmes composants que la page
- * publique, en plus petit (classe sf-cabinet--preview). Pas d'audio, pas de
- * contrôles. Le flip se fait par tuile (char-change) — l'aperçu « vit » pendant
- * la saisie sans reflash global.
+ * Aperçu split-flap côté performer : reprend exactement le rendu de la page
+ * publique (même moteur = message.visual.splitFlapEngine, mêmes hauteurs/timings/
+ * couleurs/style), en plus petit (classe sf-cabinet--preview). Pas d'audio, pas
+ * de contrôles. Moteur internal : flip par tuile (char-change) — l'aperçu « vit »
+ * pendant la saisie. Moteur HotFX : textContent change → MutationObserver.
  */
-export function SplitFlapPreview({ message, engine = 'internal' }: Props) {
+export function SplitFlapPreview({ message }: Props) {
   const board = formatBroadcastMessage(message)
   const v = resolveVisual(message?.visual)
+  const useHotFx = v.splitFlapEngine === 'hotfx'
   const settings: SplitFlapVisualSettings = {
     transition: v.transition,
     scrambleDurationMs: v.scrambleDurationMs,
     staggerDelayMs: v.staggerDelayMs,
     scrambleColors: v.scrambleColors,
   }
-  const hotfxDuration = Math.max(80, Math.min(v.scrambleDurationMs, 800))
 
-  // Pagination de la note (static = page 0, paged/scroll = cycle).
+  const hotfx = useHotFx ? hotfxLayout(board, v) : null
+  const notePages = hotfx ? hotfx.notePages : board.notePages
+
+  // Pagination note : static = page 0, paged/scroll = cycle.
   const [notePage, setNotePage] = useState(0)
   useEffect(() => {
     setNotePage(0)
-    if (v.noteMode === 'static' || board.notePages.length <= 1) return
-    // ponytail: scroll mappé sur paged (le ticker gère déjà le défilement).
-    const t = window.setInterval(() => setNotePage((p) => (p + 1) % board.notePages.length), v.pageDurationMs)
+    if (v.noteMode === 'static' || notePages.length <= 1) return
+    // ponytail: scroll mappé sur paged (pas de vraie grille défilante).
+    const t = window.setInterval(() => setNotePage((p) => (p + 1) % notePages.length), v.pageDurationMs)
     return () => clearInterval(t)
-  }, [board.notePages, v.noteMode, v.pageDurationMs])
+  }, [notePages, v.noteMode, v.pageDurationMs])
 
-  const noteLines = v.noteMode === 'static' ? board.notePages[0] : board.notePages[notePage] ?? board.notePages[0]
+  const rawNoteLines = v.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0]
+  const noteHeight = hotfx ? noteHeightFor(v, rawNoteLines.length) : SPLIT_FLAP_NOTE_ROWS
   const accent = accentColor(v)
-  const cabinetStyle = { '--sf-accent': accent } as CSSProperties
+  const fxClasses = [
+    v.edgeGlow ? 'sf-cabinet--glow' : '',
+    v.flicker ? 'sf-cabinet--flicker' : '',
+    v.panelNoise ? 'sf-cabinet--noise' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+  const cabinetStyle = { '--sf-accent': accent, ...styleVars(v) } as CSSProperties
 
   return (
     <SplitFlapVisualProvider value={settings}>
-      <div className={`sf-cabinet sf-cabinet--preview ${presetClass(v.preset)}`} style={cabinetStyle}>
-        {engine === 'hotfx' ? (
+      <div className={`sf-cabinet sf-cabinet--preview ${presetClass(v.preset)} ${fxClasses}`.trim()} style={cabinetStyle}>
+        {useHotFx && hotfx ? (
           <>
             <HotFxSplitFlap
               className="sf-hotfx sf-hotfx--title"
-              text={board.title}
+              text={hotfx.titleText}
               width={SPLIT_FLAP_TITLE_COLS}
-              height={1}
-              durationMs={hotfxDuration}
+              height={hotfx.titleHeight}
+              durationMs={v.hotfxDurationMs}
+              characters={v.hotfxCharacters}
             />
-            <HotFxSplitFlap
-              className="sf-hotfx sf-hotfx--secondary"
-              text={board.secondary}
-              width={SPLIT_FLAP_SECONDARY_COLS}
-              height={1}
-              durationMs={hotfxDuration}
-            />
+            {hotfx.secondaryHeight > 0 && (
+              <HotFxSplitFlap
+                className="sf-hotfx sf-hotfx--secondary"
+                text={hotfx.secondaryText}
+                width={SPLIT_FLAP_SECONDARY_COLS}
+                height={hotfx.secondaryHeight}
+                durationMs={v.hotfxDurationMs}
+                characters={v.hotfxCharacters}
+              />
+            )}
             <HotFxSplitFlap
               className="sf-hotfx sf-hotfx--note"
-              text={noteLines.join('\n')}
+              text={rawNoteLines.join('\n')}
               width={SPLIT_FLAP_NOTE_COLS}
-              height={SPLIT_FLAP_NOTE_ROWS}
-              durationMs={hotfxDuration}
+              height={noteHeight}
+              durationMs={v.hotfxDurationMs}
+              characters={v.hotfxCharacters}
             />
           </>
         ) : (
           <>
             <SplitFlapDisplay lines={[board.title]} variant="title" />
             <SplitFlapDisplay lines={[board.secondary]} variant="secondary" />
-            <SplitFlapDisplay key={`note:${notePage}`} lines={noteLines} variant="note" />
+            <SplitFlapDisplay key={`note:${notePage}`} lines={rawNoteLines} variant="note" />
           </>
         )}
         <RadioTicker text={board.ticker} />

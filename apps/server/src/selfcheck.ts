@@ -110,7 +110,54 @@ async function main(): Promise<void> {
     badPreset = true
   }
   assert(badPreset, 'preset invalide refusé')
-  console.log('✅ broadcast message OK (parse, updatedAt serveur, store mémoire, visual clamp/filter)')
+
+  // Moteur split-flap persistant + réglages HotFX + style industriel.
+  const eng = parseBroadcastMessage({ type: 'track', mainTitle: 'Eng', visual: { splitFlapEngine: 'hotfx' } })
+  assert(eng.visual?.splitFlapEngine === 'hotfx', 'splitFlapEngine hotfx persisté')
+  let badEngine = false
+  try {
+    parseBroadcastMessage({ type: 'track', mainTitle: 'x', visual: { splitFlapEngine: 'nope' } })
+  } catch {
+    badEngine = true
+  }
+  assert(badEngine, 'splitFlapEngine invalide refusé')
+  const hotfx = parseBroadcastMessage({
+    type: 'track',
+    mainTitle: 'H',
+    visual: {
+      hotfxHeightMode: 'auto',
+      noteRowsMin: 0, // < 1 → clamp 1
+      noteRowsMax: 99, // > 12 → clamp 12
+      hotfxDurationMs: 5, // < 30 → clamp 30
+      hotfxCharacters: 'A'.repeat(200), // 200 → 120
+      hotfxGridGapPx: 20, // > 12 → clamp 12
+      flicker: true,
+      flickerIntensity: 150, // > 100 → clamp 100
+      edgeGlow: true,
+      edgeGlowIntensity: 50,
+      tileContrast: 60,
+      panelNoise: true,
+      panelDensity: 'compact',
+      tileRadius: 20, // > 8 → clamp 8
+      tileBorderWidth: 0, // < 1 → clamp 1
+    },
+  })
+  assert(hotfx.visual?.hotfxHeightMode === 'auto', 'hotfxHeightMode')
+  assert(hotfx.visual?.noteRowsMin === 1, 'noteRowsMin clamp 1')
+  assert(hotfx.visual?.noteRowsMax === 12, 'noteRowsMax clamp 12')
+  assert(hotfx.visual?.hotfxDurationMs === 30, 'hotfxDurationMs clamp 30')
+  assert(hotfx.visual?.hotfxCharacters?.length === 120, 'hotfxCharacters max 120')
+  assert(hotfx.visual?.hotfxGridGapPx === 12, 'hotfxGridGapPx clamp 12')
+  assert(hotfx.visual?.flicker === true && hotfx.visual?.flickerIntensity === 100, 'flicker + intensity clamp')
+  assert(hotfx.visual?.tileRadius === 8 && hotfx.visual?.tileBorderWidth === 1, 'tileRadius/border clamp')
+  assert(hotfx.visual?.panelDensity === 'compact', 'panelDensity')
+  // Fallback propre : noteRowsMax < noteRowsMin → max = min (pas de rejet).
+  const rows = parseBroadcastMessage({ type: 'track', mainTitle: 'R', visual: { noteRowsMin: 8, noteRowsMax: 1 } })
+  assert(rows.visual?.noteRowsMin === 8 && rows.visual?.noteRowsMax === 8, 'noteRowsMax<min → fallback max=min')
+  // Alphabet vide → undefined (pas de stockage du champ).
+  const emptyChars = parseBroadcastMessage({ type: 'track', mainTitle: 'C', visual: { hotfxCharacters: '' } })
+  assert(emptyChars.visual === undefined, 'hotfxCharacters vide → visual vide → undefined')
+  console.log('✅ broadcast message OK (parse, updatedAt serveur, store mémoire, visual clamp/filter, engine+hotfx+style)')
 }
 
 main().catch((e) => {

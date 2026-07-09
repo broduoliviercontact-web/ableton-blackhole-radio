@@ -13,9 +13,10 @@ URLs :
       de status, grand titre, ligne secondaire, note, ticker bas.
 - [ ] `/listen` affiche la même page radio que `/`.
 - [ ] Aucun lien visible vers `/performer` sur la page publique.
-- [ ] Sans message publié : titre `RADIO BLACKHOLE`, secondaire
-      `LIVE WEB AUDIO STREAM`, note `EN ATTENTE DU MESSAGE PERFORMER.`,
-      ticker `RADIO ONLINE · LISTEN LIVE · WEBRTC STREAM`.
+- [ ] Sans message publié : titre `RADIO BLACKHOLE` (centré), ligne secondaire
+      vide (tuiles vides, plus de « LIVE WEB AUDIO STREAM »), note
+      `EN ATTENTE DU MESSAGE PERFORMER.`, ticker
+      `RADIO BLACKHOLE · PIRATE WEBRTC STREAM · LISTEN LIVE`.
 
 ## Performer (gate)
 
@@ -49,6 +50,24 @@ URLs :
 - [ ] Aucun mot de passe n’apparaît dans le message public, les logs ou
       `/api/config-check` (booléen `performerPasswordConfigured` uniquement).
 
+## Moteur split-flap & éditeur visuel
+
+- [ ] `/performer` : section « Visualisation split-flap » → « Moteur split-flap »
+      propose Internal / HotFX. Choisir HotFX → la preview bascule en demi-clapets.
+- [ ] Publier avec moteur HotFX → la page publique `/` affiche HotFX après polling
+      (≤ 5 s). `/listen` idem.
+- [ ] `/?engine=internal` force le moteur internal (override debug) ;
+      `/?engine=hotfx` force HotFX, indépendamment du message publié.
+- [ ] Performer : « Paramètres avancés » → régler Duration HotFX, Alphabet, Gap,
+      hauteur (auto/fixed, min/max), style industriel (flicker, edge-glow,
+      contrast, density, noise, radius, border) → la preview reflète les changements.
+- [ ] Publier → la page publique applique les mêmes réglages (couleurs, timings,
+      hauteur auto, style).
+- [ ] Hauteur auto : une note courte → zone note courte (pas de grand vide) ;
+      une note longue → paginée selon `noteRowsMax`.
+- [ ] `prefers-reduced-motion` (DevTools → Rendering) : HotFX snap (duration 1 ms,
+      pas de mouvement prolongé), flicker figé, flip internal figé.
+
 ## Backend
 
 - [ ] `GET /api/health` → `{"ok":true,...}`
@@ -62,4 +81,5 @@ URLs :
 - Le message radio est stocké **en mémoire** côté serveur : il est perdu au
   redémarrage de Render. Vérifier le polling repart proprement après redémarrage.
 - `prefers-reduced-motion` : couper le flip des tuiles, le scroll du ticker et
-  le pulse du point LIVE pour vérifier le respect du réglage.
+  le pulse du point LIVE pour vérifier le respect du réglage. HotFX passe en
+  snap (duration 1 ms) — le texte final reste intact.

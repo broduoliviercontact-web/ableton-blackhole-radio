@@ -6,6 +6,9 @@ export type DisplayMode = 'static' | 'paged' | 'scroll'
 export type VisualPreset = 'pirate-industrial' | 'airport-classic' | 'terminal-amber' | 'minimal-black'
 export type VisualTransition = 'flip' | 'scramble' | 'flip-scramble' | 'instant'
 export type VisualNoteMode = 'paged' | 'scroll' | 'static'
+export type VisualEngine = 'internal' | 'hotfx'
+export type HotfxHeightMode = 'auto' | 'fixed'
+export type PanelDensity = 'compact' | 'normal' | 'large'
 
 export interface BroadcastVisual {
   preset?: VisualPreset
@@ -16,6 +19,24 @@ export interface BroadcastVisual {
   pageDurationMs?: number
   scrambleColors?: string[]
   accentColors?: string[]
+  // Moteur split-flap persistant + réglages HotFX natifs.
+  splitFlapEngine?: VisualEngine
+  hotfxHeightMode?: HotfxHeightMode
+  noteRowsMin?: number
+  noteRowsMax?: number
+  hotfxDurationMs?: number
+  hotfxCharacters?: string
+  hotfxGridGapPx?: number
+  // Style industriel radio pirate.
+  flicker?: boolean
+  flickerIntensity?: number
+  edgeGlow?: boolean
+  edgeGlowIntensity?: number
+  tileContrast?: number
+  panelNoise?: boolean
+  panelDensity?: PanelDensity
+  tileRadius?: number
+  tileBorderWidth?: number
 }
 
 export interface BroadcastMessage {
@@ -55,6 +76,22 @@ const visualSchema = z
     pageDurationMs: z.coerce.number().optional(),
     scrambleColors: z.array(z.string()).optional(),
     accentColors: z.array(z.string()).optional(),
+    splitFlapEngine: z.enum(['internal', 'hotfx']).optional(),
+    hotfxHeightMode: z.enum(['auto', 'fixed']).optional(),
+    noteRowsMin: z.coerce.number().optional(),
+    noteRowsMax: z.coerce.number().optional(),
+    hotfxDurationMs: z.coerce.number().optional(),
+    hotfxCharacters: z.string().optional(),
+    hotfxGridGapPx: z.coerce.number().optional(),
+    flicker: z.boolean().optional(),
+    flickerIntensity: z.coerce.number().optional(),
+    edgeGlow: z.boolean().optional(),
+    edgeGlowIntensity: z.coerce.number().optional(),
+    tileContrast: z.coerce.number().optional(),
+    panelNoise: z.boolean().optional(),
+    panelDensity: z.enum(['compact', 'normal', 'large']).optional(),
+    tileRadius: z.coerce.number().optional(),
+    tileBorderWidth: z.coerce.number().optional(),
   })
   .strict()
   .optional()
@@ -71,6 +108,28 @@ const visualSchema = z
     if (sc) out.scrambleColors = sc
     const ac = cleanColors(v.accentColors)
     if (ac) out.accentColors = ac
+    if (v.splitFlapEngine) out.splitFlapEngine = v.splitFlapEngine
+    if (v.hotfxHeightMode) out.hotfxHeightMode = v.hotfxHeightMode
+    if (v.noteRowsMin != null) out.noteRowsMin = clampInt(v.noteRowsMin, 1, 8)
+    if (v.noteRowsMax != null) out.noteRowsMax = clampInt(v.noteRowsMax, 1, 12)
+    if (v.hotfxDurationMs != null) out.hotfxDurationMs = clampInt(v.hotfxDurationMs, 30, 1000)
+    // Alphabet HotFX : pas de trim (l'espace initial est significatif), max 120.
+    if (typeof v.hotfxCharacters === 'string' && v.hotfxCharacters.length > 0)
+      out.hotfxCharacters = v.hotfxCharacters.slice(0, 120)
+    if (v.hotfxGridGapPx != null) out.hotfxGridGapPx = clampInt(v.hotfxGridGapPx, 0, 12)
+    if (v.flicker != null) out.flicker = v.flicker
+    if (v.flickerIntensity != null) out.flickerIntensity = clampInt(v.flickerIntensity, 0, 100)
+    if (v.edgeGlow != null) out.edgeGlow = v.edgeGlow
+    if (v.edgeGlowIntensity != null) out.edgeGlowIntensity = clampInt(v.edgeGlowIntensity, 0, 100)
+    if (v.tileContrast != null) out.tileContrast = clampInt(v.tileContrast, 0, 100)
+    if (v.panelNoise != null) out.panelNoise = v.panelNoise
+    if (v.panelDensity) out.panelDensity = v.panelDensity
+    if (v.tileRadius != null) out.tileRadius = clampInt(v.tileRadius, 0, 8)
+    if (v.tileBorderWidth != null) out.tileBorderWidth = clampInt(v.tileBorderWidth, 1, 4)
+    // Fallback propre (pas de rejet) : noteRowsMax >= noteRowsMin.
+    if (out.noteRowsMin != null && out.noteRowsMax != null && out.noteRowsMax < out.noteRowsMin) {
+      out.noteRowsMax = out.noteRowsMin
+    }
     // Objet vide → undefined (pas de visual stocké).
     return Object.keys(out).length > 0 ? out : undefined
   })

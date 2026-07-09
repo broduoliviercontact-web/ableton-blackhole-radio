@@ -6,6 +6,9 @@ export type DisplayMode = 'static' | 'paged' | 'scroll'
 export type VisualPreset = 'pirate-industrial' | 'airport-classic' | 'terminal-amber' | 'minimal-black'
 export type VisualTransition = 'flip' | 'scramble' | 'flip-scramble' | 'instant'
 export type VisualNoteMode = 'paged' | 'scroll' | 'static'
+export type VisualEngine = 'internal' | 'hotfx'
+export type HotfxHeightMode = 'auto' | 'fixed'
+export type PanelDensity = 'compact' | 'normal' | 'large'
 
 export interface BroadcastVisual {
   preset?: VisualPreset
@@ -16,6 +19,24 @@ export interface BroadcastVisual {
   pageDurationMs?: number
   scrambleColors?: string[]
   accentColors?: string[]
+  // Moteur split-flap persistant + réglages HotFX natifs.
+  splitFlapEngine?: VisualEngine
+  hotfxHeightMode?: HotfxHeightMode
+  noteRowsMin?: number
+  noteRowsMax?: number
+  hotfxDurationMs?: number
+  hotfxCharacters?: string
+  hotfxGridGapPx?: number
+  // Style industriel radio pirate.
+  flicker?: boolean
+  flickerIntensity?: number
+  edgeGlow?: boolean
+  edgeGlowIntensity?: number
+  tileContrast?: number
+  panelNoise?: boolean
+  panelDensity?: PanelDensity
+  tileRadius?: number
+  tileBorderWidth?: number
 }
 
 export interface BroadcastMessage {

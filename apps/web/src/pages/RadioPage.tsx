@@ -6,10 +6,18 @@ import { ListenerVolume } from '../components/ListenerVolume'
 import { getOrCreateIdentity } from '../utils/identity'
 import { SplitFlapDisplay } from '../components/splitflap/SplitFlapDisplay'
 import { RadioTicker } from '../components/splitflap/RadioTicker'
-import { formatBroadcastMessage, SPLIT_FLAP_TITLE_COLS, SPLIT_FLAP_SECONDARY_COLS, SPLIT_FLAP_NOTE_COLS, SPLIT_FLAP_NOTE_ROWS } from '../components/splitflap/format'
-import { resolveVisual, presetClass, accentColor } from '../components/splitflap/visual'
+import {
+  formatBroadcastMessage,
+  SPLIT_FLAP_TITLE_COLS,
+  SPLIT_FLAP_SECONDARY_COLS,
+  SPLIT_FLAP_NOTE_COLS,
+  SPLIT_FLAP_NOTE_ROWS,
+} from '../components/splitflap/format'
+import { resolveVisual, presetClass, accentColor, styleVars } from '../components/splitflap/visual'
 import { SplitFlapVisualProvider, type SplitFlapVisualSettings } from '../components/splitflap/SplitFlapContext'
 import { HotFxSplitFlap } from '../components/hotfx/HotFxSplitFlap'
+import { hotfxLayout, noteHeightFor } from '../components/hotfx/layout'
+import type { VisualEngine } from '../api/broadcastMessage'
 import '../components/splitflap/splitflap.css'
 import '../components/hotfx/hotfx.css'
 
@@ -18,16 +26,18 @@ const ROOM_NAME = 'main'
 /**
  * Page radio publique : panneau split-flap continu (type gare/aéroport).
  * Aucun debug public, aucun lien vers /performer. L'audio reste le flux LiveKit
- * raw (useLiveKitListen). Les réglages visuels (message.visual) pilotent
- * preset, transition, stagger, pagination et couleurs.
+ * raw (useLiveKitListen). Les réglages visuels (message.visual) pilotent moteur
+ * (internal/hotfx), preset, transition, stagger, pagination, couleurs et style.
+ *
+ * Moteur : priorité ?engine=internal|hotfx (override debug local) →
+ * message.visual.splitFlapEngine → « internal ».
  */
 export function RadioPage() {
   const [myIdentity] = useState(() => getOrCreateIdentity('listener'))
-  // Moteur split-flap expérimental, client-only : ?engine=hotfx active HotFX.
-  // Aucun impact backend (le message publié ne porte pas ce choix).
-  const [useHotFx] = useState(
-    () => new URLSearchParams(window.location.search).get('engine') === 'hotfx',
-  )
+  const [engineOverride] = useState<VisualEngine | null>(() => {
+    const q = new URLSearchParams(window.location.search).get('engine')
+    return q === 'internal' || q === 'hotfx' ? q : null
+  })
   const audioHostRef = useRef<HTMLDivElement>(null)
   const {
     phase,
@@ -48,6 +58,8 @@ export function RadioPage() {
 
   const board = formatBroadcastMessage(broadcast)
   const visual = resolveVisual(broadcast?.visual)
+  const engine: VisualEngine = engineOverride ?? visual.splitFlapEngine
+  const useHotFx = engine === 'hotfx'
   // messageKey change à chaque message publié (updatedAt serveur) → force le
   // reflip intégral, même si le texte est identique. '' pour le défaut.
   const messageKey = broadcast.updatedAt || 'default'
@@ -59,14 +71,17 @@ export function RadioPage() {
     scrambleColors: visual.scrambleColors,
   }
 
-  // Pagination de la note : static = page 0, paged/scroll = cycle à
-  // pageDurationMs. Reset quand le message change (on repart page 0).
-  const notePages = board.notePages
+  // Layout HotFX (zones + hauteurs dynamiques). null en mode internal.
+  const hotfx = useHotFx ? hotfxLayout(board, visual) : null
+
+  // Pagination de la note : static = page 0, paged/scroll = cycle à pageDurationMs.
+  // ponytail: scroll mappé sur paged (pas de vraie grille défilante HotFX/internal ;
+  // le ticker gère déjà le défilement horizontal). Reset quand le message change.
+  const notePages = hotfx ? hotfx.notePages : board.notePages
   const [notePage, setNotePage] = useState(0)
   useEffect(() => {
     setNotePage(0)
     if (visual.noteMode === 'static' || notePages.length <= 1) return
-    // ponytail: scroll mappé sur paged (le ticker gère déjà le défilement).
     const t = window.setInterval(() => setNotePage((p) => (p + 1) % notePages.length), visual.pageDurationMs)
     return () => clearInterval(t)
   }, [notePages, visual.noteMode, visual.pageDurationMs])
@@ -81,11 +96,17 @@ export function RadioPage() {
       : 'offline'
   const statusLabel = statusKey === 'live' ? 'LIVE' : statusKey === 'connecting' ? 'CONNECTING' : 'OFFLINE'
 
-  const noteLines = visual.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0]
+  const rawNoteLines = visual.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0]
+  const noteHeight = hotfx ? noteHeightFor(visual, rawNoteLines.length) : SPLIT_FLAP_NOTE_ROWS
   const accent = accentColor(visual)
-  const cabinetStyle = { '--sf-accent': accent } as CSSProperties
-  // HotFX: duration = ms par chute de clapet (≠ total). Clamp pour rester lisible.
-  const hotfxDuration = Math.max(80, Math.min(visual.scrambleDurationMs, 800))
+  const fxClasses = [
+    visual.edgeGlow ? 'sf-cabinet--glow' : '',
+    visual.flicker ? 'sf-cabinet--flicker' : '',
+    visual.panelNoise ? 'sf-cabinet--noise' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+  const cabinetStyle = { '--sf-accent': accent, ...styleVars(visual) } as CSSProperties
 
   return (
     <main className="sf-page">
@@ -97,45 +118,46 @@ export function RadioPage() {
         </span>
       </header>
 
-      {/* Un seul cadre continu : les 4 zones split-flap vivent dedans. Les
-          régions sont keyées par messageKey / pageKey → à tout changement, React
-          remonte les tuiles et rejoue le flip intégral (titre au nouveau message,
-          note à chaque page). */}
+      {/* Un seul cadre continu : les 4 zones split-flap vivent dedans. En mode
+          internal les régions sont keyées par messageKey/pageKey → reflip intégral
+          à tout changement. En mode HotFX le textContent change → MutationObserver
+          relance l'animation (pas de remount). */}
       <SplitFlapVisualProvider value={settings}>
-        <div className={`sf-cabinet ${presetClass(visual.preset)}`} style={cabinetStyle}>
-          {useHotFx ? (
+        <div className={`sf-cabinet ${presetClass(visual.preset)} ${fxClasses}`.trim()} style={cabinetStyle}>
+          {useHotFx && hotfx ? (
             <>
-              {/* HotFX expérimental : demi-clapets clip-path. Le textContent
-                  change → MutationObserver relance l'animation (pas de key
-                  remount). Limites : uppercase forcé, pas de reflip si texte
-                  identique, pas de freeze reduced-motion. */}
               <HotFxSplitFlap
                 className="sf-hotfx sf-hotfx--title"
-                text={board.title}
+                text={hotfx.titleText}
                 width={SPLIT_FLAP_TITLE_COLS}
-                height={1}
-                durationMs={hotfxDuration}
+                height={hotfx.titleHeight}
+                durationMs={visual.hotfxDurationMs}
+                characters={visual.hotfxCharacters}
               />
-              <HotFxSplitFlap
-                className="sf-hotfx sf-hotfx--secondary"
-                text={board.secondary}
-                width={SPLIT_FLAP_SECONDARY_COLS}
-                height={1}
-                durationMs={hotfxDuration}
-              />
+              {hotfx.secondaryHeight > 0 && (
+                <HotFxSplitFlap
+                  className="sf-hotfx sf-hotfx--secondary"
+                  text={hotfx.secondaryText}
+                  width={SPLIT_FLAP_SECONDARY_COLS}
+                  height={hotfx.secondaryHeight}
+                  durationMs={visual.hotfxDurationMs}
+                  characters={visual.hotfxCharacters}
+                />
+              )}
               <HotFxSplitFlap
                 className="sf-hotfx sf-hotfx--note"
-                text={noteLines.join('\n')}
+                text={rawNoteLines.join('\n')}
                 width={SPLIT_FLAP_NOTE_COLS}
-                height={SPLIT_FLAP_NOTE_ROWS}
-                durationMs={hotfxDuration}
+                height={noteHeight}
+                durationMs={visual.hotfxDurationMs}
+                characters={visual.hotfxCharacters}
               />
             </>
           ) : (
             <>
               <SplitFlapDisplay key={`title:${messageKey}`} lines={[board.title]} variant="title" />
               <SplitFlapDisplay key={`secondary:${messageKey}`} lines={[board.secondary]} variant="secondary" />
-              <SplitFlapDisplay key={`note:${messageKey}:${notePage}`} lines={noteLines} variant="note" />
+              <SplitFlapDisplay key={`note:${messageKey}:${notePage}`} lines={rawNoteLines} variant="note" />
             </>
           )}
           <RadioTicker text={board.ticker} />
