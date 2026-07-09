@@ -11,7 +11,7 @@ import {
   type VisualPreset,
   type VisualTransition,
 } from '../api/broadcastMessage'
-import { SplitFlapPreview } from './splitflap/SplitFlapPreview'
+import { SplitFlapPreview, type SplitFlapEngine } from './splitflap/SplitFlapPreview'
 import { parseColors } from './splitflap/visual'
 
 interface Props {
@@ -67,6 +67,8 @@ export function RadioMessageForm({ performerPassword }: Props) {
   const [status, setStatus] = useState<'idle' | 'publishing' | 'ok' | 'error'>('idle')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [published, setPublished] = useState<BroadcastMessage | null>(null)
+  // Moteur d'aperçu, local au performer : non persisté, non envoyé au backend.
+  const [previewEngine, setPreviewEngine] = useState<SplitFlapEngine>('internal')
 
   const set = <K extends keyof BroadcastInput>(key: K, value: BroadcastInput[K]) =>
     setForm((f) => ({ ...f, [key]: value }))
@@ -319,7 +321,25 @@ export function RadioMessageForm({ performerPassword }: Props) {
 
       <div style={{ marginTop: 16 }}>
         <p style={mutedStyle}>Aperçu public (rendu split-flap) :</p>
-        <SplitFlapPreview message={previewMessage} />
+        <div style={rowStyle}>
+          <label style={{ ...labelStyle, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            Moteur preview
+            <select
+              value={previewEngine}
+              onChange={(e) => setPreviewEngine(e.target.value as SplitFlapEngine)}
+              style={inputStyle}
+            >
+              <option value="internal">Internal</option>
+              <option value="hotfx">HotFX expérimental</option>
+            </select>
+          </label>
+        </div>
+        <SplitFlapPreview message={previewMessage} engine={previewEngine} />
+        {previewEngine === 'hotfx' && (
+          <p style={mutedStyle}>
+            HotFX : test client-only, non persisté. Page publique : ajoute ?engine=hotfx à l’URL.
+          </p>
+        )}
         {published && (
           <p style={mutedStyle}>Dernier message publié · updatedAt : {published.updatedAt}</p>
         )}
