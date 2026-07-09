@@ -10,8 +10,10 @@ import type {
   TickerDirection,
 } from '../../api/broadcastMessage'
 
-// Alphabet HotFX par défaut (espace initial significatif).
-export const DEFAULT_HOTFX_CHARACTERS = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-·.'
+// Alphabet HotFX par défaut (espace initial significatif). Inclut les accents
+// français courants : sans eux, HotFX remplace toute lettre absente par un
+// espace (index 0). 69 caractères < limite serveur 120 — pas besoin de l'augmenter.
+export const DEFAULT_HOTFX_CHARACTERS = ' ABCDEFGHIJKLMNOPQRSTUVWXYZÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸŒÆ0123456789-·.,:;!?\'"()/%'
 
 // Layout résolu (toutes valeurs bornées). Scales en %, rows en lignes.
 export interface ResolvedLayout {

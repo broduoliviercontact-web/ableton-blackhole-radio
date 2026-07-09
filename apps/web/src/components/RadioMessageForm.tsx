@@ -7,7 +7,6 @@ import {
   type BroadcastMessage,
   type BroadcastType,
   type BroadcastVisual,
-  type DisplayMode,
   type HotfxHeightMode,
   type PanelDensity,
   type TickerDirection,
@@ -24,7 +23,6 @@ interface Props {
 }
 
 const TYPES: BroadcastType[] = ['track', 'show', 'announcement', 'note']
-const MODES: DisplayMode[] = ['static', 'paged', 'scroll']
 const PRESETS: VisualPreset[] = ['pirate-industrial', 'airport-classic', 'terminal-amber', 'minimal-black']
 const TRANSITIONS: VisualTransition[] = ['flip', 'scramble', 'flip-scramble', 'instant']
 const NOTE_MODES: VisualNoteMode[] = ['paged', 'scroll', 'static']
@@ -70,6 +68,16 @@ const DIRECTION_LABELS: Record<TickerDirection, string> = {
 
 // Aides contextuelles : décrivent l'option actuellement choisie. L'éditeur doit
 // être compréhensible sans connaître le code.
+const TYPE_HELP: Record<BroadcastType, string> = {
+  track: 'Morceau avec artiste / album.',
+  show: 'Émission ou session radio.',
+  announcement: 'Annonce courte.',
+  note: 'Texte ou information longue.',
+}
+const ENGINE_HELP: Record<VisualEngine, string> = {
+  internal: 'Moteur maison, plus contrôlable.',
+  hotfx: 'Rendu plus réaliste avec demi-clapets.',
+}
 const TRANSITION_HELP: Record<VisualTransition, string> = {
   flip: 'Lettres qui tournent comme un clapet de gare.',
   scramble: 'Caractères qui défilent avant le texte final.',
@@ -152,7 +160,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
       const msg = await postBroadcastMessage(performerPassword, { ...form, visual: visualFull })
       setPublished(msg)
       setStatus('ok')
-      setFeedback('Message publié.')
+      setFeedback('Message publié — visible sur la page publique après quelques secondes.')
     } catch (e) {
       setStatus('error')
       setFeedback(e instanceof Error ? e.message : String(e))
@@ -205,20 +213,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
               </option>
             ))}
           </select>
-        </label>
-        <label style={labelStyle}>
-          Display mode
-          <select
-            value={form.displayMode ?? 'static'}
-            onChange={(e) => set('displayMode', e.target.value as DisplayMode)}
-            style={inputStyle}
-          >
-            {MODES.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
+          <span style={helpStyle}>{TYPE_HELP[form.type]}</span>
         </label>
         <label style={fullLabelStyle}>
           Titre principal *
@@ -229,6 +224,9 @@ export function RadioMessageForm({ performerPassword }: Props) {
             placeholder="Ex : Late Night Tape"
             style={inputStyle}
           />
+          <span style={helpStyle}>
+            Requis pour publier. Pour une note seule, mets par exemple : NOTE RADIO ou RADIO BLACKHOLE.
+          </span>
         </label>
         <label style={labelStyle}>
           Sous-titre
@@ -285,6 +283,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
               </option>
             ))}
           </select>
+          <span style={helpStyle}>{ENGINE_HELP[visual.splitFlapEngine ?? 'internal']}</span>
         </label>
         <label style={labelStyle}>
           Preset visuel
@@ -431,6 +430,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
             placeholder="RADIO BLACKHOLE · LIVE FROM PANTIN · NEXT SESSION SOON"
             style={inputStyle}
           />
+          <span style={helpStyle}>Ce texte apparaît dans le bandeau roulant en bas de la page publique.</span>
         </label>
         <label style={checkLabelStyle}>
           <input
@@ -549,6 +549,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
               maxLength={120}
               style={inputStyle}
             />
+            <span style={helpStyle}>
+              Pour afficher les accents avec HotFX, les caractères doivent être présents dans
+              l'alphabet HotFX (les accents français courants sont inclus par défaut).
+            </span>
           </label>
         </div>
 
@@ -702,6 +706,13 @@ export function RadioMessageForm({ performerPassword }: Props) {
       {feedback && (
         <p style={status === 'error' ? errorStyle : okStyle}>{status === 'error' ? `❌ ${feedback}` : `✅ ${feedback}`}</p>
       )}
+      {status === 'ok' && (
+        <p style={publicLinkStyle}>
+          <a href="/" target="_blank" rel="noopener noreferrer">
+            Ouvrir la page publique ↗
+          </a>
+        </p>
+      )}
 
       {/* 4. Preview */}
       <div style={{ marginTop: 16 }}>
@@ -750,6 +761,7 @@ const helpStyle: CSSProperties = { color: '#6b7280', fontSize: 12, fontWeight: 4
 const rowStyle: CSSProperties = { display: 'flex', gap: 8, marginTop: 8 }
 const okStyle: CSSProperties = { color: 'green', marginTop: 8 }
 const errorStyle: CSSProperties = { color: 'crimson', marginTop: 8 }
+const publicLinkStyle: CSSProperties = { textAlign: 'center', marginTop: 8 }
 const detailsStyle: CSSProperties = { marginTop: 8, marginBottom: 8, borderTop: '1px solid #e5e7eb', padding: '8px 0' }
 const summaryStyle: CSSProperties = { cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#374151' }
 const smallBtnStyle: CSSProperties = { padding: '4px 8px', fontSize: 12, cursor: 'pointer' }

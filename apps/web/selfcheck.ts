@@ -120,4 +120,21 @@ assert(Math.abs(getEffectiveVolume(50, true) - DB_TRIM_GAIN / 2) < 1e-9, '50% tr
 assert(getEffectiveVolume(0, true) === 0 && getEffectiveVolume(0, false) === 0, '0% → 0 dans tous les cas')
 assert(getEffectiveVolume(150, false) === 1 && getEffectiveVolume(-20, true) === 0, 'borne 0–100 (pas de boost)')
 
-console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered, ticker+scroll, trim -30 dB)')
+// Accents français dans l'alphabet HotFX par défaut : l'espace initial reste en
+// tête, les accents courants sont présents, la limite serveur (120) est tenue.
+// HotFX uppercasse le texte cible puis cherche chaque caractère dans
+// l'alphabet ; un caractère absent devient espace (index 0) → accents perdus.
+const { DEFAULT_HOTFX_CHARACTERS } = await import('./src/components/splitflap/visual')
+assert(DEFAULT_HOTFX_CHARACTERS[0] === ' ', 'alphabet HotFX : espace initial significatif')
+assert(DEFAULT_HOTFX_CHARACTERS.length <= 120, 'alphabet HotFX ≤ limite serveur 120')
+for (const c of ['À', 'Â', 'Ä', 'Ç', 'É', 'È', 'Ê', 'Ë', 'Î', 'Ï', 'Ô', 'Ö', 'Ù', 'Û', 'Ü', 'Ÿ', 'Œ', 'Æ']) {
+  assert(DEFAULT_HOTFX_CHARACTERS.includes(c), `alphabet HotFX contient l'accent « ${c} »`)
+}
+// Phrase de test spec : les accents (minuscules) uppercassés restent dans l'alphabet.
+const testSentence = "À l'échelle du globe, les pirates créèrent un réseau d'information."
+const accents = new Set([...testSentence].map((c) => c.toUpperCase()).filter((c) => /[ÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸŒÆ]/.test(c)))
+for (const c of accents) {
+  assert(DEFAULT_HOTFX_CHARACTERS.includes(c), `accent de la phrase « ${c} » présent dans l'alphabet`)
+}
+
+console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered, ticker+scroll, trim -30 dB, accents HotFX)')
