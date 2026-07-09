@@ -33,13 +33,13 @@ Le backend Node est hors du chemin audio. Il ne fait que :
 | Côté | Tech |
 |------|------|
 | Frontend | React 19 + Vite 8 + TypeScript |
-| Transport WebRTC | LiveKit (`livekit-client`, `@livekit/components-react`) |
+| Transport WebRTC | LiveKit (`livekit-client`) |
 | Backend | Node + Express 5 + TypeScript (exécuté via `tsx`) |
 | Token | `livekit-server-sdk` |
 | Validation | `zod` (body entrée API + env) |
 
 Déjà installées dans le `package.json` racine du monorepo :
-`@livekit/components-react`, `livekit-client`, `livekit-server-sdk`,
+`livekit-client`, `livekit-server-sdk`,
 `express`, `cors`, `dotenv`, `zod`, `tsx`, `typescript`, types associés.
 
 ## 3. Sécurité / contexte

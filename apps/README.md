@@ -1,54 +1,84 @@
 # Mac Audio Input Broadcaster
 
-Diffusion d’une entrée audio du Mac (micro intégré, carte son, BlackHole, Loopback…)
-vers des navigateurs via LiveKit. BlackHole reste recommandé pour envoyer Ableton.
+Application React/Node TypeScript permettant de diffuser une entrée audio Mac
+vers des auditeurs web via LiveKit. BlackHole/Loopback restent recommandés pour
+router la sortie d'un DAW (Ableton) vers le navigateur.
 
-Monorepo :
-- `web/` — frontend React + Vite + TypeScript (`/performer`, `/listen`)
-- `server/` — backend Node + Express + TypeScript (tokens LiveKit uniquement)
+## Flux
 
-## Démarrage local
+```
+Entrée audio Mac → Performer → VU source → Fader master → VU sortie broadcast → LiveKit → Listener
+```
+
+## Prérequis
+
+- Node
+- LiveKit Cloud ou un serveur LiveKit self-hosted
+- Navigateur compatible `getUserMedia` (Chrome recommandé ; contexte sécurisé requis)
+- Une entrée audio Mac (micro intégré, carte son, ou entrée virtuelle)
+- Optionnel : BlackHole ou Loopback pour envoyer Ableton vers le navigateur
+
+## Installation
 
 ```bash
-# 1. Dépendances (déjà installées à la racine du monorepo)
 npm install
+```
 
-# 2. Env
-cp .env.example .env
-# renseigne LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET
+## Configuration
 
-# 3. Lance backend + frontend
+Copier `.env.example` vers `.env` et renseigner :
+
+```
+LIVEKIT_URL       # wss://<ton-serveur> (PAS *.example.com)
+LIVEKIT_API_KEY
+LIVEKIT_API_SECRET  # serveur uniquement, jamais côté frontend
+PORT              # backend (défaut 3001)
+```
+
+## Lancement
+
+```bash
 npm run dev:server   # http://localhost:3001
 npm run dev:web      # http://localhost:5173
 # ou les deux : npm run dev
 ```
 
-Ouvrir http://localhost:5173/performer et http://localhost:5173/listen.
+## URLs
+
+- Performer : http://localhost:5173/performer
+- Listener : http://localhost:5173/listen
 
 > `getUserMedia` exige un contexte sécurisé : `localhost` passe en dev.
 > En production, servir en **HTTPS** et définir `VITE_API_BASE`.
+
+## Checks
+
+```bash
+npm run selfcheck:web      # utils web (devices, identity)
+npm run build:web          # tsc -b + vite build
+npm run typecheck:server   # tsc serveur
+npm run selfcheck:server   # grants token
+```
 
 ## Vérifier le backend
 
 ```bash
 curl http://localhost:3001/api/health
-curl http://localhost:3001/api/config-check   # booléens de config (aucun secret)
+curl http://localhost:3001/api/config-check   # booléens (aucun secret)
 curl -X POST http://localhost:3001/api/token \
   -H 'Content-Type: application/json' \
   -d '{"roomName":"main","identity":"performer-test","role":"performer"}'
-
-# Self-check des grants token (sans serveur LiveKit réel) :
-npm run selfcheck:server
 ```
-
-## Test terrain (vrai LiveKit + entrée audio Mac)
-
-Voir [`docs/manual-test-mac-audio-input-livekit.md`](docs/manual-test-mac-audio-input-livekit.md).
 
 ## Sécurité
 
-`LIVEKIT_API_SECRET` n'est lu que côté serveur. Le frontend ne reçoit qu'un
-token JWT signé éphémère.
+- Ne jamais exposer `LIVEKIT_API_SECRET` côté frontend.
+- `.env` n'est pas committé (voir `.gitignore`). Le frontend ne reçoit qu'un
+  token JWT signé éphémère.
+
+## Test terrain
+
+Voir [`docs/manual-test-mac-audio-input-livekit.md`](docs/manual-test-mac-audio-input-livekit.md).
 
 ## Docs BMAD
 

@@ -12,7 +12,7 @@ export function AudioDeviceSelect({ devices, selectedId, onSelect, onRefresh }: 
   return (
     <div>
       <label style={labelStyle} htmlFor="audio-input">
-        Entrée audio du Mac
+        Source audio
       </label>
       <div style={rowStyle}>
         <select

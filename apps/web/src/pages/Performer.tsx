@@ -123,7 +123,7 @@ export function Performer() {
 
       {permission === 'granted' && (
         <section style={sectionStyle}>
-          <h2 style={h2Style}>2. Choisis une entrée audio</h2>
+          <h2 style={h2Style}>2. Choisis la source audio</h2>
           <AudioDeviceSelect
             devices={devices}
             selectedId={selectedId}
