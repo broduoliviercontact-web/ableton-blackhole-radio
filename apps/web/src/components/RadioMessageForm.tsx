@@ -10,6 +10,7 @@ import {
   type HotfxHeightMode,
   type PanelDensity,
   type TickerDirection,
+  type TextAlign,
   type VisualEngine,
   type VisualNoteMode,
   type VisualPreset,
@@ -130,7 +131,14 @@ const TIPS = {
   tickerScale: "Taille du bandeau roulant.",
   titleRows: "Nombre de lignes réservées au titre principal.",
   secondaryRows: "Nombre de lignes réservées à la ligne secondaire. 0 masque cette zone.",
+  brandAlign: "Alignement du nom de radio dans le haut de la page publique.",
+  titleAlign: "Alignement du grand titre dans les cases split-flap.",
+  secondaryAlign: "Alignement de la ligne sous le titre.",
+  noteAlign: "Alignement de la zone note.",
 } as const
+
+const ALIGNS: TextAlign[] = ['left', 'center', 'right']
+const ALIGN_LABELS: Record<TextAlign, string> = { left: 'Gauche', center: 'Centre', right: 'Droite' }
 
 // En-tête de champ : label + tooltip d'aide. Évite les longs paragraphes visibles
 // tout en restant accessible (hover/focus/clic). ponytail: helper DRY pour ~40 champs.
@@ -166,8 +174,9 @@ export function RadioMessageForm({ performerPassword }: Props) {
     setForm((f) => ({ ...f, [key]: value }))
   const setVis = <K extends keyof BroadcastVisual>(key: K, value: BroadcastVisual[K]) =>
     setVisual((v) => ({ ...v, [key]: value }))
-  // Layout (tailles du panneau) : sous-champs de visual.layout.
-  const setLayout = (key: keyof BroadcastLayout, value: number | undefined) =>
+  // Layout (tailles du panneau + alignements) : sous-champs de visual.layout.
+  // ponytail: value accepte number (scales/rows) et string (aligns) en un seul setter.
+  const setLayout = (key: keyof BroadcastLayout, value: number | string | undefined) =>
     setVisual((v) => ({ ...v, layout: { ...v.layout, [key]: value } }))
   const resetLayout = () => setVisual((v) => ({ ...v, layout: undefined }))
 
@@ -186,6 +195,29 @@ export function RadioMessageForm({ performerPassword }: Props) {
           onChange={(e) => setLayout(key, Number(e.target.value))}
           style={inputStyle}
         />
+      </label>
+    )
+  }
+
+  // Segmented control Gauche/Centre/Droite. ponytail: 3 boutons — pas de lib UI.
+  const alignControl = (key: keyof BroadcastLayout, label: string, tip: string) => {
+    const val = (visual.layout?.[key] as TextAlign | undefined) ?? 'left'
+    return (
+      <label style={labelStyle}>
+        <FieldHead text={label} tip={tip} />
+        <div role="group" style={segGroupStyle}>
+          {ALIGNS.map((a) => (
+            <button
+              key={a}
+              type="button"
+              onClick={() => setLayout(key, a)}
+              aria-pressed={val === a}
+              style={val === a ? segBtnActiveStyle : segBtnStyle}
+            >
+              {ALIGN_LABELS[a]}
+            </button>
+          ))}
+        </div>
       </label>
     )
   }
@@ -231,14 +263,33 @@ export function RadioMessageForm({ performerPassword }: Props) {
 
   return (
     <section style={sectionStyle}>
-      <h2 style={h2Style}>Message radio</h2>
+      <h2 style={h2Style}>Control room — message radio</h2>
       <p style={mutedStyle}>
-        Publie le message affiché sur la page publique. Indépendant du broadcast audio —
-        publiable même sans live.
+        Pilote le message affiché sur la page publique <code>/</code>. Indépendant du
+        broadcast audio — publiable même sans live. La page publique recharge le message
+        publié après quelques secondes.
       </p>
 
-      {/* 1. Contenu radio */}
-      <h3 style={h3Style}>Contenu radio</h3>
+      {/* Bloc A — Publication : statut + actions + lien public (en haut pour publier vite). */}
+      <h3 style={h3Style}>① Publication</h3>
+      <div style={pubRowStyle}>
+        <span style={status === 'ok' ? pubOkStyle : status === 'error' ? pubErrStyle : pubIdleStyle}>
+          {status === 'publishing' ? 'Publication…' : status === 'ok' ? 'Publié' : status === 'error' ? 'Erreur' : 'Brouillon'}
+        </span>
+        <button type="button" onClick={publish} disabled={!form.mainTitle.trim() || status === 'publishing'} style={publishBtnStyle}>
+          {status === 'publishing' ? 'Publication…' : 'Publier le message'}
+        </button>
+        <button type="button" onClick={reset}>Réinitialiser</button>
+        <a href="/" target="_blank" rel="noopener noreferrer" style={pubLinkStyle}>
+          Ouvrir la page publique ↗
+        </a>
+      </div>
+      {feedback && (
+        <p style={status === 'error' ? errorStyle : okStyle}>{status === 'error' ? `❌ ${feedback}` : `✅ ${feedback}`}</p>
+      )}
+
+      {/* Bloc B — Contenu radio */}
+      <h3 style={h3Style}>② Contenu radio</h3>
       <div style={gridStyle}>
         <label style={fullLabelStyle}>
           <FieldHead text="Nom de la radio (header public)" tip={TIPS.brandLabel} />
@@ -309,8 +360,8 @@ export function RadioMessageForm({ performerPassword }: Props) {
         </label>
       </div>
 
-      {/* 2. Visualisation split-flap */}
-      <h3 style={h3Style}>Visualisation split-flap</h3>
+      {/* Bloc C — Affichage public : moteur, preset, transition, mode note, alignements, tailles. */}
+      <h3 style={h3Style}>③ Affichage public</h3>
       <div style={gridStyle}>
         <label style={labelStyle}>
           <FieldHead text="Moteur split-flap" tip={TIPS.engine} />
@@ -415,6 +466,52 @@ export function RadioMessageForm({ performerPassword }: Props) {
         </button>
       </div>
 
+      {/* Alignement des textes — padding grille (titre/secondaire/note) + CSS (header). */}
+      <h4 style={h4Style}>Alignement des textes</h4>
+      <div style={gridStyle}>
+        {alignControl('brandAlign', 'Header', TIPS.brandAlign)}
+        {alignControl('titleAlign', 'Titre', TIPS.titleAlign)}
+        {alignControl('secondaryAlign', 'Secondaire', TIPS.secondaryAlign)}
+        {alignControl('noteAlign', 'Note', TIPS.noteAlign)}
+      </div>
+
+      {/* Tailles du panneau — scales % + lignes (déplacé ici depuis les détails avancés). */}
+      <h4 style={h4Style}>Tailles du panneau</h4>
+      <div style={gridStyle}>
+        {scaleField('titleScale', 'Titre', 50, 200, TIPS.titleScale)}
+        {scaleField('secondaryScale', 'Secondaire', 50, 200, TIPS.secondaryScale)}
+        {scaleField('noteScale', 'Note', 50, 200, TIPS.noteScale)}
+        {scaleField('tickerScale', 'Ticker', 50, 200, TIPS.tickerScale)}
+        {scaleField('boardScale', 'Panneau (base)', 70, 130, TIPS.boardScale)}
+        <label style={labelStyle}>
+          <FieldHead text="Titre — lignes (1–3)" tip={TIPS.titleRows} />
+          <input
+            type="number"
+            min={1}
+            max={3}
+            value={visual.layout?.titleRows ?? 1}
+            onChange={(e) => setLayout('titleRows', e.target.value === '' ? undefined : Number(e.target.value))}
+            style={inputStyle}
+          />
+        </label>
+        <label style={labelStyle}>
+          <FieldHead text="Secondaire — lignes (0 = caché, 1–2)" tip={TIPS.secondaryRows} />
+          <input
+            type="number"
+            min={0}
+            max={2}
+            value={visual.layout?.secondaryRows ?? 1}
+            onChange={(e) => setLayout('secondaryRows', e.target.value === '' ? undefined : Number(e.target.value))}
+            style={inputStyle}
+          />
+        </label>
+      </div>
+      <div style={rowStyle}>
+        <button type="button" onClick={resetLayout}>
+          Réinitialiser tailles
+        </button>
+      </div>
+
       {/* Déroulement de la note — visible seulement en mode Déroulement. */}
       {visual.noteMode === 'scroll' && (
         <>
@@ -457,8 +554,8 @@ export function RadioMessageForm({ performerPassword }: Props) {
         </>
       )}
 
-      {/* Bandeau roulant (ticker) — texte + vitesse + sens + séparateur + activation. */}
-      <h3 style={h3Style}>Bandeau roulant</h3>
+      {/* Bloc D — Bandeau roulant (ticker) : texte + vitesse + sens + séparateur + activation. */}
+      <h3 style={h3Style}>④ Bandeau roulant</h3>
       <div style={gridStyle}>
         <label style={fullLabelStyle}>
           <FieldHead text="Texte du bandeau" tip={TIPS.tickerText} />
@@ -516,45 +613,9 @@ export function RadioMessageForm({ performerPassword }: Props) {
         </label>
       </div>
 
-      {/* 3. Paramètres avancés (fermé par défaut) */}
+      {/* Bloc E — Détails avancés (HotFX, hauteur, style industriel) — fermé par défaut. */}
       <details style={detailsStyle}>
-        <summary style={summaryStyle}>Paramètres avancés (HotFX, hauteur, style industriel)</summary>
-
-        <h4 style={h4Style}>Tailles du panneau</h4>
-        <div style={gridStyle}>
-          {scaleField('titleScale', 'Titre', 50, 200, TIPS.titleScale)}
-          {scaleField('secondaryScale', 'Secondaire', 50, 200, TIPS.secondaryScale)}
-          {scaleField('noteScale', 'Note', 50, 200, TIPS.noteScale)}
-          {scaleField('tickerScale', 'Ticker', 50, 200, TIPS.tickerScale)}
-          {scaleField('boardScale', 'Panneau (base)', 70, 130, TIPS.boardScale)}
-          <label style={labelStyle}>
-            <FieldHead text="Titre — lignes (1–3)" tip={TIPS.titleRows} />
-            <input
-              type="number"
-              min={1}
-              max={3}
-              value={visual.layout?.titleRows ?? 1}
-              onChange={(e) => setLayout('titleRows', e.target.value === '' ? undefined : Number(e.target.value))}
-              style={inputStyle}
-            />
-          </label>
-          <label style={labelStyle}>
-            <FieldHead text="Secondaire — lignes (0 = caché, 1–2)" tip={TIPS.secondaryRows} />
-            <input
-              type="number"
-              min={0}
-              max={2}
-              value={visual.layout?.secondaryRows ?? 1}
-              onChange={(e) => setLayout('secondaryRows', e.target.value === '' ? undefined : Number(e.target.value))}
-              style={inputStyle}
-            />
-          </label>
-        </div>
-        <div style={rowStyle}>
-          <button type="button" onClick={resetLayout}>
-            Réinitialiser tailles
-          </button>
-        </div>
+        <summary style={summaryStyle}>⑤ Détails avancés (HotFX, hauteur, style industriel)</summary>
 
         <h4 style={h4Style}>HotFX natif</h4>
         <div style={gridStyle}>
@@ -732,37 +793,18 @@ export function RadioMessageForm({ performerPassword }: Props) {
         </div>
       </details>
 
-      {/* Actions */}
-      <div style={rowStyle}>
-        <button type="button" onClick={publish} disabled={!form.mainTitle.trim() || status === 'publishing'}>
-          {status === 'publishing' ? 'Publication…' : 'Publier le message'}
-        </button>
-        <button type="button" onClick={reset}>
-          Réinitialiser
-        </button>
-      </div>
-      {feedback && (
-        <p style={status === 'error' ? errorStyle : okStyle}>{status === 'error' ? `❌ ${feedback}` : `✅ ${feedback}`}</p>
-      )}
-      {status === 'ok' && (
-        <p style={publicLinkStyle}>
-          <a href="/" target="_blank" rel="noopener noreferrer">
-            Ouvrir la page publique ↗
-          </a>
-        </p>
-      )}
-
-      {/* 4. Preview */}
-      <div style={{ marginTop: 16 }}>
+      {/* Bloc F — Aperçu public : montre exactement ce qui sera publié (rendu split-flap). */}
+      <h3 style={h3Style}>⑥ Aperçu public</h3>
+      <div style={{ marginTop: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <p style={{ ...mutedStyle, margin: 0 }}>Aperçu public (rendu split-flap) :</p>
+          <p style={{ ...mutedStyle, margin: 0 }}>Aperçu (rendu split-flap, moteur = message.visual.splitFlapEngine) :</p>
           <button type="button" onClick={() => setPreviewNonce((n) => n + 1)} style={smallBtnStyle}>
             ↻ Relancer preview
           </button>
         </div>
         <SplitFlapPreview key={previewNonce} message={previewMessage} />
         <p style={mutedStyle}>
-          Preview non publiée — publier le message pour envoyer aux auditeurs.
+          Aperçu non publié — publier le message pour l’envoyer aux auditeurs.
         </p>
         {published && (
           <p style={mutedStyle}>Dernier message publié · updatedAt : {published.updatedAt}</p>
@@ -799,7 +841,15 @@ const headStyle: CSSProperties = { display: 'inline-flex', alignItems: 'center',
 const rowStyle: CSSProperties = { display: 'flex', gap: 8, marginTop: 8 }
 const okStyle: CSSProperties = { color: 'green', marginTop: 8 }
 const errorStyle: CSSProperties = { color: 'crimson', marginTop: 8 }
-const publicLinkStyle: CSSProperties = { textAlign: 'center', marginTop: 8 }
 const detailsStyle: CSSProperties = { marginTop: 8, marginBottom: 8, borderTop: '1px solid #e5e7eb', padding: '8px 0' }
 const summaryStyle: CSSProperties = { cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#374151' }
 const smallBtnStyle: CSSProperties = { padding: '4px 8px', fontSize: 12, cursor: 'pointer' }
+const segGroupStyle: CSSProperties = { display: 'inline-flex', gap: 4 }
+const segBtnStyle: CSSProperties = { padding: '4px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #d1d5db', background: '#fff', color: '#374151' }
+const segBtnActiveStyle: CSSProperties = { ...segBtnStyle, border: '1px solid var(--accent, #aa3bff)', background: 'var(--accent, #aa3bff)', color: '#fff' }
+const publishBtnStyle: CSSProperties = { padding: '8px 16px', fontSize: 14, fontWeight: 700, cursor: 'pointer', border: '1px solid #d1d5db', background: 'var(--accent, #aa3bff)', color: '#fff' }
+const pubRowStyle: CSSProperties = { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 8 }
+const pubLinkStyle: CSSProperties = { fontSize: 13, fontWeight: 600 }
+const pubIdleStyle: CSSProperties = { fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 3, background: '#e5e7eb', color: '#374151' }
+const pubOkStyle: CSSProperties = { ...pubIdleStyle, background: '#dcfce7', color: '#15803d' }
+const pubErrStyle: CSSProperties = { ...pubIdleStyle, background: '#fee2e2', color: '#b91c1c' }

@@ -203,6 +203,24 @@ async function main(): Promise<void> {
   }
   assert(badLayoutKey, 'layout clé inconnue refusée (.strict)')
 
+  // alignements : enum left/center/right stocké ; valeur invalide → rejet (.strict).
+  const al = parseBroadcastMessage({
+    type: 'track',
+    mainTitle: 'AL',
+    visual: { layout: { brandAlign: 'right', titleAlign: 'center', secondaryAlign: 'left', noteAlign: 'right' } },
+  })
+  assert(al.visual?.layout?.brandAlign === 'right', 'brandAlign right stocké')
+  assert(al.visual?.layout?.titleAlign === 'center', 'titleAlign center stocké')
+  assert(al.visual?.layout?.secondaryAlign === 'left', 'secondaryAlign left stocké')
+  assert(al.visual?.layout?.noteAlign === 'right', 'noteAlign right stocké')
+  let badAlign = false
+  try {
+    parseBroadcastMessage({ type: 'track', mainTitle: 'X', visual: { layout: { titleAlign: 'middle' } } })
+  } catch {
+    badAlign = true
+  }
+  assert(badAlign, 'alignement invalide refusé (enum .strict)')
+
   // Bandeau roulant (ticker) : vitesse clamp, direction enum, séparateur max 12, enabled bool.
   const tick2 = parseBroadcastMessage({
     type: 'track',

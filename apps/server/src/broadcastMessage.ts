@@ -11,6 +11,9 @@ export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'
 export type TickerDirection = 'left' | 'right'
 
+// Alignement du texte (header = CSS, titre/secondaire/note = padding grille).
+export type TextAlign = 'left' | 'center' | 'right'
+
 // Tailles du panneau (scales en %, rows en nb de lignes).
 export interface BroadcastLayout {
   titleScale?: number
@@ -20,6 +23,10 @@ export interface BroadcastLayout {
   boardScale?: number
   titleRows?: number
   secondaryRows?: number
+  brandAlign?: TextAlign
+  titleAlign?: TextAlign
+  secondaryAlign?: TextAlign
+  noteAlign?: TextAlign
 }
 
 export interface BroadcastVisual {
@@ -133,6 +140,10 @@ const visualSchema = z
         boardScale: z.coerce.number().optional(),
         titleRows: z.coerce.number().optional(),
         secondaryRows: z.coerce.number().optional(),
+        brandAlign: z.enum(['left', 'center', 'right']).optional(),
+        titleAlign: z.enum(['left', 'center', 'right']).optional(),
+        secondaryAlign: z.enum(['left', 'center', 'right']).optional(),
+        noteAlign: z.enum(['left', 'center', 'right']).optional(),
       })
       .strict()
       .optional()
@@ -146,6 +157,10 @@ const visualSchema = z
         if (l.boardScale != null) out.boardScale = clampInt(l.boardScale, 70, 130)
         if (l.titleRows != null) out.titleRows = clampInt(l.titleRows, 1, 3)
         if (l.secondaryRows != null) out.secondaryRows = clampInt(l.secondaryRows, 0, 2)
+        if (l.brandAlign) out.brandAlign = l.brandAlign
+        if (l.titleAlign) out.titleAlign = l.titleAlign
+        if (l.secondaryAlign) out.secondaryAlign = l.secondaryAlign
+        if (l.noteAlign) out.noteAlign = l.noteAlign
         return Object.keys(out).length > 0 ? out : undefined
       }),
   })

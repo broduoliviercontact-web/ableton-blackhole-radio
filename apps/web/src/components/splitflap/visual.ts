@@ -9,13 +9,14 @@ import type {
   PanelDensity,
   TickerDirection,
 } from '../../api/broadcastMessage'
+import type { TextAlign } from './format'
 
 // Alphabet HotFX par défaut (espace initial significatif). Inclut les accents
 // français courants : sans eux, HotFX remplace toute lettre absente par un
 // espace (index 0). 69 caractères < limite serveur 120 — pas besoin de l'augmenter.
 export const DEFAULT_HOTFX_CHARACTERS = ' ABCDEFGHIJKLMNOPQRSTUVWXYZÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸŒÆ0123456789-·.,:;!?\'"()/%'
 
-// Layout résolu (toutes valeurs bornées). Scales en %, rows en lignes.
+// Layout résolu (toutes valeurs bornées). Scales en %, rows en lignes, aligns.
 export interface ResolvedLayout {
   titleScale: number
   secondaryScale: number
@@ -24,6 +25,10 @@ export interface ResolvedLayout {
   boardScale: number
   titleRows: number
   secondaryRows: number
+  brandAlign: TextAlign
+  titleAlign: TextAlign
+  secondaryAlign: TextAlign
+  noteAlign: TextAlign
 }
 
 export const DEFAULT_LAYOUT: ResolvedLayout = {
@@ -34,6 +39,10 @@ export const DEFAULT_LAYOUT: ResolvedLayout = {
   boardScale: 100,
   titleRows: 1,
   secondaryRows: 1,
+  brandAlign: 'left',
+  titleAlign: 'center',
+  secondaryAlign: 'center',
+  noteAlign: 'center',
 }
 
 export interface ResolvedVisual {
@@ -85,7 +94,7 @@ export const DEFAULT_VISUAL: ResolvedVisual = {
   pageDurationMs: 6000,
   scrambleColors: [],
   accentColors: [],
-  splitFlapEngine: 'internal',
+  splitFlapEngine: 'hotfx',
   hotfxHeightMode: 'auto',
   noteRowsMin: 2,
   noteRowsMax: 5,
@@ -133,6 +142,10 @@ function resolveLayout(l?: BroadcastLayout): ResolvedLayout {
     boardScale: clamp(l.boardScale, DEFAULT_LAYOUT.boardScale, 70, 130),
     titleRows: clamp(l.titleRows, DEFAULT_LAYOUT.titleRows, 1, 3),
     secondaryRows: clamp(l.secondaryRows, DEFAULT_LAYOUT.secondaryRows, 0, 2),
+    brandAlign: l.brandAlign ?? DEFAULT_LAYOUT.brandAlign,
+    titleAlign: l.titleAlign ?? DEFAULT_LAYOUT.titleAlign,
+    secondaryAlign: l.secondaryAlign ?? DEFAULT_LAYOUT.secondaryAlign,
+    noteAlign: l.noteAlign ?? DEFAULT_LAYOUT.noteAlign,
   }
 }
 

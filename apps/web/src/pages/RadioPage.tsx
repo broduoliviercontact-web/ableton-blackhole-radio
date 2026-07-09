@@ -8,7 +8,8 @@ import { SplitFlapDisplay } from '../components/splitflap/SplitFlapDisplay'
 import { RadioTicker } from '../components/splitflap/RadioTicker'
 import {
   formatBroadcastMessage,
-  wrapCentered,
+  wrapAligned,
+  notePagesAligned,
   SPLIT_FLAP_TITLE_COLS,
   SPLIT_FLAP_SECONDARY_COLS,
   SPLIT_FLAP_NOTE_COLS,
@@ -81,7 +82,11 @@ export function RadioPage() {
   // Mode note : scroll = défilement char-par-char dans les tuiles (vrai bandeau
   // de gare) ; paged = cycle de pages à pageDurationMs ; static = page 0 fixe.
   const isScroll = visual.noteMode === 'scroll'
-  const notePages = isScroll ? [] : hotfx ? hotfx.notePages : board.notePages
+  const notePages = isScroll
+    ? []
+    : hotfx
+      ? hotfx.notePages
+      : notePagesAligned(board.noteRaw, SPLIT_FLAP_NOTE_COLS, SPLIT_FLAP_NOTE_ROWS, visual.layout.noteAlign)
   const [notePage, setNotePage] = useState(0)
   useEffect(() => {
     setNotePage(0)
@@ -101,6 +106,11 @@ export function RadioPage() {
     visual.noteScrollLoop,
     isScroll,
   )
+  // Scroll + texte plus court que la zone : on aligne (noteAlign) au lieu de défiler.
+  const noteFitsScroll = isScroll && board.noteRaw.length <= scrollRows * SPLIT_FLAP_NOTE_COLS
+  const noteScrollDisplay = noteFitsScroll
+    ? wrapAligned(board.noteRaw, SPLIT_FLAP_NOTE_COLS, scrollRows, visual.layout.noteAlign)
+    : scrollLines
 
   const connected = phase === 'connecting' || phase === 'connected' || phase === 'listening'
   const showReconnect = lost && phase === 'disconnected' && !reconnecting
@@ -114,10 +124,10 @@ export function RadioPage() {
 
   const rawNoteLines = isScroll ? [] : visual.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0]
   const noteHeight = hotfx ? (isScroll ? scrollRows : noteHeightFor(visual, rawNoteLines.length)) : SPLIT_FLAP_NOTE_ROWS
-  // Lignes titre/secondaire selon les rows du layout (grille continue, largeur uniforme).
-  const titleLines = wrapCentered(board.titleRaw, SPLIT_FLAP_TITLE_COLS, visual.layout.titleRows)
+  // Lignes titre/secondaire selon les rows + alignement du layout (grille continue).
+  const titleLines = wrapAligned(board.titleRaw, SPLIT_FLAP_TITLE_COLS, visual.layout.titleRows, visual.layout.titleAlign)
   const secondaryLines = board.secondaryRaw.trim()
-    ? wrapCentered(board.secondaryRaw, SPLIT_FLAP_SECONDARY_COLS, visual.layout.secondaryRows)
+    ? wrapAligned(board.secondaryRaw, SPLIT_FLAP_SECONDARY_COLS, visual.layout.secondaryRows, visual.layout.secondaryAlign)
     : [board.secondary]
   const showSecondary = visual.layout.secondaryRows > 0
   const brandLabel = broadcast?.brandLabel ?? 'RADIO BLACKHOLE'
@@ -134,7 +144,7 @@ export function RadioPage() {
   return (
     <main className="sf-page">
       <header className="sf-header">
-        <span className="sf-brand">{brandLabel}</span>
+        <span className="sf-brand" style={{ flex: 1, textAlign: visual.layout.brandAlign }}>{brandLabel}</span>
         <span className="sf-status">
           <span className={`sf-dot${statusKey === 'live' ? ' live' : statusKey === 'connecting' ? ' connecting' : ''}`} />
           {statusLabel}
@@ -169,7 +179,7 @@ export function RadioPage() {
               )}
               <HotFxSplitFlap
                 className="sf-hotfx sf-hotfx--note"
-                text={isScroll ? scrollLines.join('\n') : rawNoteLines.join('\n')}
+                text={isScroll ? noteScrollDisplay.join('\n') : rawNoteLines.join('\n')}
                 width={SPLIT_FLAP_NOTE_COLS}
                 height={noteHeight}
                 durationMs={visual.hotfxDurationMs}
@@ -184,7 +194,7 @@ export function RadioPage() {
               )}
               <SplitFlapDisplay
                 key={`note:${messageKey}:${isScroll ? 'scroll' : notePage}`}
-                lines={isScroll ? scrollLines : rawNoteLines}
+                lines={isScroll ? noteScrollDisplay : rawNoteLines}
                 variant="note"
               />
             </>

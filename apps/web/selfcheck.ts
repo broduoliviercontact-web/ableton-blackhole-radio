@@ -64,7 +64,7 @@ assert(/^listener-[a-z0-9]{6}$/.test(l), `identity listener format: ${l}`)
 
 // Layout (tailles du panneau) : clamp client + défauts + wrapCentered rows.
 const { resolveVisual, DEFAULT_LAYOUT } = await import('./src/components/splitflap/visual')
-const { wrapCentered } = await import('./src/components/splitflap/format')
+const { wrapCentered, wrapAligned, alignLine } = await import('./src/components/splitflap/format')
 const def = resolveVisual()
 assert(def.layout.titleScale === DEFAULT_LAYOUT.titleScale, 'layout défaut sans visual')
 const lay = resolveVisual({
@@ -80,6 +80,14 @@ const one = wrapCentered('RADIO BLACKHOLE', 32, 3)
 assert(one.length === 1 && one[0].length === 32, 'wrapCentered court → 1 ligne paddée')
 const many = wrapCentered('A'.repeat(200), 32, 2)
 assert(many.length === 2 && many.every((ln) => ln.length === 32), 'wrapCentered long → maxRows lignes, chacune ≤ cols')
+// alignLine : left=padEnd, right=padStart, center=équilibré ; wrapAligned borne par rows.
+assert(alignLine('AB', 5, 'left') === 'AB   ', 'alignLine left → padEnd')
+assert(alignLine('AB', 5, 'right') === '   AB', 'alignLine right → padStart')
+assert(alignLine('AB', 5, 'center') === ' AB  ', 'alignLine center → équilibré (pad gauche floor)')
+const wa = wrapAligned('A'.repeat(200), 32, 2, 'right')
+assert(wa.length === 2 && wa.every((ln) => ln.startsWith(' ') || ln.length === 32), 'wrapAligned right → 2 lignes paddées')
+const waL = wrapAligned('AB', 32, 1, 'left')
+assert(waL.length === 1 && waL[0] === 'AB' + ' '.repeat(30), 'wrapAligned left court → padEnd 32')
 
 // Ticker + note scroll (visual résolu) : clamp + défauts + anciens messages valides.
 const tickerDef = resolveVisual()

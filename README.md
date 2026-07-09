@@ -149,11 +149,15 @@ qu'aucun message n'est publié.
 Deux moteurs d'affichage split-flap, choisis par le performer (persistés dans
 `message.visual.splitFlapEngine`) :
 
-- **Internal** (défaut) — tuiles React + CSS 3D (flip mécanique, scramble, etc.).
-- **HotFX** — web component `<hotfx-split-flap>` (demi-clapets `clip-path`), plus
-  mécanique. **Vendored localement** (`apps/web/src/components/hotfx/`), licence
+- **HotFX** (défaut) — web component `<hotfx-split-flap>` (demi-clapets `clip-path`),
+  plus mécanique. **Vendored localement** (`apps/web/src/components/hotfx/`), licence
   MIT — pas de CDN, pas de dépendance npm. Source :
   [github.com/hot-page/fx](https://github.com/hot-page/fx).
+- **Internal** — tuiles React + CSS 3D (flip mécanique, scramble, etc.).
+
+Priorité du moteur sur la page publique : `?engine=internal|hotfx` (override debug
+local) → `message.visual.splitFlapEngine` → `hotfx` (fallback). Anciens messages
+sans `splitFlapEngine` tombent donc sur HotFX.
 
 L'éditeur performer (`/performer`) expose un `visual` persistant : preset,
 transition, mode de note, pagination, couleurs, moteur, réglages HotFX natifs
@@ -170,6 +174,15 @@ scales pilotent la taille des tuiles via des variables CSS (grille continue,
 colonnes alignées). Réinitialisable d'un clic. Anciens messages sans
 `brandLabel`/`layout` restent valides (défauts 100 %, 1 ligne).
 
+**Alignement des textes** : `visual.layout` accepte quatre alignements
+(`brandAlign`/`titleAlign`/`secondaryAlign`/`noteAlign`, chacun `left|center|right`).
+`brandAlign` agit sur le header via CSS `text-align` ; les trois autres paddent les
+caractères dans la grille split-flap (centre = équilibré, droite = padStart,
+gauche = padEnd). Défauts : header gauche, titre/secondaire/note centrés. En mode
+`scroll` avec une note plus courte que la zone, l'alignement s'applique au lieu de
+défiler (note longue → défilement conservé). L'éditeur performer expose des
+segmented controls Gauche/Centre/Droite (bloc « ③ Affichage public »).
+
 **Bandeau roulant & déroulement** : `visual.ticker*` (texte via `message.ticker`,
 `tickerSpeedMs` 5 000–120 000, `tickerDirection` left/right, `tickerSeparator`
 max 12 fallback ` · `, `tickerEnabled` booléen) contrôlent le bandeau bas —
@@ -180,9 +193,11 @@ mêmes (vrai bandeau de gare) via `visual.noteScroll*` (`noteScrollSpeedMs`
 HotFX partagent la même fenêtre de défilement (`useScrollingTextWindow`).
 `paged`/`static` inchangés.
 
-> Limites HotFX : uppercase forcé, alphabet Latin (accents → espace), animation
-> séquentielle (pas un scramble aléatoire), `duration` = ms par clapet (≠ durée
-> totale). `prefers-reduced-motion` → `duration` 1 ms (snap). Mode `scroll` +
+> Limites HotFX : uppercase forcé, animation séquentielle (pas un scramble
+> aléatoire), `duration` = ms par clapet (≠ durée totale). Les accents français
+> courants (ÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸŒÆ) sont inclus dans l'alphabet par défaut — un
+> caractère absent devient espace, d'où l'inclusion. `prefers-reduced-motion` →
+> `duration` 1 ms (snap). Mode `scroll` +
 > transition `flip` : animation mécanique chargée (toutes les tuiles re-flipent
 > à chaque tick) ; pour un défilement fluide, préférer transition `instant` ou
 > un `noteScrollSpeedMs` plus lent.

@@ -33,6 +33,9 @@ export interface SplitFlapBoard {
   noteRaw: string
 }
 
+// Alignement du texte dans la grille (agit sur les caractères, pas sur du CSS).
+export type TextAlign = 'left' | 'center' | 'right'
+
 // Centre un texte dans `cols` (espaces de chaque côté). Tronque si trop long.
 export function centerLine(text: string, cols: number): string {
   const clean = text.length > cols ? text.slice(0, cols) : text
@@ -45,6 +48,18 @@ export function centerLine(text: string, cols: number): string {
 function padRight(line: string, cols: number): string {
   const clean = line.length > cols ? line.slice(0, cols) : line
   return clean.padEnd(cols, ' ')
+}
+
+function padLeft(line: string, cols: number): string {
+  const clean = line.length > cols ? line.slice(0, cols) : line
+  return clean.padStart(cols, ' ')
+}
+
+// Aligne une ligne tronquée à `cols` selon `align` (padding dans la grille).
+export function alignLine(line: string, cols: number, align: TextAlign): string {
+  if (align === 'right') return padLeft(line, cols)
+  if (align === 'left') return padRight(line, cols)
+  return centerLine(line, cols)
 }
 
 // Wrap mot par mot sur `cols` caractères. ponytail: wrap simple, pas de césure fine.
@@ -70,32 +85,54 @@ export function wrapWords(text: string, cols: number): string[] {
   return lines.length > 0 ? lines : ['']
 }
 
-// Wrap + centre sur `cols`, max `maxRows` lignes, chacune paddée à `cols`.
+// Wrap + aligne sur `cols`, max `maxRows` lignes, chacune paddée à `cols` selon
+// `align`. Remplace wrapCentered (center = wrapAligned(..., 'center')).
 // ponytail: wrap mot simple, tronque au-delà de maxRows. Sert au titre (1–3
 // lignes) et au secondaire (0–2 lignes) — grille continue (largeur uniforme).
-export function wrapCentered(raw: string, cols: number, maxRows: number): string[] {
+export function wrapAligned(raw: string, cols: number, maxRows: number, align: TextAlign): string[] {
   return wrapWords(raw, cols)
     .slice(0, Math.max(1, maxRows))
-    .map((l) => centerLine(l, cols))
+    .map((l) => alignLine(l, cols, align))
+}
+
+// Compat : wrapCentered = wrapAligned centré (centrage = comportement historique).
+export function wrapCentered(raw: string, cols: number, maxRows: number): string[] {
+  return wrapAligned(raw, cols, maxRows, 'center')
 }
 
 // Découpe un texte en pages de NOTE_ROWS lignes chacune (toutes les pages —
-// le mode static/paged est décidé par le consommateur, pas ici).
-function toPages(text: string, cols: number, rows: number): string[][] {
+// le mode static/paged est décidé par le consommateur, pas ici). Lignes paddées
+// à `cols` selon `align` (défaut left = comportement historique).
+function toPages(text: string, cols: number, rows: number, align: TextAlign = 'left'): string[][] {
   const lines = wrapWords(text.toUpperCase(), cols)
   const pages: string[][] = []
   for (let i = 0; i < lines.length; i += rows) {
-    const page = lines.slice(i, i + rows).map((l) => padRight(l, cols))
-    while (page.length < rows) page.push(padRight('', cols))
+    const page = lines.slice(i, i + rows).map((l) => alignLine(l, cols, align))
+    while (page.length < rows) page.push(alignLine('', cols, align))
     pages.push(page)
   }
-  return pages.length > 0 ? pages : [Array.from({ length: rows }, () => padRight('', cols))]
+  return pages.length > 0 ? pages : [Array.from({ length: rows }, () => alignLine('', cols, align))]
+}
+
+// Pages alignées (paddées à `cols` selon `align`, lignes vides ajoutées pour
+// remplir `rows`) — pour la note internal statique/paginée.
+export function notePagesAligned(text: string, cols: number, rows: number, align: TextAlign): string[][] {
+  return toPages(text, cols, rows, align)
 }
 
 // Pages NON paddées (dernière page courte possible) — pour la hauteur
 // dynamique HotFX. Chaque ligne tronquée à `cols`, pas de lignes vides ajoutées.
 export function notePagesRaw(text: string, cols: number, rows: number): string[][] {
   const lines = wrapWords(text.toUpperCase(), cols).map((l) => l.slice(0, cols))
+  const pages: string[][] = []
+  for (let i = 0; i < lines.length; i += rows) pages.push(lines.slice(i, i + rows))
+  return pages.length > 0 ? pages : [['']]
+}
+
+// Pages NON paddées mais lignes alignées (paddées à `cols` selon `align`, pas de
+// lignes vides ajoutées) — pour la note HotFX statique/paginée avec alignement.
+export function notePagesRawAligned(text: string, cols: number, rows: number, align: TextAlign): string[][] {
+  const lines = wrapWords(text.toUpperCase(), cols).map((l) => alignLine(l, cols, align))
   const pages: string[][] = []
   for (let i = 0; i < lines.length; i += rows) pages.push(lines.slice(i, i + rows))
   return pages.length > 0 ? pages : [['']]

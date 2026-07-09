@@ -10,8 +10,9 @@ URLs :
 ## Page publique
 
 - [ ] `/` affiche la page radio split-flap : header `RADIO BLACKHOLE` + point
-      de status, grand titre, ligne secondaire, note, ticker bas.
-- [ ] `/listen` affiche la même page radio que `/`.
+      de status, grand titre, ligne secondaire, note, ticker bas. Moteur par
+      défaut = HotFX (sauf `?engine=internal`).
+- [ ] `/listen` affiche la même page radio que `/` (même composant RadioPage).
 - [ ] Aucun lien visible vers `/performer` sur la page publique.
 - [ ] Sans message publié : titre `RADIO BLACKHOLE` (centré), ligne secondaire
       vide (tuiles vides, plus de « LIVE WEB AUDIO STREAM »), note
@@ -52,25 +53,38 @@ URLs :
 
 ## Moteur split-flap & éditeur visuel
 
+- [ ] `/` sans query param affiche le moteur **HotFX par défaut** (message publié
+      sans `splitFlapEngine`, ou pas de message → fallback HotFX). `/listen` rend
+      exactement comme `/`. `/?engine=internal` force internal ; `/?engine=hotfx`
+      force HotFX, indépendamment du message publié (override debug local).
 - [ ] `/performer` : champ « Nom de la radio (header public) » → publier un
       brandLabel (ex. `BLACKHOLE FM`) → la page publique `/` affiche ce nom dans
       le header (fallback `RADIO BLACKHOLE` si vide). ≠ mainTitle (titre/piste).
-- [ ] `/performer` : « Paramètres avancés » → « Tailles du panneau » : régler
+- [ ] `/performer` — bloc « ③ Affichage public » → « Tailles du panneau » : régler
       Titre/Secondaire/Note/Ticker/Panneau (scales %), Titre lignes (1–3),
-      Secondaire lignes (0 = caché, 1–2) → la preview reflète les changements live.
+      Secondaire lignes (0 = caché, 1–2) → l’aperçu reflète les changements live.
 - [ ] Publier → la page publique applique les mêmes tailles. Secondaire à 0 →
       la zone disparaît. Titre 2/3 lignes → le titre se wrappe sur plusieurs
       lignes (grille continue, colonnes alignées).
 - [ ] « Réinitialiser tailles » → retour aux défauts (100 %, 1 ligne, 1 ligne).
-- [ ] `/performer` : section « Visualisation split-flap » → « Moteur split-flap »
-      propose Internal / HotFX. Choisir HotFX → la preview bascule en demi-clapets.
+- [ ] `/performer` — bloc « ③ Affichage public » → « Moteur split-flap » propose
+      Internal / HotFX. Choisir HotFX → l’aperçu bascule en demi-clapets.
 - [ ] Publier avec moteur HotFX → la page publique `/` affiche HotFX après polling
       (≤ 5 s). `/listen` idem.
-- [ ] `/?engine=internal` force le moteur internal (override debug) ;
-      `/?engine=hotfx` force HotFX, indépendamment du message publié.
-- [ ] Performer : « Paramètres avancés » → régler Duration HotFX, Alphabet, Gap,
+- [ ] `/performer` — bloc « ③ Affichage public » → « Alignement des textes » :
+      Header / Titre / Secondaire / Note → segmented controls Gauche/Centre/Droite.
+      L’aperçu réagit instantanément.
+- [ ] Alignement Titre Centre/Droite/Gauche → le grand titre se padde dans la
+      grille (Centre = équilibré, Droite = padStart, Gauche = padEnd). Publier →
+      la page publique `/` applique le même alignement. Header = CSS `text-align`.
+- [ ] Alignement Note Gauche/Centre/Droite → la zone note se padpe pareil. En mode
+      Déroulement avec une note plus courte que la zone, l’alignement s’applique
+      au lieu de défiler (note longue → défilement normal conservé).
+- [ ] HotFX + accents français toujours OK : publier une note avec « café àù ç » →
+      les lettres accentuées restent visibles (alphabet par défaut les contient).
+- [ ] Performer : bloc « ⑤ Détails avancés » → régler Duration HotFX, Alphabet, Gap,
       hauteur (auto/fixed, min/max), style industriel (flicker, edge-glow,
-      contrast, density, noise, radius, border) → la preview reflète les changements.
+      contrast, density, noise, radius, border) → l’aperçu reflète les changements.
 - [ ] Publier → la page publique applique les mêmes réglages (couleurs, timings,
       hauteur auto, style).
 - [ ] Hauteur auto : une note courte → zone note courte (pas de grand vide) ;

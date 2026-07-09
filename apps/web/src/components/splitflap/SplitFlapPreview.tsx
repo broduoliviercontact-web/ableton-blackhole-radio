@@ -4,7 +4,8 @@ import { SplitFlapDisplay } from './SplitFlapDisplay'
 import { RadioTicker } from './RadioTicker'
 import {
   formatBroadcastMessage,
-  wrapCentered,
+  wrapAligned,
+  notePagesAligned,
   SPLIT_FLAP_TITLE_COLS,
   SPLIT_FLAP_SECONDARY_COLS,
   SPLIT_FLAP_NOTE_COLS,
@@ -16,6 +17,10 @@ import { SplitFlapVisualProvider, type SplitFlapVisualSettings } from './SplitFl
 import { HotFxSplitFlap } from '../hotfx/HotFxSplitFlap'
 import { hotfxLayout, noteHeightFor } from '../hotfx/layout'
 import type { BroadcastInput, BroadcastMessage } from '../../api/broadcastMessage'
+// ponytail: styles importés ici (et dans RadioPage) — Vite déduplique. Garantit que
+// l'aperçu est stylé dans le chunk performer (qui ne charge pas splitflap.css).
+import './splitflap.css'
+import '../hotfx/hotfx.css'
 
 interface Props {
   message: BroadcastInput | BroadcastMessage | null
@@ -43,7 +48,11 @@ export function SplitFlapPreview({ message }: Props) {
 
   // Mode note : scroll = défilement char-par-char ; paged = cycle ; static = fixe.
   const isScroll = v.noteMode === 'scroll'
-  const notePages = isScroll ? [] : hotfx ? hotfx.notePages : board.notePages
+  const notePages = isScroll
+    ? []
+    : hotfx
+      ? hotfx.notePages
+      : notePagesAligned(board.noteRaw, SPLIT_FLAP_NOTE_COLS, SPLIT_FLAP_NOTE_ROWS, v.layout.noteAlign)
   const [notePage, setNotePage] = useState(0)
   useEffect(() => {
     setNotePage(0)
@@ -62,12 +71,17 @@ export function SplitFlapPreview({ message }: Props) {
     v.noteScrollLoop,
     isScroll,
   )
+  // Scroll + texte plus court que la zone : on aligne (noteAlign) au lieu de défiler.
+  const noteFitsScroll = isScroll && board.noteRaw.length <= scrollRows * SPLIT_FLAP_NOTE_COLS
+  const noteScrollDisplay = noteFitsScroll
+    ? wrapAligned(board.noteRaw, SPLIT_FLAP_NOTE_COLS, scrollRows, v.layout.noteAlign)
+    : scrollLines
 
   const rawNoteLines = isScroll ? [] : v.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0]
   const noteHeight = hotfx ? (isScroll ? scrollRows : noteHeightFor(v, rawNoteLines.length)) : SPLIT_FLAP_NOTE_ROWS
-  const titleLines = wrapCentered(board.titleRaw, SPLIT_FLAP_TITLE_COLS, v.layout.titleRows)
+  const titleLines = wrapAligned(board.titleRaw, SPLIT_FLAP_TITLE_COLS, v.layout.titleRows, v.layout.titleAlign)
   const secondaryLines = board.secondaryRaw.trim()
-    ? wrapCentered(board.secondaryRaw, SPLIT_FLAP_SECONDARY_COLS, v.layout.secondaryRows)
+    ? wrapAligned(board.secondaryRaw, SPLIT_FLAP_SECONDARY_COLS, v.layout.secondaryRows, v.layout.secondaryAlign)
     : [board.secondary]
   const showSecondary = v.layout.secondaryRows > 0
   const brandLabel = message?.brandLabel ?? 'RADIO BLACKHOLE'
@@ -84,7 +98,7 @@ export function SplitFlapPreview({ message }: Props) {
   return (
     <SplitFlapVisualProvider value={settings}>
       <div style={brandRowStyle}>
-        <span style={brandStyle}>{brandLabel}</span>
+        <span style={{ ...brandStyle, flex: 1, textAlign: v.layout.brandAlign }}>{brandLabel}</span>
         <span style={aperçuStyle}>APERÇU</span>
       </div>
       <div className={`sf-cabinet sf-cabinet--preview ${presetClass(v.preset)} ${fxClasses}`.trim()} style={cabinetStyle}>
@@ -110,7 +124,7 @@ export function SplitFlapPreview({ message }: Props) {
             )}
             <HotFxSplitFlap
               className="sf-hotfx sf-hotfx--note"
-              text={isScroll ? scrollLines.join('\n') : rawNoteLines.join('\n')}
+              text={isScroll ? noteScrollDisplay.join('\n') : rawNoteLines.join('\n')}
               width={SPLIT_FLAP_NOTE_COLS}
               height={noteHeight}
               durationMs={v.hotfxDurationMs}
@@ -121,7 +135,7 @@ export function SplitFlapPreview({ message }: Props) {
           <>
             <SplitFlapDisplay lines={titleLines} variant="title" />
             {showSecondary && <SplitFlapDisplay lines={secondaryLines} variant="secondary" />}
-            <SplitFlapDisplay key={`note:${isScroll ? 'scroll' : notePage}`} lines={isScroll ? scrollLines : rawNoteLines} variant="note" />
+            <SplitFlapDisplay key={`note:${isScroll ? 'scroll' : notePage}`} lines={isScroll ? noteScrollDisplay : rawNoteLines} variant="note" />
           </>
         )}
         <RadioTicker

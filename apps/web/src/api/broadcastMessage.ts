@@ -11,6 +11,9 @@ export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'
 export type TickerDirection = 'left' | 'right'
 
+// Alignement du texte dans la grille (header = CSS, titre/secondaire/note = padding).
+export type TextAlign = 'left' | 'center' | 'right'
+
 // Tailles du panneau (scales en %, rows en nb de lignes). Optionnel : vide → défauts.
 export interface BroadcastLayout {
   titleScale?: number
@@ -20,6 +23,10 @@ export interface BroadcastLayout {
   boardScale?: number
   titleRows?: number
   secondaryRows?: number
+  brandAlign?: TextAlign
+  titleAlign?: TextAlign
+  secondaryAlign?: TextAlign
+  noteAlign?: TextAlign
 }
 
 export interface BroadcastVisual {
