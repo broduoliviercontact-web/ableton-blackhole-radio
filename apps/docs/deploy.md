@@ -79,6 +79,21 @@ Importer le repo dans Vercel.
 Préfixe `VITE_` requis pour exposer la variable au bundle client. En dev elle
 reste vide : Vite proxye `/api` vers `localhost:3001` (`vite.config.ts`).
 
+## Routes production
+
+| Route | Côté | Rôle |
+|-------|------|------|
+| `/` | Frontend | Page radio publique split-flap (titre, métadonnées, note paginée, ticker) |
+| `/listen` | Frontend | Alias public → même page radio que `/` |
+| `/performer` | Frontend | Page cachée, protégée par `PERFORMER_PASSWORD` (gate avant chargement) |
+| `/api/health` | Backend | Healthcheck (`{ok:true,...}`) |
+| `/api/config-check` | Backend | Booléens de config (`livekitConfigured`, `performerPasswordConfigured`…) — aucun secret |
+| `/api/broadcast-message` | Backend | `GET` public (message courant) · `POST` protégé par mot de passe performer |
+
+`/api/config-check` expose `performerPasswordConfigured: true` en production
+si `PERFORMER_PASSWORD` (ou `PERFORMER_PASSWORDS`) est défini — booléen
+uniquement, jamais le mot de passe.
+
 ## Ordre de déploiement
 
 1. Déployer le **backend Render** → récupérer son URL publique
@@ -87,8 +102,12 @@ reste vide : Vite proxye `/api` vers `localhost:3001` (`vite.config.ts`).
 3. Revenir sur Render → renseigner `WEB_ORIGIN` = URL Vercel (CORS).
 4. Vérifier :
    - `curl https://ton-backend.onrender.com/api/health` → `{"ok":true,...}`
-   - Ouvrir `https://ton-frontend.vercel.app/performer` → Check server config
-     (Debug) : les trois `oui` + `URL factice : non`.
+   - `curl https://ton-backend.onrender.com/api/config-check` →
+     `performerPasswordConfigured: true` (et `livekitConfigured: true`).
+   - Ouvrir `https://ton-frontend.vercel.app/` → page radio split-flap
+     (défaut `RADIO BLACKHOLE` / `LIVE WEB AUDIO STREAM`).
+   - Ouvrir `https://ton-frontend.vercel.app/performer` → gate mot de passe,
+     puis Diagnostic : les trois `oui` + `URL factice : non`.
 
 ## Notes
 

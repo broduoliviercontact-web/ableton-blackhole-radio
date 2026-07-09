@@ -11,8 +11,8 @@ React · Vite · TypeScript · Node · Express · LiveKit · WebRTC · Vercel ·
 
 Le projet est déployé en production :
 
-- **Performer** — https://ableton-blackhole-radio.vercel.app/performer
-- **Listener** — https://ableton-blackhole-radio.vercel.app/listen
+- **Page radio publique** (split-flap) — https://ableton-blackhole-radio.vercel.app/ (alias `/listen`)
+- **Performer** (caché, protégé par mot de passe) — https://ableton-blackhole-radio.vercel.app/performer
 - **Backend health** — https://ableton-blackhole-radio.onrender.com/api/health
 - **Config check** — https://ableton-blackhole-radio.onrender.com/api/config-check
 
@@ -24,7 +24,11 @@ Le projet est déployé en production :
 - Fader master 0–100 % (0 = mute du broadcast, 100 = niveau original, réglable en direct)
 - VU-mètre post-fader / sortie broadcast
 - Diffusion LiveKit (WebRTC)
-- Page listener dédiée (lecture audio, autoplay géré)
+- **Page radio publique split-flap** : titre, métadonnées (sous-titre · artiste ·
+  album), note paginée (cycle 6 s) et ticker défilant — look affichage gare,
+  `prefers-reduced-motion` respecté.
+- **Volume listener local** 0–100 % (mute, jamais de boost — affecte seulement
+  l'écoute locale, pas le broadcast ni LiveKit).
 - Reconnexion listener simple (3 tentatives, backoff 1s/2s/4s)
 - Config-check serveur (booléens uniquement, aucun secret exposé)
 - Tokens LiveKit signés côté backend — le secret ne quitte jamais le serveur
@@ -137,8 +141,8 @@ courant via `GET /api/broadcast-message` (polling 5 s) et l'affiche en 4 zones
 qu'aucun message n'est publié.
 
 > MVP : le message est stocké **en mémoire** côté serveur — il est perdu au
-> redémarrage de Render. Split-flap animé prévu au LOT 4 (HTML/CSS simple
-> pour l'instant).
+> redémarrage de Render. L'affichage split-flap est rendu en HTML/CSS, sans
+> dépendance externe. Plus tard : Supabase / Redis / LiveKit room metadata.
 
 ## Sécurité
 
@@ -157,5 +161,6 @@ Ces outils sont indépendants du projet et optionnels.
 ## Documentation
 
 - [`apps/docs/deploy.md`](apps/docs/deploy.md) — déploiement
+- [`apps/docs/manual-test-radio-production.md`](apps/docs/manual-test-radio-production.md) — checklist de test radio en production
 - [`apps/docs/manual-test-mac-audio-input-livekit.md`](apps/docs/manual-test-mac-audio-input-livekit.md) — test terrain
 - [`apps/docs/bmad/`](apps/docs/bmad) — notes de conception
