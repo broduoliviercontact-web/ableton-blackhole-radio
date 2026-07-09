@@ -1,0 +1,187 @@
+/* Split-flap display — inspiré de flipoff, porté en React/CSS. */
+
+.sf-page {
+  background: #07090d;
+  color: #efe9d6;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 16px;
+  gap: 14px;
+  text-align: left;
+}
+
+.sf-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #9ca3af;
+  text-transform: uppercase;
+}
+
+.sf-brand {
+  font-weight: 700;
+  color: #f5d76b;
+}
+
+.sf-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sf-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #444;
+}
+.sf-dot.live {
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+  animation: sf-pulse 1.6s ease-in-out infinite;
+}
+.sf-dot.connecting {
+  background: #f59e0b;
+}
+@keyframes sf-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.sf-board {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.sf-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+}
+
+.sf-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(#15171f, #0c0e14);
+  border: 1px solid #23262f;
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  color: #efe9d6;
+  font-family: var(--mono);
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  /* La fente centrale du clapet : */
+  position: relative;
+  overflow: hidden;
+}
+.sf-tile::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.6);
+}
+.sf-tile--blank {
+  color: #2a2d36;
+}
+
+/* Flip au changement : l'élément interne est remonté (key=char) et joue
+   l'animation une fois. ponytail: flip simplifié, pas mécaniquement parfait. */
+.sf-tile__inner {
+  display: inline-flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  animation: sf-flip 0.22s ease-out;
+}
+@keyframes sf-flip {
+  0% { transform: rotateX(-85deg); opacity: 0.15; }
+  60% { opacity: 0.9; }
+  100% { transform: rotateX(0); opacity: 1; }
+}
+
+.sf-title .sf-tile { font-size: 30px; height: 46px; width: 26px; }
+.sf-secondary .sf-tile { font-size: 17px; height: 30px; width: 17px; }
+.sf-note .sf-tile { font-size: 19px; height: 34px; width: 20px; }
+
+@media (max-width: 720px) {
+  .sf-title .sf-tile { font-size: 20px; height: 34px; width: 20px; }
+  .sf-secondary .sf-tile { font-size: 13px; height: 24px; width: 14px; }
+  .sf-note .sf-tile { font-size: 14px; height: 26px; width: 16px; }
+}
+
+/* Audio zone compacte */
+.sf-audio {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: #9ca3af;
+}
+.sf-audio button {
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 6px 12px;
+  background: #15171f;
+  color: #efe9d6;
+  border: 1px solid #2a2d36;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+.sf-audio button:disabled { opacity: 0.4; cursor: default; }
+.sf-vol { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 160px; }
+.sf-vol input[type='range'] { flex: 1; }
+
+/* Ticker bas : défilement CSS, dupliqué pour boucle continue. */
+.sf-ticker {
+  overflow: hidden;
+  white-space: nowrap;
+  border-top: 1px solid #1f222b;
+  padding: 8px 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: #f5d76b;
+}
+.sf-ticker__track {
+  display: inline-block;
+  padding-left: 100%;
+  animation: sf-scroll 22s linear infinite;
+}
+@keyframes sf-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+.sf-footer {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #4b5563;
+  text-align: center;
+}
+
+/* Respecte prefers-reduced-motion : on coupe flip + scroll + pulse. */
+@media (prefers-reduced-motion: reduce) {
+  .sf-tile__inner { animation: none; }
+  .sf-ticker__track { animation: none; padding-left: 0; }
+  .sf-dot.live { animation: none; }
+}
