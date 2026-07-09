@@ -9,6 +9,7 @@ export type VisualNoteMode = 'paged' | 'scroll' | 'static'
 export type VisualEngine = 'internal' | 'hotfx'
 export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'
+export type TickerDirection = 'left' | 'right'
 
 // Tailles du panneau (scales en %, rows en nb de lignes).
 export interface BroadcastLayout {
@@ -50,6 +51,15 @@ export interface BroadcastVisual {
   tileBorderWidth?: number
   // Tailles du panneau.
   layout?: BroadcastLayout
+  // Bandeau roulant (ticker) : vitesse, sens, séparateur, activation.
+  tickerSpeedMs?: number
+  tickerDirection?: TickerDirection
+  tickerSeparator?: string
+  tickerEnabled?: boolean
+  // Mode note « scroll » : défilement dans les tuiles split-flap.
+  noteScrollSpeedMs?: number
+  noteScrollStep?: number
+  noteScrollLoop?: boolean
 }
 
 export interface BroadcastMessage {
@@ -107,6 +117,13 @@ const visualSchema = z
     panelDensity: z.enum(['compact', 'normal', 'large']).optional(),
     tileRadius: z.coerce.number().optional(),
     tileBorderWidth: z.coerce.number().optional(),
+    tickerSpeedMs: z.coerce.number().optional(),
+    tickerDirection: z.enum(['left', 'right']).optional(),
+    tickerSeparator: z.string().optional(),
+    tickerEnabled: z.boolean().optional(),
+    noteScrollSpeedMs: z.coerce.number().optional(),
+    noteScrollStep: z.coerce.number().optional(),
+    noteScrollLoop: z.boolean().optional(),
     layout: z
       .object({
         titleScale: z.coerce.number().optional(),
@@ -165,6 +182,15 @@ const visualSchema = z
     if (v.panelDensity) out.panelDensity = v.panelDensity
     if (v.tileRadius != null) out.tileRadius = clampInt(v.tileRadius, 0, 8)
     if (v.tileBorderWidth != null) out.tileBorderWidth = clampInt(v.tileBorderWidth, 1, 4)
+    if (v.tickerSpeedMs != null) out.tickerSpeedMs = clampInt(v.tickerSpeedMs, 5000, 120000)
+    if (v.tickerDirection) out.tickerDirection = v.tickerDirection
+    // Séparateur : pas de trim (espaces significatifs), max 12. Fallback ' · ' côté client.
+    if (typeof v.tickerSeparator === 'string' && v.tickerSeparator.length > 0)
+      out.tickerSeparator = v.tickerSeparator.slice(0, 12)
+    if (v.tickerEnabled != null) out.tickerEnabled = v.tickerEnabled
+    if (v.noteScrollSpeedMs != null) out.noteScrollSpeedMs = clampInt(v.noteScrollSpeedMs, 100, 5000)
+    if (v.noteScrollStep != null) out.noteScrollStep = clampInt(v.noteScrollStep, 1, 8)
+    if (v.noteScrollLoop != null) out.noteScrollLoop = v.noteScrollLoop
     if (v.layout) out.layout = v.layout
     // Fallback propre (pas de rejet) : noteRowsMax >= noteRowsMin.
     if (out.noteRowsMin != null && out.noteRowsMax != null && out.noteRowsMax < out.noteRowsMin) {

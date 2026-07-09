@@ -78,6 +78,26 @@ URLs :
 - [ ] `prefers-reduced-motion` (DevTools → Rendering) : HotFX snap (duration 1 ms,
       pas de mouvement prolongé), flicker figé, flip internal figé.
 
+## Bandeau roulant & déroulement de la note
+
+- [ ] `/performer` : section « Bandeau roulant » → modifier le texte du bandeau
+      (placeholder `RADIO BLACKHOLE · LIVE FROM PANTIN · NEXT SESSION SOON`) →
+      la preview reflète le ticker immédiatement.
+- [ ] Changer la vitesse du bandeau (range 5 000–120 000 ms) → le défilement
+      accélère / ralentit dans la preview et sur la page publique après publication.
+- [ ] Changer le sens (Gauche / Droite) → le bandeau défile dans l'autre sens.
+- [ ] Changer le séparateur (max 12, ex. ` | `) → inséré entre les répétitions.
+- [ ] Décocher « Activer le bandeau » → le bandeau disparaît (preview + public).
+- [ ] Mode de note = Déroulement → les contrôles « Déroulement de la note »
+      apparaissent (vitesse, pas, boucle). Modifier la note longue → elle défile
+      dans les cases split-flap (cases fixes, contenu qui se décale).
+- [ ] Tester le mode Déroulement avec le moteur Internal, puis avec HotFX →
+      défilement réel dans les tuiles (≠ du mode Paginé).
+- [ ] Pas de boucle + note courte → la note s'arrête en fin (queue fixe) ;
+      boucle + note longue → défilement continu (reboucle).
+- [ ] Publier → la page publique `/` et `/listen` appliquent le même défilement.
+- [ ] Mode Paginé et Statique → comportement inchangé (pas de défilement).
+
 ## Backend
 
 - [ ] `GET /api/health` → `{"ok":true,...}`

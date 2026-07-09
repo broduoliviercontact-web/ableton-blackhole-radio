@@ -10,6 +10,7 @@ import {
   type DisplayMode,
   type HotfxHeightMode,
   type PanelDensity,
+  type TickerDirection,
   type VisualEngine,
   type VisualNoteMode,
   type VisualPreset,
@@ -30,6 +31,7 @@ const NOTE_MODES: VisualNoteMode[] = ['paged', 'scroll', 'static']
 const ENGINES: VisualEngine[] = ['internal', 'hotfx']
 const HEIGHT_MODES: HotfxHeightMode[] = ['auto', 'fixed']
 const DENSITIES: PanelDensity[] = ['compact', 'normal', 'large']
+const DIRECTIONS: TickerDirection[] = ['left', 'right']
 
 const PRESET_LABELS: Record<VisualPreset, string> = {
   'pirate-industrial': 'Pirate industrial',
@@ -60,6 +62,30 @@ const DENSITY_LABELS: Record<PanelDensity, string> = {
   compact: 'Compact',
   normal: 'Normal',
   large: 'Large',
+}
+const DIRECTION_LABELS: Record<TickerDirection, string> = {
+  left: 'Gauche → (défaut)',
+  right: '← Droite',
+}
+
+// Aides contextuelles : décrivent l'option actuellement choisie. L'éditeur doit
+// être compréhensible sans connaître le code.
+const TRANSITION_HELP: Record<VisualTransition, string> = {
+  flip: 'Lettres qui tournent comme un clapet de gare.',
+  scramble: 'Caractères qui défilent avant le texte final.',
+  'flip-scramble': 'Mélange scramble puis clapet final.',
+  instant: 'Changement sans animation.',
+}
+const NOTE_MODE_HELP: Record<VisualNoteMode, string> = {
+  paged: 'La note est découpée en pages (cycle toutes les 6 s).',
+  scroll: 'La note défile dans les cases split-flap comme un bandeau de gare.',
+  static: 'La note reste fixe.',
+}
+const PRESET_HELP: Record<VisualPreset, string> = {
+  'pirate-industrial': 'Radio pirate / panneau industriel.',
+  'airport-classic': 'Panneau gare / aéroport.',
+  'terminal-amber': 'Terminal ambre.',
+  'minimal-black': 'Sobre et noir.',
 }
 
 const empty: BroadcastInput = { type: 'track', mainTitle: '' }
@@ -241,15 +267,6 @@ export function RadioMessageForm({ performerPassword }: Props) {
             style={textareaStyle}
           />
         </label>
-        <label style={fullLabelStyle}>
-          Ticker (bandeau bas)
-          <input
-            value={form.ticker ?? ''}
-            onChange={(e) => set('ticker', e.target.value)}
-            maxLength={500}
-            style={inputStyle}
-          />
-        </label>
       </div>
 
       {/* 2. Visualisation split-flap */}
@@ -282,6 +299,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
               </option>
             ))}
           </select>
+          <span style={helpStyle}>{PRESET_HELP[visual.preset ?? 'pirate-industrial']}</span>
         </label>
         <label style={labelStyle}>
           Transition (moteur internal)
@@ -296,6 +314,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
               </option>
             ))}
           </select>
+          <span style={helpStyle}>{TRANSITION_HELP[visual.transition ?? 'flip']}</span>
         </label>
         <label style={labelStyle}>
           Mode de note
@@ -310,6 +329,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
               </option>
             ))}
           </select>
+          <span style={helpStyle}>{NOTE_MODE_HELP[visual.noteMode ?? 'paged']}</span>
         </label>
         <label style={labelStyle}>
           Page duration (ms)
@@ -356,6 +376,105 @@ export function RadioMessageForm({ performerPassword }: Props) {
         <button type="button" onClick={resetVisual}>
           Réinitialiser visuel
         </button>
+      </div>
+
+      {/* Déroulement de la note — visible seulement en mode Déroulement. */}
+      {visual.noteMode === 'scroll' && (
+        <>
+          <h4 style={h4Style}>Déroulement de la note</h4>
+          <div style={gridStyle}>
+            <label style={labelStyle}>
+              Vitesse de défilement (ms) — {visual.noteScrollSpeedMs ?? 180} ms
+              <input
+                type="range"
+                min={100}
+                max={5000}
+                step={20}
+                value={visual.noteScrollSpeedMs ?? 180}
+                onChange={(e) => setVis('noteScrollSpeedMs', Number(e.target.value))}
+                style={inputStyle}
+              />
+            </label>
+            <label style={labelStyle}>
+              Pas (caractères/tick) — {visual.noteScrollStep ?? 1}
+              <input
+                type="range"
+                min={1}
+                max={8}
+                step={1}
+                value={visual.noteScrollStep ?? 1}
+                onChange={(e) => setVis('noteScrollStep', Number(e.target.value))}
+                style={inputStyle}
+              />
+            </label>
+            <label style={checkLabelStyle}>
+              <input
+                type="checkbox"
+                checked={visual.noteScrollLoop ?? true}
+                onChange={(e) => setVis('noteScrollLoop', e.target.checked)}
+              />
+              Boucle continue (sinon s’arrête en fin de note)
+            </label>
+          </div>
+        </>
+      )}
+
+      {/* Bandeau roulant (ticker) — texte + vitesse + sens + séparateur + activation. */}
+      <h3 style={h3Style}>Bandeau roulant</h3>
+      <div style={gridStyle}>
+        <label style={fullLabelStyle}>
+          Texte du bandeau
+          <input
+            value={form.ticker ?? ''}
+            onChange={(e) => set('ticker', e.target.value)}
+            maxLength={500}
+            placeholder="RADIO BLACKHOLE · LIVE FROM PANTIN · NEXT SESSION SOON"
+            style={inputStyle}
+          />
+        </label>
+        <label style={checkLabelStyle}>
+          <input
+            type="checkbox"
+            checked={visual.tickerEnabled ?? true}
+            onChange={(e) => setVis('tickerEnabled', e.target.checked)}
+          />
+          Activer le bandeau
+        </label>
+        <label style={labelStyle}>
+          Vitesse du bandeau (ms) — {visual.tickerSpeedMs ?? 22000} ms
+          <input
+            type="range"
+            min={5000}
+            max={120000}
+            step={1000}
+            value={visual.tickerSpeedMs ?? 22000}
+            onChange={(e) => setVis('tickerSpeedMs', Number(e.target.value))}
+            style={inputStyle}
+          />
+        </label>
+        <label style={labelStyle}>
+          Sens du défilement
+          <select
+            value={visual.tickerDirection ?? 'left'}
+            onChange={(e) => setVis('tickerDirection', e.target.value as TickerDirection)}
+            style={inputStyle}
+          >
+            {DIRECTIONS.map((d) => (
+              <option key={d} value={d}>
+                {DIRECTION_LABELS[d]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label style={labelStyle}>
+          Séparateur (max 12)
+          <input
+            value={visual.tickerSeparator ?? ' · '}
+            onChange={(e) => setVis('tickerSeparator', e.target.value)}
+            maxLength={12}
+            style={inputStyle}
+          />
+        </label>
       </div>
 
       {/* 3. Paramètres avancés (fermé par défaut) */}
@@ -627,6 +746,7 @@ const checkLabelStyle: CSSProperties = {
 }
 const inputStyle: CSSProperties = { padding: '6px 8px', fontSize: 14, fontWeight: 400 }
 const textareaStyle: CSSProperties = { ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }
+const helpStyle: CSSProperties = { color: '#6b7280', fontSize: 12, fontWeight: 400, marginTop: 4 }
 const rowStyle: CSSProperties = { display: 'flex', gap: 8, marginTop: 8 }
 const okStyle: CSSProperties = { color: 'green', marginTop: 8 }
 const errorStyle: CSSProperties = { color: 'crimson', marginTop: 8 }

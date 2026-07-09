@@ -15,6 +15,7 @@ import {
   SPLIT_FLAP_NOTE_ROWS,
 } from '../components/splitflap/format'
 import { resolveVisual, presetClass, accentColor, styleVars } from '../components/splitflap/visual'
+import { useScrollingTextWindow } from '../components/splitflap/useScrollingTextWindow'
 import { SplitFlapVisualProvider, type SplitFlapVisualSettings } from '../components/splitflap/SplitFlapContext'
 import { HotFxSplitFlap } from '../components/hotfx/HotFxSplitFlap'
 import { hotfxLayout, noteHeightFor } from '../components/hotfx/layout'
@@ -75,17 +76,29 @@ export function RadioPage() {
   // Layout HotFX (zones + hauteurs dynamiques). null en mode internal.
   const hotfx = useHotFx ? hotfxLayout(board, visual) : null
 
-  // Pagination de la note : static = page 0, paged/scroll = cycle à pageDurationMs.
-  // ponytail: scroll mappé sur paged (pas de vraie grille défilante HotFX/internal ;
-  // le ticker gère déjà le défilement horizontal). Reset quand le message change.
-  const notePages = hotfx ? hotfx.notePages : board.notePages
+  // Mode note : scroll = défilement char-par-char dans les tuiles (vrai bandeau
+  // de gare) ; paged = cycle de pages à pageDurationMs ; static = page 0 fixe.
+  const isScroll = visual.noteMode === 'scroll'
+  const notePages = isScroll ? [] : hotfx ? hotfx.notePages : board.notePages
   const [notePage, setNotePage] = useState(0)
   useEffect(() => {
     setNotePage(0)
-    if (visual.noteMode === 'static' || notePages.length <= 1) return
+    if (isScroll || visual.noteMode === 'static' || notePages.length <= 1) return
     const t = window.setInterval(() => setNotePage((p) => (p + 1) % notePages.length), visual.pageDurationMs)
     return () => clearInterval(t)
-  }, [notePages, visual.noteMode, visual.pageDurationMs])
+  }, [notePages, visual.noteMode, visual.pageDurationMs, isScroll])
+
+  // Fenêtre défilante (scroll) : rows selon le moteur (internal = 4, HotFX = noteRowsMax).
+  const scrollRows = hotfx ? visual.noteRowsMax : SPLIT_FLAP_NOTE_ROWS
+  const scrollLines = useScrollingTextWindow(
+    board.noteRaw,
+    SPLIT_FLAP_NOTE_COLS,
+    scrollRows,
+    visual.noteScrollSpeedMs,
+    visual.noteScrollStep,
+    visual.noteScrollLoop,
+    isScroll,
+  )
 
   const connected = phase === 'connecting' || phase === 'connected' || phase === 'listening'
   const showReconnect = lost && phase === 'disconnected' && !reconnecting
@@ -97,8 +110,8 @@ export function RadioPage() {
       : 'offline'
   const statusLabel = statusKey === 'live' ? 'LIVE' : statusKey === 'connecting' ? 'CONNECTING' : 'OFFLINE'
 
-  const rawNoteLines = visual.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0]
-  const noteHeight = hotfx ? noteHeightFor(visual, rawNoteLines.length) : SPLIT_FLAP_NOTE_ROWS
+  const rawNoteLines = isScroll ? [] : visual.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0]
+  const noteHeight = hotfx ? (isScroll ? scrollRows : noteHeightFor(visual, rawNoteLines.length)) : SPLIT_FLAP_NOTE_ROWS
   // Lignes titre/secondaire selon les rows du layout (grille continue, largeur uniforme).
   const titleLines = wrapCentered(board.titleRaw, SPLIT_FLAP_TITLE_COLS, visual.layout.titleRows)
   const secondaryLines = board.secondaryRaw.trim()
@@ -154,7 +167,7 @@ export function RadioPage() {
               )}
               <HotFxSplitFlap
                 className="sf-hotfx sf-hotfx--note"
-                text={rawNoteLines.join('\n')}
+                text={isScroll ? scrollLines.join('\n') : rawNoteLines.join('\n')}
                 width={SPLIT_FLAP_NOTE_COLS}
                 height={noteHeight}
                 durationMs={visual.hotfxDurationMs}
@@ -167,10 +180,20 @@ export function RadioPage() {
               {showSecondary && (
                 <SplitFlapDisplay key={`secondary:${messageKey}`} lines={secondaryLines} variant="secondary" />
               )}
-              <SplitFlapDisplay key={`note:${messageKey}:${notePage}`} lines={rawNoteLines} variant="note" />
+              <SplitFlapDisplay
+                key={`note:${messageKey}:${isScroll ? 'scroll' : notePage}`}
+                lines={isScroll ? scrollLines : rawNoteLines}
+                variant="note"
+              />
             </>
           )}
-          <RadioTicker text={board.ticker} />
+          <RadioTicker
+            text={board.ticker}
+            enabled={visual.tickerEnabled}
+            speedMs={visual.tickerSpeedMs}
+            direction={visual.tickerDirection}
+            separator={visual.tickerSeparator}
+          />
 
           <div className="sf-controls">
             {!connected && !lost && (

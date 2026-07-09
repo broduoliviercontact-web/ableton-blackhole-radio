@@ -202,7 +202,40 @@ async function main(): Promise<void> {
     badLayoutKey = true
   }
   assert(badLayoutKey, 'layout clé inconnue refusée (.strict)')
-  console.log('✅ broadcast message OK (parse, updatedAt serveur, store mémoire, visual clamp/filter, engine+hotfx+style, brandLabel+layout)')
+
+  // Bandeau roulant (ticker) : vitesse clamp, direction enum, séparateur max 12, enabled bool.
+  const tick2 = parseBroadcastMessage({
+    type: 'track',
+    mainTitle: 'T2',
+    visual: { tickerSpeedMs: 999999, tickerDirection: 'right', tickerSeparator: 'X'.repeat(40), tickerEnabled: false },
+  })
+  assert(tick2.visual?.tickerSpeedMs === 120000, 'tickerSpeedMs clamp 120000')
+  assert(tick2.visual?.tickerDirection === 'right', 'tickerDirection stocké')
+  assert(tick2.visual?.tickerSeparator?.length === 12, 'tickerSeparator max 12')
+  assert(tick2.visual?.tickerEnabled === false, 'tickerEnabled false')
+  const tickEmpty = parseBroadcastMessage({ type: 'track', mainTitle: 'TE', visual: { tickerSeparator: '' } })
+  assert(tickEmpty.visual?.tickerSeparator === undefined, 'tickerSeparator vide → non stocké (fallback client)')
+  let badDir = false
+  try {
+    parseBroadcastMessage({ type: 'track', mainTitle: 'X', visual: { tickerDirection: 'up' as never } })
+  } catch {
+    badDir = true
+  }
+  assert(badDir, 'tickerDirection invalide refusé')
+
+  // Note scroll : vitesse/step clamp, loop bool.
+  const sc = parseBroadcastMessage({
+    type: 'track',
+    mainTitle: 'S',
+    visual: { noteScrollSpeedMs: 10, noteScrollStep: 99, noteScrollLoop: true },
+  })
+  assert(sc.visual?.noteScrollSpeedMs === 100, 'noteScrollSpeedMs clamp 100')
+  assert(sc.visual?.noteScrollStep === 8, 'noteScrollStep clamp 8')
+  assert(sc.visual?.noteScrollLoop === true, 'noteScrollLoop stocké')
+  // Anciens messages sans ticker/scroll restent valides.
+  const old = parseBroadcastMessage({ type: 'track', mainTitle: 'OLD' })
+  assert(old.visual === undefined && old.brandLabel === undefined, 'ancien message sans visual/brandLabel valide')
+  console.log('✅ broadcast message OK (parse, updatedAt serveur, store mémoire, visual clamp/filter, engine+hotfx+style, brandLabel+layout, ticker+scroll)')
 }
 
 main().catch((e) => {

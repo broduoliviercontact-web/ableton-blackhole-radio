@@ -170,9 +170,22 @@ scales pilotent la taille des tuiles via des variables CSS (grille continue,
 colonnes alignées). Réinitialisable d'un clic. Anciens messages sans
 `brandLabel`/`layout` restent valides (défauts 100 %, 1 ligne).
 
+**Bandeau roulant & déroulement** : `visual.ticker*` (texte via `message.ticker`,
+`tickerSpeedMs` 5 000–120 000, `tickerDirection` left/right, `tickerSeparator`
+max 12 fallback ` · `, `tickerEnabled` booléen) contrôlent le bandeau bas —
+`tickerEnabled=false` le masque ; défilement CSS seamless (unit × 2, -50 %). Le
+mode de note `scroll` fait défiler la note **dans les tuiles** split-flap elles-
+mêmes (vrai bandeau de gare) via `visual.noteScroll*` (`noteScrollSpeedMs`
+100–5 000, `noteScrollStep` 1–8, `noteScrollLoop` booléen). Moteurs Internal et
+HotFX partagent la même fenêtre de défilement (`useScrollingTextWindow`).
+`paged`/`static` inchangés.
+
 > Limites HotFX : uppercase forcé, alphabet Latin (accents → espace), animation
 > séquentielle (pas un scramble aléatoire), `duration` = ms par clapet (≠ durée
-> totale). `prefers-reduced-motion` → `duration` 1 ms (snap).
+> totale). `prefers-reduced-motion` → `duration` 1 ms (snap). Mode `scroll` +
+> transition `flip` : animation mécanique chargée (toutes les tuiles re-flipent
+> à chaque tick) ; pour un défilement fluide, préférer transition `instant` ou
+> un `noteScrollSpeedMs` plus lent.
 
 ## Sécurité
 

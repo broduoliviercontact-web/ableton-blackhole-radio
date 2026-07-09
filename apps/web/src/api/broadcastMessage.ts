@@ -9,6 +9,7 @@ export type VisualNoteMode = 'paged' | 'scroll' | 'static'
 export type VisualEngine = 'internal' | 'hotfx'
 export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'
+export type TickerDirection = 'left' | 'right'
 
 // Tailles du panneau (scales en %, rows en nb de lignes). Optionnel : vide → défauts.
 export interface BroadcastLayout {
@@ -50,6 +51,15 @@ export interface BroadcastVisual {
   tileBorderWidth?: number
   // Tailles du panneau.
   layout?: BroadcastLayout
+  // Bandeau roulant (ticker) : vitesse, sens, séparateur, activation.
+  tickerSpeedMs?: number
+  tickerDirection?: TickerDirection
+  tickerSeparator?: string
+  tickerEnabled?: boolean
+  // Mode note « scroll » : défilement dans les tuiles split-flap.
+  noteScrollSpeedMs?: number
+  noteScrollStep?: number
+  noteScrollLoop?: boolean
 }
 
 export interface BroadcastMessage {

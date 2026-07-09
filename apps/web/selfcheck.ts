@@ -81,4 +81,34 @@ assert(one.length === 1 && one[0].length === 32, 'wrapCentered court → 1 ligne
 const many = wrapCentered('A'.repeat(200), 32, 2)
 assert(many.length === 2 && many.every((ln) => ln.length === 32), 'wrapCentered long → maxRows lignes, chacune ≤ cols')
 
-console.log('✅ web utils self-check OK (isBlackHole, isLoopback, pickPreferredAudioInput, looksLikeBuiltInMic, identity, layout+wrapCentered)')
+// Ticker + note scroll (visual résolu) : clamp + défauts + anciens messages valides.
+const tickerDef = resolveVisual()
+assert(tickerDef.tickerSpeedMs === 22000 && tickerDef.tickerDirection === 'left', 'ticker défauts')
+assert(tickerDef.tickerSeparator === ' · ' && tickerDef.tickerEnabled === true, 'ticker défauts sep+enabled')
+assert(tickerDef.noteScrollSpeedMs === 180 && tickerDef.noteScrollStep === 1 && tickerDef.noteScrollLoop === true, 'note scroll défauts')
+const tickerC = resolveVisual({
+  tickerSpeedMs: 1000, tickerDirection: 'right', tickerSeparator: 'X'.repeat(40),
+  tickerEnabled: false, noteScrollSpeedMs: 10, noteScrollStep: 99, noteScrollLoop: false,
+})
+assert(tickerC.tickerSpeedMs === 5000, 'tickerSpeedMs clamp 5000')
+assert(tickerC.tickerDirection === 'right', 'tickerDirection right')
+assert(tickerC.tickerSeparator?.length === 12, 'tickerSeparator clamp 12')
+assert(tickerC.tickerEnabled === false, 'tickerEnabled false')
+assert(tickerC.noteScrollSpeedMs === 100, 'noteScrollSpeedMs clamp 100')
+assert(tickerC.noteScrollStep === 8, 'noteScrollStep clamp 8')
+assert(tickerC.noteScrollLoop === false, 'noteScrollLoop false')
+
+// computeScrollLines : décalage char-par-char, lignes = tranches consécutives, loop reboucle.
+const { computeScrollLines } = await import('./src/components/splitflap/useScrollingTextWindow')
+const S = 'ABCDEFGH' // L=8
+const w0 = computeScrollLines(S, 0, 4, 2, true)
+assert(w0.length === 2 && w0[0] === 'ABCD' && w0[1] === 'EFGH', 'scroll offset 0 → ABCD/EFGH')
+const w1 = computeScrollLines(S, 1, 4, 2, true)
+assert(w1[0] === 'BCDE' && w1[1] === 'FGHA', 'scroll offset 1 → BCDE/FGHA (loop wrap)')
+const wStep = computeScrollLines(S, 2, 4, 2, true)
+assert(wStep[0] === 'CDEF', 'scroll offset 2 → CDEF')
+// non-loop : queue paddée d'espaces, fenêtre fixe largeur.
+const noloop = computeScrollLines('ABC', 0, 5, 1, false)
+assert(noloop[0] === 'ABC  ' && noloop[0].length === 5, 'scroll non-loop court → paddé à width')
+
+console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered, ticker+scroll)')

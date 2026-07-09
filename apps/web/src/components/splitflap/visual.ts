@@ -7,6 +7,7 @@ import type {
   VisualEngine,
   HotfxHeightMode,
   PanelDensity,
+  TickerDirection,
 } from '../../api/broadcastMessage'
 
 // Alphabet HotFX par défaut (espace initial significatif).
@@ -61,6 +62,15 @@ export interface ResolvedVisual {
   tileRadius: number
   tileBorderWidth: number
   layout: ResolvedLayout
+  // Bandeau roulant.
+  tickerSpeedMs: number
+  tickerDirection: TickerDirection
+  tickerSeparator: string
+  tickerEnabled: boolean
+  // Note scroll.
+  noteScrollSpeedMs: number
+  noteScrollStep: number
+  noteScrollLoop: boolean
 }
 
 // Valeurs par défaut = preset « pirate-industrial » actuel.
@@ -90,6 +100,13 @@ export const DEFAULT_VISUAL: ResolvedVisual = {
   tileRadius: 3,
   tileBorderWidth: 1,
   layout: { ...DEFAULT_LAYOUT },
+  tickerSpeedMs: 22000,
+  tickerDirection: 'left',
+  tickerSeparator: ' · ',
+  tickerEnabled: true,
+  noteScrollSpeedMs: 180,
+  noteScrollStep: 1,
+  noteScrollLoop: true,
 }
 
 // Couleur d'accent par preset (utilisée si accentColors vide).
@@ -150,6 +167,16 @@ export function resolveVisual(v?: BroadcastVisual): ResolvedVisual {
     tileRadius: clamp(v.tileRadius, DEFAULT_VISUAL.tileRadius, 0, 8),
     tileBorderWidth: clamp(v.tileBorderWidth, DEFAULT_VISUAL.tileBorderWidth, 1, 4),
     layout: resolveLayout(v.layout),
+    tickerSpeedMs: clamp(v.tickerSpeedMs, DEFAULT_VISUAL.tickerSpeedMs, 5000, 120000),
+    tickerDirection: v.tickerDirection ?? DEFAULT_VISUAL.tickerDirection,
+    tickerSeparator:
+      typeof v.tickerSeparator === 'string' && v.tickerSeparator.length > 0
+        ? v.tickerSeparator.slice(0, 12)
+        : DEFAULT_VISUAL.tickerSeparator,
+    tickerEnabled: v.tickerEnabled ?? DEFAULT_VISUAL.tickerEnabled,
+    noteScrollSpeedMs: clamp(v.noteScrollSpeedMs, DEFAULT_VISUAL.noteScrollSpeedMs, 100, 5000),
+    noteScrollStep: clamp(v.noteScrollStep, DEFAULT_VISUAL.noteScrollStep, 1, 8),
+    noteScrollLoop: v.noteScrollLoop ?? DEFAULT_VISUAL.noteScrollLoop,
   }
 }
 

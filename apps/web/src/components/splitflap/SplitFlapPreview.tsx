@@ -11,6 +11,7 @@ import {
   SPLIT_FLAP_NOTE_ROWS,
 } from './format'
 import { resolveVisual, presetClass, accentColor, styleVars } from './visual'
+import { useScrollingTextWindow } from './useScrollingTextWindow'
 import { SplitFlapVisualProvider, type SplitFlapVisualSettings } from './SplitFlapContext'
 import { HotFxSplitFlap } from '../hotfx/HotFxSplitFlap'
 import { hotfxLayout, noteHeightFor } from '../hotfx/layout'
@@ -39,20 +40,31 @@ export function SplitFlapPreview({ message }: Props) {
   }
 
   const hotfx = useHotFx ? hotfxLayout(board, v) : null
-  const notePages = hotfx ? hotfx.notePages : board.notePages
 
-  // Pagination note : static = page 0, paged/scroll = cycle.
+  // Mode note : scroll = défilement char-par-char ; paged = cycle ; static = fixe.
+  const isScroll = v.noteMode === 'scroll'
+  const notePages = isScroll ? [] : hotfx ? hotfx.notePages : board.notePages
   const [notePage, setNotePage] = useState(0)
   useEffect(() => {
     setNotePage(0)
-    if (v.noteMode === 'static' || notePages.length <= 1) return
-    // ponytail: scroll mappé sur paged (pas de vraie grille défilante).
+    if (isScroll || v.noteMode === 'static' || notePages.length <= 1) return
     const t = window.setInterval(() => setNotePage((p) => (p + 1) % notePages.length), v.pageDurationMs)
     return () => clearInterval(t)
-  }, [notePages, v.noteMode, v.pageDurationMs])
+  }, [notePages, v.noteMode, v.pageDurationMs, isScroll])
 
-  const rawNoteLines = v.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0]
-  const noteHeight = hotfx ? noteHeightFor(v, rawNoteLines.length) : SPLIT_FLAP_NOTE_ROWS
+  const scrollRows = hotfx ? v.noteRowsMax : SPLIT_FLAP_NOTE_ROWS
+  const scrollLines = useScrollingTextWindow(
+    board.noteRaw,
+    SPLIT_FLAP_NOTE_COLS,
+    scrollRows,
+    v.noteScrollSpeedMs,
+    v.noteScrollStep,
+    v.noteScrollLoop,
+    isScroll,
+  )
+
+  const rawNoteLines = isScroll ? [] : v.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0]
+  const noteHeight = hotfx ? (isScroll ? scrollRows : noteHeightFor(v, rawNoteLines.length)) : SPLIT_FLAP_NOTE_ROWS
   const titleLines = wrapCentered(board.titleRaw, SPLIT_FLAP_TITLE_COLS, v.layout.titleRows)
   const secondaryLines = board.secondaryRaw.trim()
     ? wrapCentered(board.secondaryRaw, SPLIT_FLAP_SECONDARY_COLS, v.layout.secondaryRows)
@@ -98,7 +110,7 @@ export function SplitFlapPreview({ message }: Props) {
             )}
             <HotFxSplitFlap
               className="sf-hotfx sf-hotfx--note"
-              text={rawNoteLines.join('\n')}
+              text={isScroll ? scrollLines.join('\n') : rawNoteLines.join('\n')}
               width={SPLIT_FLAP_NOTE_COLS}
               height={noteHeight}
               durationMs={v.hotfxDurationMs}
@@ -109,10 +121,16 @@ export function SplitFlapPreview({ message }: Props) {
           <>
             <SplitFlapDisplay lines={titleLines} variant="title" />
             {showSecondary && <SplitFlapDisplay lines={secondaryLines} variant="secondary" />}
-            <SplitFlapDisplay key={`note:${notePage}`} lines={rawNoteLines} variant="note" />
+            <SplitFlapDisplay key={`note:${isScroll ? 'scroll' : notePage}`} lines={isScroll ? scrollLines : rawNoteLines} variant="note" />
           </>
         )}
-        <RadioTicker text={board.ticker} />
+        <RadioTicker
+          text={board.ticker}
+          enabled={v.tickerEnabled}
+          speedMs={v.tickerSpeedMs}
+          direction={v.tickerDirection}
+          separator={v.tickerSeparator}
+        />
       </div>
     </SplitFlapVisualProvider>
   )
