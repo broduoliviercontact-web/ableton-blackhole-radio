@@ -298,3 +298,10 @@ Ces outils sont indépendants du projet et optionnels.
 - [`apps/docs/manual-test-radio-production.md`](apps/docs/manual-test-radio-production.md) — checklist de test radio en production
 - [`apps/docs/manual-test-mac-audio-input-livekit.md`](apps/docs/manual-test-mac-audio-input-livekit.md) — test terrain
 - [`apps/docs/bmad/`](apps/docs/bmad) — notes de conception
+
+## Notes
+
+- Frontend CSS nettoyé des restes du starter Vite (`.hero`, `#next-steps`, `#center`,
+  `.counter`, largeur magique `#root` 1126px) ; couleur d'accent alignée sur l'ambre
+  Radio Blackhole (`--accent: #f5d76b`, + `--accent-deep`/`--accent-bright`). Fin de la
+  fuite du violet SaaS (`#aa3bff`) dans le bouton *Publier* et les *segmented controls*.
