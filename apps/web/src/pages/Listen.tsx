@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useLiveKitListen } from '../hooks/useLiveKitListen'
 import { ConfigCheckButton } from '../components/ConfigCheckButton'
+import { ListenerVolume } from '../components/ListenerVolume'
 import { getOrCreateIdentity } from '../utils/identity'
 
 const ROOM_NAME = 'main'
@@ -17,10 +18,14 @@ export function Listen() {
     lost,
     reconnecting,
     needGesture,
+    listenerVolume,
+    muted,
     listenLive,
     stopListening,
     reconnect,
     startAudio,
+    setListenerVolume,
+    toggleMute,
   } = useLiveKitListen(ROOM_NAME, myIdentity, audioHostRef)
 
   const connected = phase === 'connecting' || phase === 'connected' || phase === 'listening'
@@ -54,6 +59,17 @@ export function Listen() {
         <button type="button" onClick={() => void startAudio()}>
           Autoriser la lecture audio
         </button>
+      )}
+
+      {connected && (
+        <div style={{ marginTop: 8 }}>
+          <ListenerVolume
+            volume={listenerVolume}
+            muted={muted}
+            onVolumeChange={setListenerVolume}
+            onToggleMute={toggleMute}
+          />
+        </div>
       )}
 
       <p style={mutedStyle}>

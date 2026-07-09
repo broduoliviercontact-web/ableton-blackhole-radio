@@ -14,10 +14,14 @@ interface UseLiveKitListenResult {
   lost: boolean
   reconnecting: boolean
   needGesture: boolean
+  listenerVolume: number
+  muted: boolean
   listenLive: () => Promise<void>
   stopListening: () => void
   reconnect: () => Promise<void>
   startAudio: () => Promise<void>
+  setListenerVolume: (volumePercent: number) => void
+  toggleMute: () => void
 }
 
 const MAX_ATTEMPTS = 3
@@ -43,12 +47,18 @@ export function useLiveKitListen(
   const audioEls = useRef<Map<RemoteAudioTrack, HTMLAudioElement>>(new Map())
   // Ref stable vers connect() pour le retry interne (évite la ref circulaire).
   const connectRef = useRef<() => Promise<void>>(async () => {})
+  // Volume listener local (0–100). Ref pour que attachTrack (callback stable)
+  // lise la valeur courante sans re-création ; state pour l'UI.
+  const listenerVolumeRef = useRef(100)
+  const preMuteRef = useRef(100)
 
   const [phase, setPhase] = useState<ListenPhase>('disconnected')
   const [error, setError] = useState<string | null>(null)
   const [lost, setLost] = useState(false)
   const [reconnecting, setReconnecting] = useState(false)
   const [needGesture, setNeedGesture] = useState(false)
+  const [listenerVolume, setListenerVolumeState] = useState(100)
+  const [muted, setMuted] = useState(false)
 
   const clearRetry = useCallback(() => {
     if (retryTimer.current != null) {
@@ -65,6 +75,7 @@ export function useLiveKitListen(
       const el = track.attach() // crée un <audio> et y branche le MediaStream
       el.autoplay = true
       el.controls = false
+      el.volume = listenerVolumeRef.current / 100 // volume listener courant
       audioHostRef.current?.appendChild(el)
       audioEls.current.set(track, el)
       setPhase('listening')
@@ -218,6 +229,28 @@ export function useLiveKitListen(
     }
   }, [])
 
+  // Volume listener local 0–100 (jamais > 100 : pas de boost). Appliqué à tous
+  // les <audio> existants et mémorisé pour les futurs (attachTrack). Mute = 0,
+  // avec mémoire du niveau précédent pour le démute.
+  const setListenerVolume = useCallback((volumePercent: number) => {
+    const clamped = Math.max(0, Math.min(100, Math.round(volumePercent)))
+    listenerVolumeRef.current = clamped
+    setListenerVolumeState(clamped)
+    for (const el of audioEls.current.values()) el.volume = clamped / 100
+    if (clamped > 0 && muted) setMuted(false)
+  }, [muted])
+
+  const toggleMute = useCallback(() => {
+    if (!muted) {
+      preMuteRef.current = listenerVolumeRef.current
+      setListenerVolume(0)
+      setMuted(true)
+    } else {
+      setMuted(false)
+      setListenerVolume(preMuteRef.current || 100)
+    }
+  }, [muted, setListenerVolume])
+
   // Nettoie le timer + la room au démontage (US-4.1) — pas de retry orphelin.
   useEffect(() => {
     return () => {
@@ -241,9 +274,13 @@ export function useLiveKitListen(
     lost,
     reconnecting,
     needGesture,
+    listenerVolume,
+    muted,
     listenLive,
     stopListening,
     reconnect,
     startAudio,
+    setListenerVolume,
+    toggleMute,
   }
 }
