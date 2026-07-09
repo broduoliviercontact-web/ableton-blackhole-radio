@@ -17,6 +17,7 @@ import {
 } from '../api/broadcastMessage'
 import { SplitFlapPreview } from './splitflap/SplitFlapPreview'
 import { DEFAULT_VISUAL, parseColors } from './splitflap/visual'
+import { HelpTooltip } from './HelpTooltip'
 
 interface Props {
   performerPassword: string
@@ -66,34 +67,79 @@ const DIRECTION_LABELS: Record<TickerDirection, string> = {
   right: '← Droite',
 }
 
-// Aides contextuelles : décrivent l'option actuellement choisie. L'éditeur doit
-// être compréhensible sans connaître le code.
-const TYPE_HELP: Record<BroadcastType, string> = {
-  track: 'Morceau avec artiste / album.',
-  show: 'Émission ou session radio.',
-  announcement: 'Annonce courte.',
-  note: 'Texte ou information longue.',
-}
-const ENGINE_HELP: Record<VisualEngine, string> = {
-  internal: 'Moteur maison, plus contrôlable.',
-  hotfx: 'Rendu plus réaliste avec demi-clapets.',
-}
-const TRANSITION_HELP: Record<VisualTransition, string> = {
-  flip: 'Lettres qui tournent comme un clapet de gare.',
-  scramble: 'Caractères qui défilent avant le texte final.',
-  'flip-scramble': 'Mélange scramble puis clapet final.',
-  instant: 'Changement sans animation.',
-}
-const NOTE_MODE_HELP: Record<VisualNoteMode, string> = {
-  paged: 'La note est découpée en pages (cycle toutes les 6 s).',
-  scroll: 'La note défile dans les cases split-flap comme un bandeau de gare.',
-  static: 'La note reste fixe.',
-}
-const PRESET_HELP: Record<VisualPreset, string> = {
-  'pirate-industrial': 'Radio pirate / panneau industriel.',
-  'airport-classic': 'Panneau gare / aéroport.',
-  'terminal-amber': 'Terminal ambre.',
-  'minimal-black': 'Sobre et noir.',
+// Textes des tooltips d'aide (accessibles au hover/focus/clic). Remplacent les
+// anciennes aides inline pour éviter les doublons et les longs paragraphes.
+const TIPS = {
+  brandLabel:
+    "Nom affiché dans le header de la page publique. Exemple : RADIO BLACKHOLE, ZUB RADIO, BLACKHOLE FM.",
+  type:
+    "Catégorie du message : track = morceau, show = émission, announcement = annonce courte, note = texte explicatif.",
+  noteMode:
+    "Contrôle la note longue : statique = fixe, paginé = pages successives, déroulement = texte qui avance dans les cases split-flap.",
+  mainTitle:
+    "Champ requis. C’est le grand texte principal du panneau. Pour une note seule, utilise par exemple RADIO BLACKHOLE ou NOTE RADIO.",
+  subtitle: "Texte secondaire sous le titre : épisode, contexte, lieu, numéro de session, etc.",
+  artist: "Nom de l’artiste, du performer ou du projet musical.",
+  album: "Album, collection, session ou série associée au message.",
+  url: "Lien optionnel associé au message. Utilise seulement des liens http/https.",
+  note:
+    "Texte explicatif affiché dans la grande zone du panneau. Peut être paginé ou déroulant selon le mode de note.",
+  engine:
+    "Internal = moteur maison très contrôlable. HotFX = rendu plus réaliste avec demi-clapets mécaniques.",
+  preset: "Change l’ambiance du panneau : radio pirate, gare/aéroport, terminal ambre ou minimal noir.",
+  transition: "Animation des lettres : flip mécanique, scramble, mélange des deux, ou instantané.",
+  staggerDelay:
+    "Décalage entre les tuiles. Plus la valeur est haute, plus la vague d’animation gauche→droite est visible.",
+  pageDuration: "Durée d’affichage d’une page de note avant de passer à la suivante.",
+  scrambleColors:
+    "Couleurs utilisées pendant le mode scramble. Format hex séparé par virgule, ex : #e6c84f,#d94b45.",
+  accentColors:
+    "Couleurs principales du panneau : titre, ticker, accents lumineux. Format hex séparé par virgule.",
+  tickerText: "Texte qui défile en bas de la page publique, comme un bandeau radio/news.",
+  tickerEnabled: "Masque ou affiche le ticker en bas du panneau public.",
+  tickerSpeed:
+    "Durée d’un cycle de défilement. Plus la valeur est élevée, plus le bandeau défile lentement.",
+  tickerDirection: "Direction du bandeau : gauche ou droite.",
+  tickerSeparator: "Texte placé entre deux répétitions du ticker. Exemple : · ou // ou —.",
+  noteScrollSpeed:
+    "Vitesse du défilement dans les cases split-flap. Plus la valeur est basse, plus le texte avance vite.",
+  noteScrollStep:
+    "Nombre de caractères avancés à chaque pas. 1 = très fluide, valeurs plus hautes = saut plus rapide.",
+  noteScrollLoop: "Quand activé, le texte recommence au début après la fin.",
+  hotfxDuration:
+    "Durée par chute de clapet. Attention : ce n’est pas la durée totale, car HotFX avance caractère par caractère dans son alphabet.",
+  hotfxCharacters:
+    "Liste des caractères disponibles pour HotFX. Les caractères absents peuvent disparaître. Les accents français sont inclus par défaut.",
+  hotfxGridGap: "Espace entre les clapets HotFX.",
+  hotfxHeightMode:
+    "Auto adapte la hauteur au texte. Fixe garde une hauteur plus stable pour la zone note.",
+  noteRows: "Nombre minimum et maximum de lignes utilisées par la note HotFX.",
+  flicker: "Ajoute un léger scintillement radio/électrique au panneau.",
+  flickerIntensity: "Force du scintillement. À utiliser doucement pour rester lisible.",
+  edgeGlow: "Ajoute une lueur sur les bords du panneau et des tuiles.",
+  edgeGlowIntensity: "Intensité de la lueur.",
+  tileContrast: "Contraste des clapets. Plus haut = tuiles plus marquées.",
+  panelNoise: "Ajoute une texture discrète au panneau pour un aspect plus industriel.",
+  panelDensity: "Densité des tuiles : compact = plus serré, large = plus aéré.",
+  tileRadius: "Arrondi des tuiles. Bas = plus industriel, haut = plus doux.",
+  tileBorderWidth: "Épaisseur de bordure des tuiles.",
+  boardScale: "Taille générale du panneau.",
+  titleScale: "Taille du titre principal.",
+  secondaryScale: "Taille de la ligne secondaire.",
+  noteScale: "Taille du texte dans la zone note.",
+  tickerScale: "Taille du bandeau roulant.",
+  titleRows: "Nombre de lignes réservées au titre principal.",
+  secondaryRows: "Nombre de lignes réservées à la ligne secondaire. 0 masque cette zone.",
+} as const
+
+// En-tête de champ : label + tooltip d'aide. Évite les longs paragraphes visibles
+// tout en restant accessible (hover/focus/clic). ponytail: helper DRY pour ~40 champs.
+function FieldHead({ text, tip }: { text: string; tip: string }) {
+  return (
+    <span style={headStyle}>
+      {text} <HelpTooltip text={tip} label={text} />
+    </span>
+  )
 }
 
 const empty: BroadcastInput = { type: 'track', mainTitle: '' }
@@ -125,12 +171,12 @@ export function RadioMessageForm({ performerPassword }: Props) {
     setVisual((v) => ({ ...v, layout: { ...v.layout, [key]: value } }))
   const resetLayout = () => setVisual((v) => ({ ...v, layout: undefined }))
 
-  // Champ scale (%) : range + affichage live. ponytail: helper local DRY (5 scales identiques).
-  const scaleField = (key: keyof BroadcastLayout, label: string, min: number, max: number) => {
+  // Champ scale (%) : range + affichage live + tooltip. ponytail: helper local DRY (5 scales identiques).
+  const scaleField = (key: keyof BroadcastLayout, label: string, min: number, max: number, tip: string) => {
     const val = visual.layout?.[key] ?? 100
     return (
       <label style={labelStyle}>
-        {label} — {val}%
+        <FieldHead text={`${label} — ${val}%`} tip={tip} />
         <input
           type="range"
           min={min}
@@ -195,7 +241,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
       <h3 style={h3Style}>Contenu radio</h3>
       <div style={gridStyle}>
         <label style={fullLabelStyle}>
-          Nom de la radio (header public)
+          <FieldHead text="Nom de la radio (header public)" tip={TIPS.brandLabel} />
           <input
             value={form.brandLabel ?? ''}
             onChange={(e) => set('brandLabel', e.target.value)}
@@ -205,7 +251,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           />
         </label>
         <label style={labelStyle}>
-          Type
+          <FieldHead text="Type" tip={TIPS.type} />
           <select value={form.type} onChange={(e) => set('type', e.target.value as BroadcastType)} style={inputStyle}>
             {TYPES.map((t) => (
               <option key={t} value={t}>
@@ -213,10 +259,9 @@ export function RadioMessageForm({ performerPassword }: Props) {
               </option>
             ))}
           </select>
-          <span style={helpStyle}>{TYPE_HELP[form.type]}</span>
         </label>
         <label style={fullLabelStyle}>
-          Titre principal *
+          <FieldHead text="Titre principal *" tip={TIPS.mainTitle} />
           <input
             value={form.mainTitle}
             onChange={(e) => set('mainTitle', e.target.value)}
@@ -224,12 +269,9 @@ export function RadioMessageForm({ performerPassword }: Props) {
             placeholder="Ex : Late Night Tape"
             style={inputStyle}
           />
-          <span style={helpStyle}>
-            Requis pour publier. Pour une note seule, mets par exemple : NOTE RADIO ou RADIO BLACKHOLE.
-          </span>
         </label>
         <label style={labelStyle}>
-          Sous-titre
+          <FieldHead text="Sous-titre" tip={TIPS.subtitle} />
           <input
             value={form.subtitle ?? ''}
             onChange={(e) => set('subtitle', e.target.value)}
@@ -238,15 +280,15 @@ export function RadioMessageForm({ performerPassword }: Props) {
           />
         </label>
         <label style={labelStyle}>
-          Artiste
+          <FieldHead text="Artiste" tip={TIPS.artist} />
           <input value={form.artist ?? ''} onChange={(e) => set('artist', e.target.value)} maxLength={120} style={inputStyle} />
         </label>
         <label style={labelStyle}>
-          Album
+          <FieldHead text="Album" tip={TIPS.album} />
           <input value={form.album ?? ''} onChange={(e) => set('album', e.target.value)} maxLength={120} style={inputStyle} />
         </label>
         <label style={labelStyle}>
-          URL
+          <FieldHead text="URL" tip={TIPS.url} />
           <input
             value={form.url ?? ''}
             onChange={(e) => set('url', e.target.value)}
@@ -256,7 +298,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           />
         </label>
         <label style={fullLabelStyle}>
-          Note longue
+          <FieldHead text="Note longue" tip={TIPS.note} />
           <textarea
             value={form.note ?? ''}
             onChange={(e) => set('note', e.target.value)}
@@ -271,7 +313,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
       <h3 style={h3Style}>Visualisation split-flap</h3>
       <div style={gridStyle}>
         <label style={labelStyle}>
-          Moteur split-flap
+          <FieldHead text="Moteur split-flap" tip={TIPS.engine} />
           <select
             value={visual.splitFlapEngine ?? 'internal'}
             onChange={(e) => setVis('splitFlapEngine', e.target.value as VisualEngine)}
@@ -283,10 +325,9 @@ export function RadioMessageForm({ performerPassword }: Props) {
               </option>
             ))}
           </select>
-          <span style={helpStyle}>{ENGINE_HELP[visual.splitFlapEngine ?? 'internal']}</span>
         </label>
         <label style={labelStyle}>
-          Preset visuel
+          <FieldHead text="Preset visuel" tip={TIPS.preset} />
           <select
             value={visual.preset ?? 'pirate-industrial'}
             onChange={(e) => setVis('preset', e.target.value as VisualPreset)}
@@ -298,10 +339,9 @@ export function RadioMessageForm({ performerPassword }: Props) {
               </option>
             ))}
           </select>
-          <span style={helpStyle}>{PRESET_HELP[visual.preset ?? 'pirate-industrial']}</span>
         </label>
         <label style={labelStyle}>
-          Transition (moteur internal)
+          <FieldHead text="Transition (moteur internal)" tip={TIPS.transition} />
           <select
             value={visual.transition ?? 'flip'}
             onChange={(e) => setVis('transition', e.target.value as VisualTransition)}
@@ -313,10 +353,9 @@ export function RadioMessageForm({ performerPassword }: Props) {
               </option>
             ))}
           </select>
-          <span style={helpStyle}>{TRANSITION_HELP[visual.transition ?? 'flip']}</span>
         </label>
         <label style={labelStyle}>
-          Mode de note
+          <FieldHead text="Mode de note" tip={TIPS.noteMode} />
           <select
             value={visual.noteMode ?? 'paged'}
             onChange={(e) => setVis('noteMode', e.target.value as VisualNoteMode)}
@@ -328,10 +367,9 @@ export function RadioMessageForm({ performerPassword }: Props) {
               </option>
             ))}
           </select>
-          <span style={helpStyle}>{NOTE_MODE_HELP[visual.noteMode ?? 'paged']}</span>
         </label>
         <label style={labelStyle}>
-          Page duration (ms)
+          <FieldHead text="Page duration (ms)" tip={TIPS.pageDuration} />
           <input
             type="number"
             min={2000}
@@ -342,7 +380,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           />
         </label>
         <label style={labelStyle}>
-          Stagger delay (ms)
+          <FieldHead text="Stagger delay (ms)" tip={TIPS.staggerDelay} />
           <input
             type="number"
             min={0}
@@ -353,7 +391,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           />
         </label>
         <label style={fullLabelStyle}>
-          Scramble colors (hex séparés par virgule)
+          <FieldHead text="Scramble colors (hex séparés par virgule)" tip={TIPS.scrambleColors} />
           <input
             value={scrambleColorsText}
             onChange={(e) => setScrambleColorsText(e.target.value)}
@@ -362,7 +400,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           />
         </label>
         <label style={fullLabelStyle}>
-          Accent colors (hex séparés par virgule)
+          <FieldHead text="Accent colors (hex séparés par virgule)" tip={TIPS.accentColors} />
           <input
             value={accentColorsText}
             onChange={(e) => setAccentColorsText(e.target.value)}
@@ -383,7 +421,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           <h4 style={h4Style}>Déroulement de la note</h4>
           <div style={gridStyle}>
             <label style={labelStyle}>
-              Vitesse de défilement (ms) — {visual.noteScrollSpeedMs ?? 180} ms
+              <FieldHead text={`Vitesse de défilement (ms) — ${visual.noteScrollSpeedMs ?? 180} ms`} tip={TIPS.noteScrollSpeed} />
               <input
                 type="range"
                 min={100}
@@ -395,7 +433,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
               />
             </label>
             <label style={labelStyle}>
-              Pas (caractères/tick) — {visual.noteScrollStep ?? 1}
+              <FieldHead text={`Pas (caractères/tick) — ${visual.noteScrollStep ?? 1}`} tip={TIPS.noteScrollStep} />
               <input
                 type="range"
                 min={1}
@@ -413,6 +451,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
                 onChange={(e) => setVis('noteScrollLoop', e.target.checked)}
               />
               Boucle continue (sinon s’arrête en fin de note)
+              <HelpTooltip text={TIPS.noteScrollLoop} label="Boucle continue" />
             </label>
           </div>
         </>
@@ -422,7 +461,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
       <h3 style={h3Style}>Bandeau roulant</h3>
       <div style={gridStyle}>
         <label style={fullLabelStyle}>
-          Texte du bandeau
+          <FieldHead text="Texte du bandeau" tip={TIPS.tickerText} />
           <input
             value={form.ticker ?? ''}
             onChange={(e) => set('ticker', e.target.value)}
@@ -430,7 +469,6 @@ export function RadioMessageForm({ performerPassword }: Props) {
             placeholder="RADIO BLACKHOLE · LIVE FROM PANTIN · NEXT SESSION SOON"
             style={inputStyle}
           />
-          <span style={helpStyle}>Ce texte apparaît dans le bandeau roulant en bas de la page publique.</span>
         </label>
         <label style={checkLabelStyle}>
           <input
@@ -439,9 +477,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
             onChange={(e) => setVis('tickerEnabled', e.target.checked)}
           />
           Activer le bandeau
+          <HelpTooltip text={TIPS.tickerEnabled} label="Activer le bandeau" />
         </label>
         <label style={labelStyle}>
-          Vitesse du bandeau (ms) — {visual.tickerSpeedMs ?? 22000} ms
+          <FieldHead text={`Vitesse du bandeau (ms) — ${visual.tickerSpeedMs ?? 22000} ms`} tip={TIPS.tickerSpeed} />
           <input
             type="range"
             min={5000}
@@ -453,7 +492,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           />
         </label>
         <label style={labelStyle}>
-          Sens du défilement
+          <FieldHead text="Sens du défilement" tip={TIPS.tickerDirection} />
           <select
             value={visual.tickerDirection ?? 'left'}
             onChange={(e) => setVis('tickerDirection', e.target.value as TickerDirection)}
@@ -467,7 +506,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           </select>
         </label>
         <label style={labelStyle}>
-          Séparateur (max 12)
+          <FieldHead text="Séparateur (max 12)" tip={TIPS.tickerSeparator} />
           <input
             value={visual.tickerSeparator ?? ' · '}
             onChange={(e) => setVis('tickerSeparator', e.target.value)}
@@ -483,13 +522,13 @@ export function RadioMessageForm({ performerPassword }: Props) {
 
         <h4 style={h4Style}>Tailles du panneau</h4>
         <div style={gridStyle}>
-          {scaleField('titleScale', 'Titre', 50, 200)}
-          {scaleField('secondaryScale', 'Secondaire', 50, 200)}
-          {scaleField('noteScale', 'Note', 50, 200)}
-          {scaleField('tickerScale', 'Ticker', 50, 200)}
-          {scaleField('boardScale', 'Panneau (base)', 70, 130)}
+          {scaleField('titleScale', 'Titre', 50, 200, TIPS.titleScale)}
+          {scaleField('secondaryScale', 'Secondaire', 50, 200, TIPS.secondaryScale)}
+          {scaleField('noteScale', 'Note', 50, 200, TIPS.noteScale)}
+          {scaleField('tickerScale', 'Ticker', 50, 200, TIPS.tickerScale)}
+          {scaleField('boardScale', 'Panneau (base)', 70, 130, TIPS.boardScale)}
           <label style={labelStyle}>
-            Titre — lignes (1–3)
+            <FieldHead text="Titre — lignes (1–3)" tip={TIPS.titleRows} />
             <input
               type="number"
               min={1}
@@ -500,7 +539,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
             />
           </label>
           <label style={labelStyle}>
-            Secondaire — lignes (0 = caché, 1–2)
+            <FieldHead text="Secondaire — lignes (0 = caché, 1–2)" tip={TIPS.secondaryRows} />
             <input
               type="number"
               min={0}
@@ -520,7 +559,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
         <h4 style={h4Style}>HotFX natif</h4>
         <div style={gridStyle}>
           <label style={labelStyle}>
-            Duration HotFX (ms/clapet)
+            <FieldHead text="Duration HotFX (ms/clapet)" tip={TIPS.hotfxDuration} />
             <input
               type="number"
               min={30}
@@ -531,7 +570,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
             />
           </label>
           <label style={labelStyle}>
-            Gap grille HotFX (px)
+            <FieldHead text="Gap grille HotFX (px)" tip={TIPS.hotfxGridGap} />
             <input
               type="number"
               min={0}
@@ -542,24 +581,20 @@ export function RadioMessageForm({ performerPassword }: Props) {
             />
           </label>
           <label style={fullLabelStyle}>
-            Alphabet HotFX (max 120 ; espace initial significatif)
+            <FieldHead text="Alphabet HotFX (max 120 ; espace initial significatif)" tip={TIPS.hotfxCharacters} />
             <input
               value={visual.hotfxCharacters ?? ''}
               onChange={(e) => setVis('hotfxCharacters', e.target.value)}
               maxLength={120}
               style={inputStyle}
             />
-            <span style={helpStyle}>
-              Pour afficher les accents avec HotFX, les caractères doivent être présents dans
-              l'alphabet HotFX (les accents français courants sont inclus par défaut).
-            </span>
           </label>
         </div>
 
         <h4 style={h4Style}>Hauteur des zones (HotFX)</h4>
         <div style={gridStyle}>
           <label style={labelStyle}>
-            Mode hauteur
+            <FieldHead text="Mode hauteur" tip={TIPS.hotfxHeightMode} />
             <select
               value={visual.hotfxHeightMode ?? 'auto'}
               onChange={(e) => setVis('hotfxHeightMode', e.target.value as HotfxHeightMode)}
@@ -573,7 +608,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
             </select>
           </label>
           <label style={labelStyle}>
-            Note lignes min (1–8)
+            <FieldHead text="Note lignes min (1–8)" tip={TIPS.noteRows} />
             <input
               type="number"
               min={1}
@@ -584,7 +619,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
             />
           </label>
           <label style={labelStyle}>
-            Note lignes max (1–12)
+            <FieldHead text="Note lignes max (1–12)" tip={TIPS.noteRows} />
             <input
               type="number"
               min={1}
@@ -605,9 +640,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
               onChange={(e) => setVis('flicker', e.target.checked)}
             />
             Flicker
+            <HelpTooltip text={TIPS.flicker} label="Flicker" />
           </label>
           <label style={labelStyle}>
-            Flicker intensity (0–100)
+            <FieldHead text="Flicker intensity (0–100)" tip={TIPS.flickerIntensity} />
             <input
               type="number"
               min={0}
@@ -624,9 +660,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
               onChange={(e) => setVis('edgeGlow', e.target.checked)}
             />
             Edge glow
+            <HelpTooltip text={TIPS.edgeGlow} label="Edge glow" />
           </label>
           <label style={labelStyle}>
-            Edge glow intensity (0–100)
+            <FieldHead text="Edge glow intensity (0–100)" tip={TIPS.edgeGlowIntensity} />
             <input
               type="number"
               min={0}
@@ -637,7 +674,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
             />
           </label>
           <label style={labelStyle}>
-            Tile contrast (0–100)
+            <FieldHead text="Tile contrast (0–100)" tip={TIPS.tileContrast} />
             <input
               type="number"
               min={0}
@@ -654,9 +691,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
               onChange={(e) => setVis('panelNoise', e.target.checked)}
             />
             Panel noise
+            <HelpTooltip text={TIPS.panelNoise} label="Panel noise" />
           </label>
           <label style={labelStyle}>
-            Panel density
+            <FieldHead text="Panel density" tip={TIPS.panelDensity} />
             <select
               value={visual.panelDensity ?? 'normal'}
               onChange={(e) => setVis('panelDensity', e.target.value as PanelDensity)}
@@ -670,7 +708,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
             </select>
           </label>
           <label style={labelStyle}>
-            Tile radius (0–8)
+            <FieldHead text="Tile radius (0–8)" tip={TIPS.tileRadius} />
             <input
               type="number"
               min={0}
@@ -681,7 +719,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
             />
           </label>
           <label style={labelStyle}>
-            Tile border width (1–4)
+            <FieldHead text="Tile border width (1–4)" tip={TIPS.tileBorderWidth} />
             <input
               type="number"
               min={1}
@@ -757,7 +795,7 @@ const checkLabelStyle: CSSProperties = {
 }
 const inputStyle: CSSProperties = { padding: '6px 8px', fontSize: 14, fontWeight: 400 }
 const textareaStyle: CSSProperties = { ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }
-const helpStyle: CSSProperties = { color: '#6b7280', fontSize: 12, fontWeight: 400, marginTop: 4 }
+const headStyle: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6 }
 const rowStyle: CSSProperties = { display: 'flex', gap: 8, marginTop: 8 }
 const okStyle: CSSProperties = { color: 'green', marginTop: 8 }
 const errorStyle: CSSProperties = { color: 'crimson', marginTop: 8 }
