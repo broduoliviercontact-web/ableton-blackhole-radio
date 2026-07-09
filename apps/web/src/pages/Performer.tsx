@@ -8,6 +8,7 @@ import { useLiveKitBroadcast } from '../hooks/useLiveKitBroadcast'
 import { AudioDeviceSelect } from '../components/AudioDeviceSelect'
 import { AudioMeter } from '../components/AudioMeter'
 import { ConfigCheckButton } from '../components/ConfigCheckButton'
+import { RadioMessageForm } from '../components/RadioMessageForm'
 import { getOrCreateIdentity } from '../utils/identity'
 
 type Permission = 'idle' | 'requesting' | 'granted' | 'denied' | 'unsupported'
@@ -230,6 +231,8 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
           {!capturing && <p style={mutedStyle}>Démarrez la capture locale avant le broadcast.</p>}
         </section>
       )}
+
+      <RadioMessageForm performerPassword={performerPassword} />
 
       <section style={sectionStyle}>
         <h2 style={h2Style}>Diagnostic</h2>

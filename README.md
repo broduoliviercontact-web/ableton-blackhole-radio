@@ -30,6 +30,9 @@ Le projet est déployé en production :
 - Tokens LiveKit signés côté backend — le secret ne quitte jamais le serveur
 - **Diffusion protégée par mot de passe** : seuls les performers authentifiés
   obtiennent un token `canPublish`. Les listeners restent publics.
+- **Messages radio** : le performer publie un message (titre, artiste/album,
+  note, ticker) affiché sur la page publique ; les listeners récupèrent le
+  message courant par polling.
 
 ## Flux audio
 
@@ -123,6 +126,19 @@ npm run selfcheck:server   # grants token
 
 Le déploiement (Vercel + Render + LiveKit Cloud) est documenté dans
 [`apps/docs/deploy.md`](apps/docs/deploy.md).
+
+## Messages radio
+
+Le performer publie un message radio (titre principal, sous-titre, artiste,
+album, note longue, ticker, URL) depuis `/performer` → `POST /api/broadcast-message`
+(protégé par `PERFORMER_PASSWORD`). La page publique `/` récupère le message
+courant via `GET /api/broadcast-message` (polling 5 s) et l'affiche en 4 zones
+(titre, métadonnées, note, ticker). Le message par défaut s'affiche tant
+qu'aucun message n'est publié.
+
+> MVP : le message est stocké **en mémoire** côté serveur — il est perdu au
+> redémarrage de Render. Split-flap animé prévu au LOT 4 (HTML/CSS simple
+> pour l'instant).
 
 ## Sécurité
 

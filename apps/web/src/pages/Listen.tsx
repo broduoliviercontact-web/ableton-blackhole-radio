@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useLiveKitListen } from '../hooks/useLiveKitListen'
+import { useBroadcastMessage } from '../hooks/useBroadcastMessage'
 import { ConfigCheckButton } from '../components/ConfigCheckButton'
 import { ListenerVolume } from '../components/ListenerVolume'
+import { BroadcastMessagePanel } from '../components/BroadcastMessagePanel'
 import { getOrCreateIdentity } from '../utils/identity'
 
 const ROOM_NAME = 'main'
@@ -27,6 +29,7 @@ export function Listen() {
     setListenerVolume,
     toggleMute,
   } = useLiveKitListen(ROOM_NAME, myIdentity, audioHostRef)
+  const { display: broadcast } = useBroadcastMessage()
 
   const connected = phase === 'connecting' || phase === 'connected' || phase === 'listening'
   const showReconnect = lost && phase === 'disconnected' && !reconnecting
@@ -36,6 +39,8 @@ export function Listen() {
     <main style={mainStyle}>
       <h1>Listener</h1>
       <p>Receive live audio stream</p>
+
+      <BroadcastMessagePanel message={broadcast} />
 
       <div style={rowStyle}>
         {!connected && !lost && (

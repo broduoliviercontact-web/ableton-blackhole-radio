@@ -4,6 +4,7 @@ import { TokenVerifier } from 'livekit-server-sdk'
 import { createToken } from './livekit.js'
 import { config } from './config.js'
 import { checkPerformerAccess, parseAllowedPasswords } from './performerAuth.js'
+import { getBroadcastMessage, parseBroadcastMessage, setBroadcastMessage } from './broadcastMessage.js'
 
 function assert(cond: boolean, label: string): void {
   if (!cond) {
@@ -49,6 +50,32 @@ async function main(): Promise<void> {
 
   console.log('✅ token grants OK (performer publish+subscribe, listener subscribe-only)')
   console.log(`✅ performer password OK (multi-passwords, refus 401/503, accepté si dans la liste ; configuré=${allowed.length > 0})`)
+
+  // Broadcast message : parsing + updatedAt serveur + store mémoire round-trip.
+  const msg = parseBroadcastMessage({ type: 'track', mainTitle: 'Song', subtitle: '', url: '' })
+  assert(msg.mainTitle === 'Song' && msg.type === 'track', 'message parsé')
+  assert(msg.subtitle === undefined && msg.url === undefined, 'champs vides → undefined')
+  assert(typeof msg.updatedAt === 'string' && msg.updatedAt.length > 0, 'updatedAt généré serveur')
+  const m2 = parseBroadcastMessage({ type: 'show', mainTitle: 'Show', displayMode: 'scroll', url: 'https://x.com' })
+  assert(m2.displayMode === 'scroll' && m2.url === 'https://x.com', 'displayMode + url valides')
+  let threw = false
+  try {
+    parseBroadcastMessage({ type: 'track', mainTitle: '' })
+  } catch {
+    threw = true
+  }
+  assert(threw, 'mainTitle vide → erreur')
+  let badUrl = false
+  try {
+    parseBroadcastMessage({ type: 'track', mainTitle: 'x', url: 'ftp://x' })
+  } catch {
+    badUrl = true
+  }
+  assert(badUrl, 'url non-http refusée')
+  setBroadcastMessage(msg)
+  assert(getBroadcastMessage()?.mainTitle === 'Song', 'store round-trip')
+  setBroadcastMessage(null)
+  console.log('✅ broadcast message OK (parse, updatedAt serveur, store mémoire)')
 }
 
 main().catch((e) => {

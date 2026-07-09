@@ -45,6 +45,15 @@ Le serveur écoute `process.env.PORT` (fourni automatiquement par Render).
 > (aucun mot de passe requis). Aucun mot de passe n’est jamais exposé côté frontend
 > ni retourné par `/api/config-check` (booléen `performerPasswordConfigured` uniquement).
 
+### Messages radio
+
+`POST /api/broadcast-message` est protégé par `PERFORMER_PASSWORD` et met à jour
+le message courant affiché sur la page publique. `GET /api/broadcast-message` est
+public (polling 5 s côté listener).
+
+> MVP : le message est stocké **en mémoire** côté serveur — il est **perdu au
+> redémarrage** de Render. Plus tard : Supabase / Redis / LiveKit room metadata.
+
 ## Frontend — Vercel
 
 Importer le repo dans Vercel.
