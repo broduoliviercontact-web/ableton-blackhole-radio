@@ -1,11 +1,12 @@
 import type { BroadcastMessage } from '../../api/broadcastMessage'
 
-// Dimensions du panneau (colonnes/lignes). Ponytail: fixes, pas de responsive
-// dynamique — la CSS adapte juste la taille des tuiles.
+// Dimensions du panneau : grille UNIFORME 32 colonnes (toutes les zones ont la
+// même largeur → colonnes alignées = vrai panneau continu). Ponytail: fixes,
+// la CSS adapte juste la taille des tuiles.
 export const SPLIT_FLAP_TITLE_COLS = 32
-export const SPLIT_FLAP_SECONDARY_COLS = 40
-export const SPLIT_FLAP_NOTE_COLS = 40
-export const SPLIT_FLAP_NOTE_ROWS = 3
+export const SPLIT_FLAP_SECONDARY_COLS = 32
+export const SPLIT_FLAP_NOTE_COLS = 32
+export const SPLIT_FLAP_NOTE_ROWS = 4
 export const SPLIT_FLAP_PAGE_DURATION_MS = 6000
 
 const FALLBACK_TITLE = 'RADIO BLACKHOLE'

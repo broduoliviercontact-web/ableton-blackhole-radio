@@ -12,7 +12,7 @@ export function SplitFlapLine({ line }: Props) {
   return (
     <div className="sf-line">
       {line.split('').map((char, i) => (
-        <SplitFlapTile key={i} char={char} blank={char === ' '} delay={Math.min(i, 30) * 6} />
+        <SplitFlapTile key={i} char={char} blank={char === ' '} delay={Math.min(i, 40) * 12} />
       ))}
     </div>
   )

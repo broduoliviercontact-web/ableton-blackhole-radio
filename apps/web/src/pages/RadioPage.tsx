@@ -39,6 +39,9 @@ export function RadioPage() {
   const { display: broadcast } = useBroadcastMessage()
 
   const board = formatBroadcastMessage(broadcast)
+  // messageKey change à chaque message publié (updatedAt serveur) → force le
+  // reflip intégral même si le texte est identique. '' pour le message défaut.
+  const messageKey = broadcast.updatedAt || 'default'
 
   // Pagination de la note : cycle de page toutes les 6 s. Si une seule page,
   // l'index reste 0 (pas de timer inutile). ponytail: reset quand le message
@@ -76,13 +79,14 @@ export function RadioPage() {
       </header>
 
       {/* Un seul cadre continu : les 4 zones split-flap vivent dedans. Les
-          régions sont keyées par leur contenu / page → au changement, React
-          remonte les tuiles et rejoue le flip (titre au nouveau message, note
-          à chaque page). */}
+          régions sont keyées par messageKey (updatedAt) / pageKey → à tout
+          changement, React remonte les tuiles et rejoue le flip intégral, même
+          si une lettre reste identique (titre au nouveau message, note à chaque
+          page). */}
       <div className="sf-cabinet">
-        <SplitFlapDisplay key={`title:${board.title}`} lines={[board.title]} variant="title" />
-        <SplitFlapDisplay key={`secondary:${board.secondary}`} lines={[board.secondary]} variant="secondary" />
-        <SplitFlapDisplay key={`note:${notePage}`} lines={notePages[notePage] ?? notePages[0]} variant="note" />
+        <SplitFlapDisplay key={`title:${messageKey}`} lines={[board.title]} variant="title" />
+        <SplitFlapDisplay key={`secondary:${messageKey}`} lines={[board.secondary]} variant="secondary" />
+        <SplitFlapDisplay key={`note:${messageKey}:${notePage}`} lines={notePages[notePage] ?? notePages[0]} variant="note" />
         <RadioTicker text={board.ticker} />
 
         <div className="sf-controls">
