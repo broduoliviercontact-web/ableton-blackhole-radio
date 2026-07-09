@@ -49,12 +49,14 @@ export function RadioPage() {
     needGesture,
     listenerVolume,
     muted,
+    trimMinus30Db,
     listenLive,
     stopListening,
     reconnect,
     startAudio,
     setListenerVolume,
     toggleMute,
+    toggleTrimMinus30Db,
   } = useLiveKitListen(ROOM_NAME, myIdentity, audioHostRef)
   const { display: broadcast } = useBroadcastMessage()
 
@@ -221,8 +223,10 @@ export function RadioPage() {
                 <ListenerVolume
                   volume={listenerVolume}
                   muted={muted}
+                  trimMinus30Db={trimMinus30Db}
                   onVolumeChange={setListenerVolume}
                   onToggleMute={toggleMute}
+                  onToggleTrimMinus30Db={toggleTrimMinus30Db}
                 />
               </div>
             )}

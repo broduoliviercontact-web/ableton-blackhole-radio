@@ -111,4 +111,13 @@ assert(wStep[0] === 'CDEF', 'scroll offset 2 → CDEF')
 const noloop = computeScrollLines('ABC', 0, 5, 1, false)
 assert(noloop[0] === 'ABC  ' && noloop[0].length === 5, 'scroll non-loop court → paddé à width')
 
-console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered, ticker+scroll)')
+// Trim PAD -30 dB (getEffectiveVolume) : dB → gain, exemples de la spec.
+const { getEffectiveVolume, DB_TRIM_GAIN } = await import('./src/audio/listenerVolume')
+assert(Math.abs(DB_TRIM_GAIN - 0.0316227766) < 1e-9, 'DB_TRIM_GAIN ≈ 0.0316')
+assert(getEffectiveVolume(100, false) === 1, '100% trim off → 1.0')
+assert(Math.abs(getEffectiveVolume(100, true) - DB_TRIM_GAIN) < 1e-9, '100% trim on → 0.0316')
+assert(Math.abs(getEffectiveVolume(50, true) - DB_TRIM_GAIN / 2) < 1e-9, '50% trim on → 0.0158')
+assert(getEffectiveVolume(0, true) === 0 && getEffectiveVolume(0, false) === 0, '0% → 0 dans tous les cas')
+assert(getEffectiveVolume(150, false) === 1 && getEffectiveVolume(-20, true) === 0, 'borne 0–100 (pas de boost)')
+
+console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered, ticker+scroll, trim -30 dB)')

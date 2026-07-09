@@ -3,6 +3,7 @@ import type { RefObject } from 'react'
 import { Room, RoomEvent, isAudioTrack } from 'livekit-client'
 import type { RemoteAudioTrack, RemoteTrack } from 'livekit-client'
 import { connectToRoom } from '../livekit/livekitClient'
+import { getEffectiveVolume } from '../audio/listenerVolume'
 
 export type ListenPhase = 'disconnected' | 'connecting' | 'connected' | 'listening' | 'error'
 
@@ -16,12 +17,14 @@ interface UseLiveKitListenResult {
   needGesture: boolean
   listenerVolume: number
   muted: boolean
+  trimMinus30Db: boolean
   listenLive: () => Promise<void>
   stopListening: () => void
   reconnect: () => Promise<void>
   startAudio: () => Promise<void>
   setListenerVolume: (volumePercent: number) => void
   toggleMute: () => void
+  toggleTrimMinus30Db: () => void
 }
 
 const MAX_ATTEMPTS = 3
@@ -51,6 +54,8 @@ export function useLiveKitListen(
   // lise la valeur courante sans re-création ; state pour l'UI.
   const listenerVolumeRef = useRef(100)
   const preMuteRef = useRef(100)
+  // Trim PAD -30 dB : ref (lu par attachTrack sans re-création) + state (UI).
+  const trimMinus30DbRef = useRef(false)
 
   const [phase, setPhase] = useState<ListenPhase>('disconnected')
   const [error, setError] = useState<string | null>(null)
@@ -59,6 +64,7 @@ export function useLiveKitListen(
   const [needGesture, setNeedGesture] = useState(false)
   const [listenerVolume, setListenerVolumeState] = useState(100)
   const [muted, setMuted] = useState(false)
+  const [trimMinus30Db, setTrimMinus30Db] = useState(false)
 
   const clearRetry = useCallback(() => {
     if (retryTimer.current != null) {
@@ -75,7 +81,8 @@ export function useLiveKitListen(
       const el = track.attach() // crée un <audio> et y branche le MediaStream
       el.autoplay = true
       el.controls = false
-      el.volume = listenerVolumeRef.current / 100 // volume listener courant
+      // volume effectif (mute + trim -30 dB) — ref lue sans re-création du callback.
+      el.volume = getEffectiveVolume(listenerVolumeRef.current, trimMinus30DbRef.current)
       audioHostRef.current?.appendChild(el)
       audioEls.current.set(track, el)
       setPhase('listening')
@@ -236,7 +243,9 @@ export function useLiveKitListen(
     const clamped = Math.max(0, Math.min(100, Math.round(volumePercent)))
     listenerVolumeRef.current = clamped
     setListenerVolumeState(clamped)
-    for (const el of audioEls.current.values()) el.volume = clamped / 100
+    // Volume effectif : intègre le trim -30 dB (mute = 0 ici car clamped=0).
+    const eff = getEffectiveVolume(clamped, trimMinus30DbRef.current)
+    for (const el of audioEls.current.values()) el.volume = eff
     if (clamped > 0 && muted) setMuted(false)
   }, [muted])
 
@@ -250,6 +259,18 @@ export function useLiveKitListen(
       setListenerVolume(preMuteRef.current || 100)
     }
   }, [muted, setListenerVolume])
+
+  // Trim PAD -30 dB (double-clic haut-parleur) : indépendant du mute. Bascule le
+  // gain et réapplique le volume effectif à tous les <audio> existants. Les
+  // futurs audio elements (reconnect/stop+listen) lisent trimMinus30DbRef dans
+  // attachTrack → le trim reste appliqué pendant la session.
+  const toggleTrimMinus30Db = useCallback(() => {
+    const next = !trimMinus30DbRef.current
+    trimMinus30DbRef.current = next
+    setTrimMinus30Db(next)
+    const eff = getEffectiveVolume(listenerVolumeRef.current, next)
+    for (const el of audioEls.current.values()) el.volume = eff
+  }, [])
 
   // Nettoie le timer + la room au démontage (US-4.1) — pas de retry orphelin.
   useEffect(() => {
@@ -276,11 +297,13 @@ export function useLiveKitListen(
     needGesture,
     listenerVolume,
     muted,
+    trimMinus30Db,
     listenLive,
     stopListening,
     reconnect,
     startAudio,
     setListenerVolume,
     toggleMute,
+    toggleTrimMinus30Db,
   }
 }
