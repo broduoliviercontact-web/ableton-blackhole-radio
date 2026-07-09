@@ -4,6 +4,7 @@ import { config } from './config.js'
 import { healthRouter } from './routes/health.js'
 import { tokenRouter } from './routes/token.js'
 import { configRouter } from './routes/config.js'
+import { authRouter } from './routes/auth.js'
 
 const app = express()
 app.use(express.json())
@@ -16,6 +17,7 @@ app.use(cors({ origin: allowedOrigins }))
 app.use('/api', healthRouter)
 app.use('/api', tokenRouter)
 app.use('/api', configRouter)
+app.use('/api', authRouter)
 
 app.listen(config.PORT, () => {
   console.log(`▶ serveur sur http://localhost:${config.PORT}`)
