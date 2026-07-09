@@ -1,4 +1,4 @@
-/* Split-flap display — inspiré de flipoff, porté en React/CSS. */
+/* Split-flap board — panneau type tableau d'aéroport. React + CSS, zéro dépendance. */
 
 .sf-page {
   background: #07090d;
@@ -8,84 +8,68 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  padding: 16px;
-  gap: 14px;
+  padding: 14px;
+  gap: 10px;
   text-align: left;
 }
 
+/* Bandeau haut du panneau */
 .sf-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: var(--mono);
   font-size: 13px;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   color: #9ca3af;
   text-transform: uppercase;
+  padding: 0 4px;
 }
+.sf-brand { font-weight: 700; color: #f5d76b; }
+.sf-status { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.sf-dot { width: 9px; height: 9px; border-radius: 50%; background: #3a3f4b; }
+.sf-dot.live { background: #ef4444; box-shadow: 0 0 8px #ef4444; animation: sf-pulse 1.6s ease-in-out infinite; }
+.sf-dot.connecting { background: #f59e0b; }
+@keyframes sf-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
-.sf-brand {
-  font-weight: 700;
-  color: #f5d76b;
-}
-
-.sf-status {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.sf-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #444;
-}
-.sf-dot.live {
-  background: #ef4444;
-  box-shadow: 0 0 8px #ef4444;
-  animation: sf-pulse 1.6s ease-in-out infinite;
-}
-.sf-dot.connecting {
-  background: #f59e0b;
-}
-@keyframes sf-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
-}
-
-.sf-board {
+/* Le grand tableau : un seul cadre continu, toutes les zones à l'intérieur. */
+.sf-cabinet {
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  flex: 1 1 auto;
-  justify-content: center;
+  gap: 6px;
+  background: linear-gradient(#0c0e14, #0a0c12);
+  border: 1px solid #1f222b;
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 30px rgba(0, 0, 0, 0.5);
+  min-height: 0;
 }
 
-.sf-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  justify-content: center;
-}
+/* Une zone = bloc de lignes de tuiles. */
+.sf-region { display: flex; flex-direction: column; gap: 4px; }
+.sf-region--note { flex: 1 1 auto; justify-content: center; }
+.sf-region--ticker { margin-top: auto; }
 
+/* Ligne de tuiles */
+.sf-line { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; }
+
+/* Tuile + flip 3D */
 .sf-tile {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(#15171f, #0c0e14);
-  border: 1px solid #23262f;
+  background: linear-gradient(#161821, #0c0e14);
+  border: 1px solid #262932;
   border-bottom-width: 2px;
   border-radius: 3px;
   color: #efe9d6;
   font-family: var(--mono);
   line-height: 1;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  /* La fente centrale du clapet : */
   position: relative;
   overflow: hidden;
+  perspective: 240px;
 }
+/* Fente centrale du clapet */
 .sf-tile::after {
   content: '';
   position: absolute;
@@ -94,94 +78,88 @@
   top: 50%;
   height: 1px;
   background: rgba(0, 0, 0, 0.6);
+  z-index: 2;
 }
-.sf-tile--blank {
-  color: #2a2d36;
-}
+.sf-tile--blank { color: #2a2d36; }
 
-/* Flip au changement : l'élément interne est remonté (key=char) et joue
-   l'animation une fois. ponytail: flip simplifié, pas mécaniquement parfait. */
-.sf-tile__inner {
-  display: inline-flex;
+/* Le clapet : faces avant (ancien) / arrière (nouveau), rotateX 180°. */
+.sf-flipper {
+  position: relative;
   width: 100%;
   height: 100%;
+  transform-style: preserve-3d;
+}
+.sf-flipper--flip { animation: sf-flip 0.42s ease-in-out forwards; }
+@keyframes sf-flip {
+  0% { transform: rotateX(0); }
+  100% { transform: rotateX(-180deg); }
+}
+.sf-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  animation: sf-flip 0.22s ease-out;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
-@keyframes sf-flip {
-  0% { transform: rotateX(-85deg); opacity: 0.15; }
-  60% { opacity: 0.9; }
-  100% { transform: rotateX(0); opacity: 1; }
-}
+.sf-face--back { transform: rotateX(180deg); }
 
-.sf-title .sf-tile { font-size: 30px; height: 46px; width: 26px; }
-.sf-secondary .sf-tile { font-size: 17px; height: 30px; width: 17px; }
-.sf-note .sf-tile { font-size: 19px; height: 34px; width: 20px; }
+/* Tailles des tuiles par zone */
+.sf-region--title .sf-tile { font-size: 34px; height: 52px; width: 30px; }
+.sf-region--secondary .sf-tile { font-size: 18px; height: 32px; width: 18px; }
+.sf-region--note .sf-tile { font-size: 22px; height: 40px; width: 24px; }
 
-@media (max-width: 720px) {
-  .sf-title .sf-tile { font-size: 20px; height: 34px; width: 20px; }
-  .sf-secondary .sf-tile { font-size: 13px; height: 24px; width: 14px; }
-  .sf-note .sf-tile { font-size: 14px; height: 26px; width: 16px; }
+@media (max-width: 760px) {
+  .sf-region--title .sf-tile { font-size: 21px; height: 36px; width: 20px; }
+  .sf-region--secondary .sf-tile { font-size: 13px; height: 24px; width: 14px; }
+  .sf-region--note .sf-tile { font-size: 15px; height: 28px; width: 17px; }
 }
 
-/* Audio zone compacte */
-.sf-audio {
+/* Bandeau contrôles audio intégré au panneau */
+.sf-controls {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  font-family: var(--mono);
   font-size: 13px;
   color: #9ca3af;
+  padding-top: 8px;
+  border-top: 1px solid #1a1d25;
 }
-.sf-audio button {
+.sf-controls button {
   font-family: var(--mono);
   font-size: 13px;
   padding: 6px 12px;
-  background: #15171f;
+  background: #14161e;
   color: #efe9d6;
   border: 1px solid #2a2d36;
   border-radius: 4px;
   cursor: pointer;
   letter-spacing: 1px;
 }
-.sf-audio button:disabled { opacity: 0.4; cursor: default; }
-.sf-vol { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 160px; }
-.sf-vol input[type='range'] { flex: 1; }
+.sf-controls button:disabled { opacity: 0.4; cursor: default; }
+.sf-vol { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 180px; }
+.sf-vol input[type='range'] { flex: 1; accent-color: #f5d76b; }
 
-/* Ticker bas : défilement CSS, dupliqué pour boucle continue. */
+/* Ticker bas = zone D, intégré au tableau */
 .sf-ticker {
   overflow: hidden;
   white-space: nowrap;
-  border-top: 1px solid #1f222b;
-  padding: 8px 0;
-  font-family: var(--mono);
-  font-size: 14px;
-  letter-spacing: 2px;
+  border-top: 1px solid #1a1d25;
+  padding: 8px 0 2px;
+  font-size: 15px;
+  letter-spacing: 3px;
   color: #f5d76b;
 }
-.sf-ticker__track {
-  display: inline-block;
-  padding-left: 100%;
-  animation: sf-scroll 22s linear infinite;
-}
-@keyframes sf-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
-}
+.sf-ticker__track { display: inline-block; padding-left: 100%; animation: sf-scroll 22s linear infinite; }
+@keyframes sf-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-.sf-footer {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 1px;
-  color: #4b5563;
-  text-align: center;
-}
+.sf-footer { font-size: 11px; letter-spacing: 1px; color: #4b5563; text-align: center; padding-top: 2px; }
 
-/* Respecte prefers-reduced-motion : on coupe flip + scroll + pulse. */
+/* reduced motion : on fige le clapet sur la face arrière (nouveau caractère). */
 @media (prefers-reduced-motion: reduce) {
-  .sf-tile__inner { animation: none; }
+  .sf-flipper--flip { animation: none; transform: rotateX(-180deg); }
   .sf-ticker__track { animation: none; padding-left: 0; }
   .sf-dot.live { animation: none; }
 }

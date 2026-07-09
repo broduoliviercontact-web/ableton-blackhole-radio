@@ -75,41 +75,48 @@ export function RadioPage() {
         </span>
       </header>
 
-      <SplitFlapDisplay lines={[board.title]} variant="title" />
-      <SplitFlapDisplay lines={[board.secondary]} variant="secondary" />
-      <SplitFlapDisplay lines={notePages[notePage] ?? notePages[0]} variant="note" />
+      {/* Un seul cadre continu : les 4 zones split-flap vivent dedans. Les
+          régions sont keyées par leur contenu / page → au changement, React
+          remonte les tuiles et rejoue le flip (titre au nouveau message, note
+          à chaque page). */}
+      <div className="sf-cabinet">
+        <SplitFlapDisplay key={`title:${board.title}`} lines={[board.title]} variant="title" />
+        <SplitFlapDisplay key={`secondary:${board.secondary}`} lines={[board.secondary]} variant="secondary" />
+        <SplitFlapDisplay key={`note:${notePage}`} lines={notePages[notePage] ?? notePages[0]} variant="note" />
+        <RadioTicker text={board.ticker} />
 
-      <div className="sf-audio">
-        {!connected && !lost && (
-          <button type="button" onClick={() => void listenLive()}>
-            ▶ LISTEN LIVE
-          </button>
-        )}
-        {connected && (
-          <button type="button" onClick={stopListening}>
-            ■ STOP
-          </button>
-        )}
-        {showReconnect && (
-          <button type="button" onClick={() => void reconnect()}>
-            ↻ RECONNECT
-          </button>
-        )}
-        {needGesture && connected && (
-          <button type="button" onClick={() => void startAudio()}>
-            AUTORISER L'AUDIO
-          </button>
-        )}
-        {connected && (
-          <div className="sf-vol">
-            <ListenerVolume
-              volume={listenerVolume}
-              muted={muted}
-              onVolumeChange={setListenerVolume}
-              onToggleMute={toggleMute}
-            />
-          </div>
-        )}
+        <div className="sf-controls">
+          {!connected && !lost && (
+            <button type="button" onClick={() => void listenLive()}>
+              ▶ LISTEN LIVE
+            </button>
+          )}
+          {connected && (
+            <button type="button" onClick={stopListening}>
+              ■ STOP
+            </button>
+          )}
+          {showReconnect && (
+            <button type="button" onClick={() => void reconnect()}>
+              ↻ RECONNECT
+            </button>
+          )}
+          {needGesture && connected && (
+            <button type="button" onClick={() => void startAudio()}>
+              AUTORISER L'AUDIO
+            </button>
+          )}
+          {connected && (
+            <div className="sf-vol">
+              <ListenerVolume
+                volume={listenerVolume}
+                muted={muted}
+                onVolumeChange={setListenerVolume}
+                onToggleMute={toggleMute}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {lost && phase === 'disconnected' && (
@@ -121,7 +128,6 @@ export function RadioPage() {
         <p style={{ color: '#ef4444', fontFamily: 'var(--mono)', fontSize: 12 }}>❌ {error}</p>
       )}
 
-      <RadioTicker text={board.ticker} />
       <p className="sf-footer">RADIO BLACKHOLE · LIVE WEB AUDIO · WEBRTC</p>
 
       {/* Conteneur invisible pour les <audio> distants. */}

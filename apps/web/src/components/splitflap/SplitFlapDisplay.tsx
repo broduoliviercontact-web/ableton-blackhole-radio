@@ -13,7 +13,7 @@ interface Props {
  */
 export function SplitFlapDisplay({ lines, variant }: Props) {
   return (
-    <div className={`sf-board sf-${variant}`}>
+    <div className={`sf-region sf-region--${variant}`}>
       {lines.map((line, i) => (
         <SplitFlapLine key={i} line={line} />
       ))}

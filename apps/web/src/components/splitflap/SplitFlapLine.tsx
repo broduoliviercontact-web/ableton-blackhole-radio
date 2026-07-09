@@ -5,15 +5,14 @@ interface Props {
 }
 
 /**
- * Une ligne de tuiles. Reçoit une string déjà paddée (espaces de fin =
- * tuiles vides). Chaque tuile est `key`é par sa position (la ligne est
- * stable ; seul le contenu d'une tuile flip au changement).
+ * Une ligne de tuiles. Reçoit une string déjà paddée (espaces = tuiles vides).
+ * `delay` par colonne → cascade du flip gauche→droite (effet vague mécanique).
  */
 export function SplitFlapLine({ line }: Props) {
   return (
     <div className="sf-line">
       {line.split('').map((char, i) => (
-        <SplitFlapTile key={i} char={char} blank={char === ' '} />
+        <SplitFlapTile key={i} char={char} blank={char === ' '} delay={Math.min(i, 30) * 6} />
       ))}
     </div>
   )
