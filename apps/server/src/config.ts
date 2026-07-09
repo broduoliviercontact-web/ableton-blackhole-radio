@@ -9,9 +9,11 @@ const envSchema = z.object({
   // Origine du frontend en production (CORS). Optionnel : absent en dev.
   WEB_ORIGIN: z.string().url().optional(),
   // Mot de passe protégeant la génération des tokens performer (canPublish).
-  // Requis en production : si absent, /api/token renvoie 503 pour les performers.
+  // Requis en production : si aucun mot de passe configuré, /api/token renvoie 503.
   // Jamais exposé au frontend, jamais loggé.
   PERFORMER_PASSWORD: z.string().optional(),
+  // Optionnel : plusieurs mots de passe séparés par virgule (en plus du unique).
+  PERFORMER_PASSWORDS: z.string().optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)

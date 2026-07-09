@@ -3,7 +3,7 @@
 import { TokenVerifier } from 'livekit-server-sdk'
 import { createToken } from './livekit.js'
 import { config } from './config.js'
-import { checkPerformerAccess } from './performerAuth.js'
+import { checkPerformerAccess, parseAllowedPasswords } from './performerAuth.js'
 
 function assert(cond: boolean, label: string): void {
   if (!cond) {
@@ -28,17 +28,27 @@ async function main(): Promise<void> {
   assert(l.video?.canPublish === false, 'listener canPublish false')
   assert(l.video?.canSubscribe === true, 'listener canSubscribe')
 
-  // Mot de passe performer : accepté si correct, refusé sinon, 503 si non configuré.
-  assert(checkPerformerAccess('secret', 'secret').ok === true, 'performer password correct accepté')
-  const wrong = checkPerformerAccess('secret', 'other')
-  assert(wrong.ok === false && wrong.status === 401, 'performer password incorrect → 401')
-  const missing = checkPerformerAccess(undefined, 'secret')
-  assert(missing.ok === false && missing.status === 401, 'performer password absent → 401')
-  const unconfigured = checkPerformerAccess('secret', undefined)
-  assert(unconfigured.ok === false && unconfigured.status === 503, 'serveur non configuré → 503')
+  // Mot de passe performer : accepté si présent dans la liste autorisée, refusé sinon,
+  // 503 si aucun configuré. Liste = PERFORMER_PASSWORD + PERFORMER_PASSWORDS (split/trim/filtre-vides).
+  const allowed = parseAllowedPasswords(config.PERFORMER_PASSWORD, config.PERFORMER_PASSWORDS)
+
+  // Accepté via PERFORMER_PASSWORD (unique).
+  assert(checkPerformerAccess('main', parseAllowedPasswords('main', undefined)).ok === true, 'unique password accepté')
+  // Accepté via un élément de PERFORMER_PASSWORDS.
+  assert(checkPerformerAccess('guest', parseAllowedPasswords('main', 'guest,test')).ok === true, 'liste : guest accepté')
+  assert(checkPerformerAccess('backup', parseAllowedPasswords('main', 'guest, test , backup')).ok === true, 'liste : backup (avec espaces) accepté')
+  // Refusé : mauvais mot de passe.
+  const wrong = checkPerformerAccess('nope', parseAllowedPasswords('main', 'guest,test'))
+  assert(wrong.ok === false && wrong.status === 401, 'mauvais password → 401')
+  // Refusé : absent.
+  const missing = checkPerformerAccess(undefined, parseAllowedPasswords('main', 'guest'))
+  assert(missing.ok === false && missing.status === 401, 'password absent → 401')
+  // 503 : aucun configuré (valeurs vides ignorées).
+  const unconfigured = checkPerformerAccess('x', parseAllowedPasswords(undefined, ' , ,, '))
+  assert(unconfigured.ok === false && unconfigured.status === 503, 'aucun password configuré → 503')
 
   console.log('✅ token grants OK (performer publish+subscribe, listener subscribe-only)')
-  console.log(`✅ performer password OK (refus 401/503, accepté si correct ; configuré=${Boolean(config.PERFORMER_PASSWORD)})`)
+  console.log(`✅ performer password OK (multi-passwords, refus 401/503, accepté si dans la liste ; configuré=${allowed.length > 0})`)
 }
 
 main().catch((e) => {

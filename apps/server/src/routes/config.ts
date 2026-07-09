@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { config } from '../config.js'
+import { parseAllowedPasswords } from '../performerAuth.js'
 
 // Heuristique "URL factice" : les placeholders .env.example utilisent example.com.
 function looksFake(url: string): boolean {
@@ -19,7 +20,8 @@ configRouter.get('/config-check', (_req, res) => {
   const livekitKeyConfigured = Boolean(config.LIVEKIT_API_KEY)
   const livekitSecretConfigured = Boolean(config.LIVEKIT_API_SECRET)
   const livekitUrlLooksFake = looksFake(config.LIVEKIT_URL)
-  const performerPasswordConfigured = Boolean(config.PERFORMER_PASSWORD)
+  const performerPasswordConfigured =
+    parseAllowedPasswords(config.PERFORMER_PASSWORD, config.PERFORMER_PASSWORDS).length > 0
   const ok =
     livekitUrlConfigured && livekitKeyConfigured && livekitSecretConfigured && !livekitUrlLooksFake
   res.json({

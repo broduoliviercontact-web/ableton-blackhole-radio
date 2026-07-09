@@ -34,13 +34,16 @@ Le serveur écoute `process.env.PORT` (fourni automatiquement par Render).
 | `PORT` | fourni par Render — ne pas définir manuellement |
 | `WEB_ORIGIN` | `https://ton-frontend.vercel.app` (à renseigner **après** le déploiement Vercel) |
 | `PERFORMER_PASSWORD` | mot de passe protégeant les tokens performer (`canPublish`) — requis en production |
+| `PERFORMER_PASSWORDS` | optionnel : plusieurs mots de passe séparés par virgule (en plus du unique) |
 
 > `LIVEKIT_API_SECRET` reste côté Render uniquement. Le frontend ne le reçoit jamais.
 >
-> `PERFORMER_PASSWORD` protège la génération des tokens LiveKit avec `canPublish` :
-> un performer doit le saisir pour démarrer un broadcast. Si la variable est absente,
+> `PERFORMER_PASSWORD` (et optionnellement `PERFORMER_PASSWORDS`, séparés par virgule)
+> protège la génération des tokens LiveKit avec `canPublish` : un performer doit saisir
+> l’un des mots de passe pour démarrer un broadcast. Si aucun n’est configuré,
 > `/api/token` renvoie `503` pour les performers. **Les listeners restent publics**
-> (aucun mot de passe requis).
+> (aucun mot de passe requis). Aucun mot de passe n’est jamais exposé côté frontend
+> ni retourné par `/api/config-check` (booléen `performerPasswordConfigured` uniquement).
 
 ## Frontend — Vercel
 
