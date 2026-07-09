@@ -2,16 +2,26 @@ import { useEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import { AudioMotionAnalyzer } from 'audiomotion-analyzer'
 import type { ListenerAudioAnalyser } from '../../audio/listenerAnalysis'
+import { logFraction } from './analysisUtils'
 
 interface Props {
   analyser: ListenerAudioAnalyser
   active: boolean
 }
 
+const FMIN = 20
+const FMAX = 20000
+const MARKERS = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+
+function fmtFreq(f: number): string {
+  return f >= 1000 ? `${f / 1000}k` : `${f}`
+}
+
 /**
- * Spectrum analyzer via audioMotion-analyzer. Partage notre AudioContext et
- * utilise le mainAnalyser comme source (aucun nouveau graphe audible :
- * connectSpeakers false). Recréé quand l'écoute (re)devient active.
+ * Spectrum analyzer via audioMotion-analyzer. Échelle logarithmique 20 Hz →
+ * 20 kHz (frequencyScale 'log'). Partage notre AudioContext + mainAnalyser
+ * (connectSpeakers false → aucun graphe audible). Repères fréquence log
+ * dessinés en overlay (onCanvasDraw) : 20/50/100/200/500/1k/2k/5k/10k/20k.
  */
 export function SpectrumAnalyzer({ analyser, active }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -28,18 +38,19 @@ export function SpectrumAnalyzer({ analyser, active }: Props) {
       source,
       connectSpeakers: false,
       frequencyScale: 'log',
-      minFreq: 20,
-      maxFreq: 20000,
+      minFreq: FMIN,
+      maxFreq: FMAX,
       minDecibels: -90,
       maxDecibels: -20,
       fftSize: 2048,
       smoothing: 0.8,
-      showScaleX: true,
+      showScaleX: false, // échelle log dessinée en overlay (repères exacts).
       showScaleY: false,
       bgAlpha: 0,
       fillAlpha: 0,
       showBgColor: false,
       peakHoldTime: 200,
+      onCanvasDraw: drawLogScale,
     })
     am.registerGradient('radio-amber', {
       bgColor: '#0b0d12',
@@ -68,7 +79,31 @@ export function SpectrumAnalyzer({ analyser, active }: Props) {
   )
 }
 
-const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6 }
+// Overlay : grille + labels fréquence log, tracé après le rendu audioMotion.
+function drawLogScale(am: AudioMotionAnalyzer): void {
+  const ctx = am.canvasCtx
+  const w = am.canvas.width
+  const h = am.canvas.height
+  const labelH = 16
+  ctx.save()
+  ctx.strokeStyle = 'rgba(35,38,47,0.9)'
+  ctx.fillStyle = '#5b6473'
+  ctx.font = '10px ui-monospace, Consolas, monospace'
+  ctx.lineWidth = 1
+  for (const f of MARKERS) {
+    const x = Math.round(logFraction(f, FMIN, FMAX) * w)
+    ctx.beginPath()
+    ctx.moveTo(x, 0)
+    ctx.lineTo(x, h - labelH)
+    ctx.stroke()
+    const label = fmtFreq(f)
+    const tw = ctx.measureText(label).width
+    ctx.fillText(label, Math.min(w - tw, Math.max(0, x + 2)), h - 4)
+  }
+  ctx.restore()
+}
+
+const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4 }
 const head: CSSProperties = { display: 'flex', justifyContent: 'space-between', fontSize: 11, letterSpacing: 1, color: '#9ca3af', textTransform: 'uppercase' }
 const sub: CSSProperties = { color: '#6b7280' }
-const canvasStyle: CSSProperties = { width: '100%', height: 160, background: '#0b0d12', border: '1px solid #23262f' }
+const canvasStyle: CSSProperties = { width: '100%', height: 320, background: '#0b0d12', border: '1px solid #23262f' }

@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import type { ListenerAudioAnalyser } from '../../audio/listenerAnalysis'
 import { timeLevel } from './analysisUtils'
 import { useRafLoop } from './useRafLoop'
+import { useCanvasResolution } from './useCanvasResolution'
 
 interface Props {
   analyser: ListenerAudioAnalyser
@@ -19,6 +20,7 @@ const dbToPos = (db: number): number => Math.max(0, Math.min(1, (db - MIN_DB) / 
  */
 export function VuMeter({ analyser, active, maxFps }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  useCanvasResolution(canvasRef)
   const dispL = useRef(0)
   const dispR = useRef(0)
   const peakL = useRef(0)
@@ -99,7 +101,7 @@ function draw(canvas: HTMLCanvasElement, l: number, r: number, pl: number, pr: n
   ctx.fillText('R', w / 2 + 6, h - 1)
 }
 
-const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6 }
+const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4 }
 const head: CSSProperties = { display: 'flex', justifyContent: 'space-between', fontSize: 11, letterSpacing: 1, color: '#9ca3af', textTransform: 'uppercase' }
 const sub: CSSProperties = { color: '#6b7280' }
-const canvasStyle: CSSProperties = { width: '100%', height: 120, background: '#0b0d12', border: '1px solid #23262f', display: 'block' }
+const canvasStyle: CSSProperties = { width: '100%', height: 220, background: '#0b0d12', border: '1px solid #23262f', display: 'block' }

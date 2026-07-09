@@ -146,7 +146,7 @@ for (const c of accents) {
 }
 
 // Audio monitor helpers (analysisUtils purs) : RMS/dBFS, bandes, centroid, corrélation.
-const { timeLevel, dbLabel, freqBands, spectralCentroid, correlation } = await import(
+const { timeLevel, dbLabel, freqBands, spectralCentroid, correlation, logFraction, logRowBinRange, spectrogramRowValue } = await import(
   './src/components/audio-monitor/analysisUtils'
 )
 const silence = timeLevel(new Float32Array(1024))
@@ -167,5 +167,24 @@ assert(Math.abs(sc - ((4 * sr) / fft)) < 1, `spectralCentroid ≈ freq(bin4) = $
 const sigL = new Float32Array([0.1, 0.2, 0.3, 0.4])
 assert(Math.abs(correlation(sigL, sigL) - 1) < 1e-6, 'correlation identique → 1')
 assert(Math.abs(correlation(sigL, new Float32Array([-0.1, -0.2, -0.3, -0.4])) + 1) < 1e-6, 'correlation opposé → -1')
+
+// Spectrogram log remapping : logFraction + logRowBinRange + spectrogramRowValue.
+assert(Math.abs(logFraction(20, 20, 20000)) < 1e-9, 'logFraction fmin → 0')
+assert(Math.abs(logFraction(20000, 20, 20000) - 1) < 1e-9, 'logFraction fmax → 1')
+assert(Math.abs(logFraction(200, 20, 20000) - 1 / 3) < 1e-6, 'logFraction 200 Hz → 1/3 (décade du milieu)')
+// 48 kHz / fftSize 2048 → binWidth 23.4 Hz, binCount 1024. fmin 20, fmax 20000.
+const srMon = 48000
+const fftMon = 2048
+// Ligne du bas (y=h-1) → bande ~[20 Hz, ~20.9 Hz] → bin 0..1 (1-2 bins).
+const bot = logRowBinRange(199, 200, 20, 20000, srMon, fftMon)
+assert(bot.lo === 0 && bot.hi <= 1, `ligne basse → bins 0..${bot.hi} (basses = peu de bins)`)
+// Ligne du haut (y=0) → bande ~[18974 Hz, 20000 Hz] → plusieurs bins.
+const topRow = logRowBinRange(0, 200, 20, 20000, srMon, fftMon)
+assert(topRow.hi - topRow.lo >= 2, `ligne haute → >=3 bins (aigus agrégés), got ${topRow.lo}..${topRow.hi}`)
+// spectrogramRowValue agrège (max) : un pic isolé dans la bande ressort.
+const freqMon = new Uint8Array(fftMon / 2)
+freqMon[topRow.lo + 1] = 250
+assert(spectrogramRowValue(freqMon, 0, 200, 20, 20000, srMon, fftMon) === 250, 'spectrogramRowValue agrège le max de la bande')
+assert(spectrogramRowValue(freqMon, 199, 200, 20, 20000, srMon, fftMon) === 0, 'spectrogramRowValue bande vide → 0')
 
 console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered, ticker+scroll, trim -30 dB, accents HotFX, audio monitor)')

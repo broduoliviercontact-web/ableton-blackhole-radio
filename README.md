@@ -215,9 +215,12 @@ visualisations temps réel du flux LiveKit entendu par le listener :
   lente), peak hold court, -60 → 0 dB.
 - **Peak / dB** (maison) — peak L/R, RMS L/R, master approx + label d'ambiance
   (SILENCE / NORMAL / FORT / PROCHE CLIP / CLIP).
-- **Spectrum** — `audiomotion-analyzer` (log 20 Hz → 20 kHz, gradient radio-amber,
+- **Spectrum** — `audiomotion-analyzer` (échelle log 20 Hz → 20 kHz, gradient
+  radio-amber, repères 20/50/100/200/500/1k/2k/5k/10k/20k en overlay,
   `connectSpeakers: false`).
-- **Spectrogram** (maison, canvas) — waterfall, bas = graves, FPS ≤ 24.
+- **Spectrogram** (maison, canvas) — waterfall, axe Y **logarithmique** (vrai
+  remapping des bins FFT par ligne, agrégation max → basses plus larges, aigus
+  compressés), repères fréquence log à gauche, FPS ≤ 24.
 - **Stereo / vectorscope** (maison) — x = L−R, y = L+R, corrélation L/R
   (MONO / STEREO / PHASE RISK).
 - **Spectral** (maison) — bandes Bass / Lo-mid / Hi-mid / Air, centroid spectral,

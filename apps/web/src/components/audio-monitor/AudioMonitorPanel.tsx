@@ -90,21 +90,21 @@ export function AudioMonitorPanel({ analyser, active, defaultOpen = false }: Pro
 }
 
 const panel: CSSProperties = {
-  marginTop: 12,
-  padding: 10,
+  marginTop: 10,
+  padding: 8,
   background: '#0e1117',
   border: '1px solid #23262f',
   borderRadius: 4,
   fontFamily: 'var(--mono, ui-monospace, Consolas, monospace)',
 }
-const headerRow: CSSProperties = { display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }
+const headerRow: CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }
 const title: CSSProperties = { fontSize: 13, fontWeight: 700, letterSpacing: 2, color: '#f5d76b' }
 const statusRow: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#9ca3af', letterSpacing: 1, textTransform: 'uppercase' }
 const dotLive: CSSProperties = { width: 8, height: 8, borderRadius: '50%', background: '#f5d76b', display: 'inline-block' }
 const dotIdle: CSSProperties = { width: 8, height: 8, borderRadius: '50%', background: '#3a3f4b', display: 'inline-block' }
 const toggleBtn: CSSProperties = { marginLeft: 'auto', padding: '4px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #2a2f3a', background: '#15181f', color: '#9ca3af' }
-const tabs: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 10 }
+const tabs: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }
 const tabStyle: CSSProperties = { padding: '4px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #2a2f3a', background: '#15181f', color: '#6b7280' }
 const tabActive: CSSProperties = { ...tabStyle, border: '1px solid var(--accent, #aa3bff)', background: 'var(--accent, #aa3bff)', color: '#0e1117' }
-const stage: CSSProperties = { marginTop: 8 }
-const note: CSSProperties = { margin: '8px 0 0', fontSize: 10, color: '#5b6473' }
+const stage: CSSProperties = { marginTop: 6 }
+const note: CSSProperties = { margin: '6px 0 0', fontSize: 10, color: '#5b6473' }

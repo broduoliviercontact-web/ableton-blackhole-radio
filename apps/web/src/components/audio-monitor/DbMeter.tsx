@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import type { ListenerAudioAnalyser } from '../../audio/listenerAnalysis'
 import { timeLevel, dbLabel } from './analysisUtils'
 import { useRafLoop } from './useRafLoop'
+import { useCanvasResolution } from './useCanvasResolution'
 
 interface Props {
   analyser: ListenerAudioAnalyser
@@ -19,6 +20,7 @@ const dbToPos = (db: number): number => Math.max(0, Math.min(1, (db - MIN_DB) / 
  */
 export function DbMeter({ analyser, active, maxFps }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  useCanvasResolution(canvasRef)
   const stateRef = useRef({ pl: 0, pr: 0, rl: 0, rr: 0, ml: 'SILENCE', mlDb: -Infinity })
 
   useRafLoop(active, maxFps, () => {
@@ -76,27 +78,31 @@ function draw(canvas: HTMLCanvasElement, s: { pl: number; pr: number; rl: number
   ctx.clearRect(0, 0, w, h)
   ctx.fillStyle = '#0b0d12'
   ctx.fillRect(0, 0, w, h)
-  const row = (y: number, val: number, color: string): void => {
+  const rows = [
+    { v: s.rl, color: '#d8b32a', label: 'RMS L' },
+    { v: s.rr, color: '#d8b32a', label: 'RMS R' },
+    { v: s.pl, color: '#d9822a', label: 'PK L' },
+    { v: s.pr, color: '#d9822a', label: 'PK R' },
+  ]
+  const top = 18
+  const bottom = 12
+  const span = h - top - bottom
+  const barH = Math.max(10, span / rows.length - 10)
+  ctx.font = '10px ui-monospace, monospace'
+  rows.forEach((row, i) => {
+    const y = top + (i * span) / rows.length
+    ctx.fillStyle = '#5b6473'
+    ctx.fillText(row.label, 8, y - 2)
     ctx.fillStyle = '#1a1d24'
-    ctx.fillRect(8, y, w - 16, 8)
-    ctx.fillStyle = color
-    ctx.fillRect(8, y, (w - 16) * val, 8)
-  }
-  row(10, s.rl, '#d8b32a')
-  row(24, s.rr, '#d8b32a')
-  row(42, s.pl, '#d9822a')
-  row(56, s.pr, '#d9822a')
-  ctx.fillStyle = '#5b6473'
-  ctx.font = '9px ui-monospace, monospace'
-  ctx.fillText('RMS L', 8, 9)
-  ctx.fillText('RMS R', 8, 23)
-  ctx.fillText('PK L', 8, 41)
-  ctx.fillText('PK R', 8, 55)
+    ctx.fillRect(8, y, w - 16, barH)
+    ctx.fillStyle = row.color
+    ctx.fillRect(8, y, (w - 16) * row.v, barH)
+  })
 }
 
-const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6 }
+const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4 }
 const head: CSSProperties = { display: 'flex', justifyContent: 'space-between', fontSize: 11, letterSpacing: 1, color: '#9ca3af', textTransform: 'uppercase' }
 const accent: CSSProperties = { color: '#f5d76b', fontWeight: 700 }
-const canvasStyle: CSSProperties = { width: '100%', height: 70, background: '#0b0d12', border: '1px solid #23262f', display: 'block' }
+const canvasStyle: CSSProperties = { width: '100%', height: 220, background: '#0b0d12', border: '1px solid #23262f', display: 'block' }
 const grid: CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, fontSize: 11, color: '#9ca3af', fontFamily: 'ui-monospace, monospace' }
 const cell: CSSProperties = { display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #23262f', padding: '2px 0' }

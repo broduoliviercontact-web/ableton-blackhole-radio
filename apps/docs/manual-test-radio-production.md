@@ -127,9 +127,11 @@ LUFS broadcast). Panneau repliable sous le split-flap, rAF stoppé tant que ferm
 - [ ] Onglet **dB** : peak L/R, RMS L/R, master approx + label
       (SILENCE / NORMAL / FORT / PROCHE CLIP / CLIP).
 - [ ] Onglet **Spectrum** : spectre log 20 Hz → 20 kHz (audioMotion-analyzer),
-      gradient radio-amber. Fond sombre transparent.
-- [ ] Onglet **Spectrogram** : waterfall (canvas), bas = graves, haut = aigus.
-      Se clear au reset / reconnect.
+      gradient radio-amber, repères 20/50/100/200/500/1k/2k/5k/10k/20k en bas.
+      Fond sombre transparent.
+- [ ] Onglet **Spectrogram** : waterfall (canvas), axe Y **logarithmique** (basses
+      prennent plus de place, aigus compressés — remapping vrai des bins FFT,
+      pas un étirement), repères fréquence log à gauche. Se clear au reset / reconnect.
 - [ ] Onglet **Stereo** : vectorscope (x = L−R, y = L+R), label MONO / STEREO /
       PHASE RISK + corrélation −1..1.
 - [ ] Onglet **Spectral** : 4 bandes (Bass / Lo-mid / Hi-mid / Air), centroid Hz,

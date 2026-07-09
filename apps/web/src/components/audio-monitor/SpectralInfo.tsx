@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import type { ListenerAudioAnalyser } from '../../audio/listenerAnalysis'
 import { freqBands, spectralCentroid, timeLevel } from './analysisUtils'
 import { useRafLoop } from './useRafLoop'
+import { useCanvasResolution } from './useCanvasResolution'
 
 interface Props {
   analyser: ListenerAudioAnalyser
@@ -23,6 +24,7 @@ const BANDS: Array<{ key: 'bass' | 'lowMid' | 'midHigh' | 'air'; label: string; 
  */
 export function SpectralInfo({ analyser, active, maxFps }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  useCanvasResolution(canvasRef)
   const textRef = useRef<HTMLDivElement>(null)
 
   useRafLoop(active, maxFps, () => {
@@ -85,13 +87,13 @@ function draw(canvas: HTMLCanvasElement, b: { bass: number; lowMid: number; midH
     ctx.fillStyle = band.color
     ctx.fillRect(x, h - 6 - bh, bw, bh)
     ctx.fillStyle = '#5b6473'
-    ctx.font = '8px ui-monospace, monospace'
-    ctx.fillText(band.label, x, h - 1)
+    ctx.font = '10px ui-monospace, monospace'
+    ctx.fillText(band.label, x, h - 3)
   })
 }
 
-const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6 }
+const wrap: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4 }
 const head: CSSProperties = { display: 'flex', justifyContent: 'space-between', fontSize: 11, letterSpacing: 1, color: '#9ca3af', textTransform: 'uppercase' }
 const sub: CSSProperties = { color: '#6b7280' }
-const canvasStyle: CSSProperties = { width: '100%', height: 96, background: '#0b0d12', border: '1px solid #23262f', display: 'block' }
+const canvasStyle: CSSProperties = { width: '100%', height: 220, background: '#0b0d12', border: '1px solid #23262f', display: 'block' }
 const foot: CSSProperties = { fontSize: 11, color: '#9ca3af', fontFamily: 'ui-monospace, monospace' }
