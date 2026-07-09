@@ -1,13 +1,11 @@
+import { API_BASE } from './base'
+
 export type Role = 'performer' | 'listener'
 
 export interface TokenResponse {
   token: string
   url: string
 }
-
-// En dev, Vite proxy /api -> http://localhost:3001 (vite.config.ts).
-// En prod, définir VITE_API_BASE (ex: https://api.example.com).
-const API_BASE = import.meta.env.VITE_API_BASE ?? ''
 
 export async function fetchToken(args: {
   roomName: string

@@ -1,5 +1,7 @@
 // Diagnostic config LiveKit — booléens uniquement, jamais de secret.
 
+import { API_BASE } from './base'
+
 export interface ConfigCheckResult {
   ok: boolean
   livekitUrlConfigured: boolean
@@ -10,8 +12,6 @@ export interface ConfigCheckResult {
 
 export const FAKE_CONFIG_HINT =
   'LiveKit semble configuré avec des valeurs factices. Renseigne un vrai LIVEKIT_URL / KEY / SECRET dans .env puis relance le serveur.'
-
-const API_BASE = import.meta.env.VITE_API_BASE ?? ''
 
 export function looksFakeUrl(url: string): boolean {
   try {
