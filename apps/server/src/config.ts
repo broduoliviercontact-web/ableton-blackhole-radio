@@ -8,6 +8,10 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3001),
   // Origine du frontend en production (CORS). Optionnel : absent en dev.
   WEB_ORIGIN: z.string().url().optional(),
+  // Mot de passe protégeant la génération des tokens performer (canPublish).
+  // Requis en production : si absent, /api/token renvoie 503 pour les performers.
+  // Jamais exposé au frontend, jamais loggé.
+  PERFORMER_PASSWORD: z.string().optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)

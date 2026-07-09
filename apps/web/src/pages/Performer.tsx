@@ -33,6 +33,7 @@ export function Performer() {
   const { postFaderStream } = broadcast
   const [myIdentity] = useState(() => getOrCreateIdentity('performer'))
   const [masterVolume, setMasterVolume] = useState(100) // US-5 : fader master (défaut 100 %)
+  const [performerPassword, setPerformerPassword] = useState('') // vérifié côté serveur, jamais persisté
 
   const capturing = capture.status === 'capturing'
 
@@ -74,10 +75,15 @@ export function Performer() {
   const [tokenStatus, setTokenStatus] = useState('')
   const [tokenOk, setTokenOk] = useState<boolean | null>(null)
   async function testToken() {
+    if (!performerPassword) {
+      setTokenStatus('Saisis d’abord le mot de passe Performer (section Broadcast LiveKit) pour tester le token.')
+      setTokenOk(null)
+      return
+    }
     setTokenStatus('…')
     setTokenOk(null)
     try {
-      const r = await fetchToken({ roomName: 'main', identity: 'performer-test', role: 'performer' })
+      const r = await fetchToken({ roomName: 'main', identity: 'performer-test', role: 'performer', performerPassword })
       setTokenStatus(`✅ token reçu — url: ${r.url} (${r.token.length} chars)`)
       setTokenOk(true)
     } catch (e) {
@@ -87,7 +93,9 @@ export function Performer() {
   }
 
   const canStartBroadcast =
-    capturing && (broadcast.status === 'disconnected' || broadcast.status === 'error')
+    capturing &&
+    performerPassword.length > 0 &&
+    (broadcast.status === 'disconnected' || broadcast.status === 'error')
   const canStopBroadcast =
     broadcast.status === 'connecting' ||
     broadcast.status === 'connected' ||
@@ -193,10 +201,30 @@ export function Performer() {
               </p>
             </div>
           )}
+          {capturing && (
+            <div style={{ marginBottom: 12 }}>
+              <label style={labelStyle} htmlFor="performer-password">
+                Mot de passe Performer
+              </label>
+              <input
+                id="performer-password"
+                type="password"
+                value={performerPassword}
+                onChange={(e) => setPerformerPassword(e.target.value)}
+                placeholder="Requis pour diffuser"
+                autoComplete="current-password"
+                style={rangeStyle}
+              />
+              <p style={tipStyle}>
+                Requis pour démarrer le broadcast. Vérifié côté serveur — les listeners restent
+                publics.
+              </p>
+            </div>
+          )}
           <div style={rowStyle}>
             <button
               type="button"
-              onClick={() => void broadcast.start(myIdentity, masterVolume)}
+              onClick={() => void broadcast.start(myIdentity, masterVolume, performerPassword)}
               disabled={!canStartBroadcast}
             >
               Start broadcast

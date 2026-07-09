@@ -17,7 +17,7 @@ interface UseLiveKitBroadcastResult {
   identity: string
   publicationName: string | null
   postFaderStream: MediaStream | null
-  start: (identity: string, masterVolume: number) => Promise<void>
+  start: (identity: string, masterVolume: number, performerPassword?: string) => Promise<void>
   stop: () => Promise<void>
   setMasterVolume: (volumePercent: number) => void
 }
@@ -127,7 +127,7 @@ export function useLiveKitBroadcast(localStream: MediaStream | null): UseLiveKit
   }, [cleanupRoom, cleanupPipeline])
 
   const start = useCallback(
-    async (identity: string, masterVolume: number) => {
+    async (identity: string, masterVolume: number, performerPassword?: string) => {
       if (startingRef.current) return // anti double-clic (US-2.4)
       if (!localStream) {
         setError('Aucune capture locale active. Démarrez la capture d’abord.')
@@ -164,7 +164,7 @@ export function useLiveKitBroadcast(localStream: MediaStream | null): UseLiveKit
         destTrackRef.current = processedTrack
         setPostFaderStream(dest.stream) // VU-mètre post-fader (US-5)
 
-        const res = await connectToRoom({ role: 'performer', identity, roomName: 'main' })
+        const res = await connectToRoom({ role: 'performer', identity, roomName: 'main', performerPassword })
         roomRef.current = res.room
         setRoomName(res.roomName)
         setIdentity(res.identity)

@@ -19,12 +19,15 @@ configRouter.get('/config-check', (_req, res) => {
   const livekitKeyConfigured = Boolean(config.LIVEKIT_API_KEY)
   const livekitSecretConfigured = Boolean(config.LIVEKIT_API_SECRET)
   const livekitUrlLooksFake = looksFake(config.LIVEKIT_URL)
-  const ok = livekitUrlConfigured && livekitKeyConfigured && livekitSecretConfigured && !livekitUrlLooksFake
+  const performerPasswordConfigured = Boolean(config.PERFORMER_PASSWORD)
+  const ok =
+    livekitUrlConfigured && livekitKeyConfigured && livekitSecretConfigured && !livekitUrlLooksFake
   res.json({
     ok,
     livekitUrlConfigured,
     livekitKeyConfigured,
     livekitSecretConfigured,
     livekitUrlLooksFake,
+    performerPasswordConfigured,
   })
 })

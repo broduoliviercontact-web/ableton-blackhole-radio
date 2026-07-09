@@ -11,6 +11,8 @@ export async function fetchToken(args: {
   roomName: string
   identity: string
   role: Role
+  // Requis pour role: "performer" (vérifié côté serveur). Ignéré pour les listeners.
+  performerPassword?: string
 }): Promise<TokenResponse> {
   const res = await fetch(`${API_BASE}/api/token`, {
     method: 'POST',

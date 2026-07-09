@@ -1,11 +1,15 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import { config } from '../config.js'
 import { createToken } from '../livekit.js'
+import { checkPerformerAccess } from '../performerAuth.js'
 
 const bodySchema = z.object({
   roomName: z.string().min(1),
   identity: z.string().min(1),
   role: z.enum(['performer', 'listener']),
+  // Requis pour role: "performer" (vérifié côté serveur). Ignéré pour les listeners.
+  performerPassword: z.string().optional(),
 })
 
 export const tokenRouter = Router()
@@ -17,6 +21,18 @@ tokenRouter.post('/token', async (req, res) => {
       .status(400)
       .json({ error: 'body invalide', details: parsed.error.issues.map((i) => i.message).join('; ') })
     return
+  }
+
+  const { role } = parsed.data
+
+  // Le mot de passe protège seulement les tokens performer (canPublish).
+  // Les listeners restent publics.
+  if (role === 'performer') {
+    const access = checkPerformerAccess(parsed.data.performerPassword, config.PERFORMER_PASSWORD)
+    if (!access.ok) {
+      res.status(access.status).json({ error: access.error })
+      return
+    }
   }
 
   try {

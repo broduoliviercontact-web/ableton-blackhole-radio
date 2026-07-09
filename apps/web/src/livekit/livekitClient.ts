@@ -6,6 +6,8 @@ export interface ConnectArgs {
   role: Role
   identity: string
   roomName: string
+  // Requis pour role: "performer". Ignéré pour les listeners.
+  performerPassword?: string
 }
 
 export interface ConnectResult {
@@ -24,11 +26,11 @@ function describe(e: unknown): string {
  * Le serveur ne transporte pas l'audio : on ne fait que signer le token et
  * ouvrir la room WebRTC.
  */
-export async function connectToRoom({ role, identity, roomName }: ConnectArgs): Promise<ConnectResult> {
+export async function connectToRoom({ role, identity, roomName, performerPassword }: ConnectArgs): Promise<ConnectResult> {
   let url: string
   let token: string
   try {
-    const r = await fetchToken({ roomName, identity, role })
+    const r = await fetchToken({ roomName, identity, role, performerPassword })
     url = r.url
     token = r.token
   } catch (e) {
