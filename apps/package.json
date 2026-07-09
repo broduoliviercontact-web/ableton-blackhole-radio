@@ -1,0 +1,35 @@
+{
+  "dependencies": {
+    "@livekit/components-react": "^2.9.21",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "livekit-client": "^2.20.1",
+    "livekit-server-sdk": "^2.17.0",
+    "zod": "^4.4.3"
+  },
+  "name": "apps",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:server": "tsx watch server/src/index.ts",
+    "dev:web": "npm --prefix web run dev",
+    "dev": "npm run dev:server & npm run dev:web",
+    "selfcheck:server": "tsx server/src/selfcheck.ts",
+    "selfcheck:web": "tsx web/selfcheck.ts",
+    "typecheck:server": "tsc -p server/tsconfig.json --noEmit",
+    "build:web": "npm --prefix web run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.1.1",
+    "tsx": "^4.23.0",
+    "typescript": "^7.0.2"
+  }
+}

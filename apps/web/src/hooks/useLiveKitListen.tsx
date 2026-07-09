@@ -1,0 +1,249 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { RefObject } from 'react'
+import { Room, RoomEvent, isAudioTrack } from 'livekit-client'
+import type { RemoteAudioTrack, RemoteTrack } from 'livekit-client'
+import { connectToRoom } from '../livekit/livekitClient'
+
+export type ListenPhase = 'disconnected' | 'connecting' | 'connected' | 'listening' | 'error'
+
+interface UseLiveKitListenResult {
+  phase: ListenPhase
+  error: string | null
+  identity: string
+  roomName: string
+  lost: boolean
+  reconnecting: boolean
+  needGesture: boolean
+  listenLive: () => Promise<void>
+  stopListening: () => void
+  reconnect: () => Promise<void>
+  startAudio: () => Promise<void>
+}
+
+const MAX_ATTEMPTS = 3
+
+/**
+ * Listener raw livekit-client (US-3.1) : on ne dépend plus de
+ * @livekit/components-react (double instance React en monorepo → "Invalid hook
+ * call"). La room est gérée ici : fetch token → room.connect → on attache les
+ * pistes audio distantes à des <audio> dans le conteneur fourni.
+ * Reconnexion simple (3 tentatives, backoff 1s/2s/4s) après déconnexion
+ * inattendue ; bouton Reconnect manuel si épuisées (US-4.1).
+ */
+export function useLiveKitListen(
+  roomName: string,
+  identity: string,
+  audioHostRef: RefObject<HTMLDivElement | null>,
+): UseLiveKitListenResult {
+  const startingRef = useRef(false)
+  const userStoppedRef = useRef(false)
+  const attemptsRef = useRef(0)
+  const retryTimer = useRef<number | null>(null)
+  const roomRef = useRef<Room | null>(null)
+  const audioEls = useRef<Map<RemoteAudioTrack, HTMLAudioElement>>(new Map())
+  // Ref stable vers connect() pour le retry interne (évite la ref circulaire).
+  const connectRef = useRef<() => Promise<void>>(async () => {})
+
+  const [phase, setPhase] = useState<ListenPhase>('disconnected')
+  const [error, setError] = useState<string | null>(null)
+  const [lost, setLost] = useState(false)
+  const [reconnecting, setReconnecting] = useState(false)
+  const [needGesture, setNeedGesture] = useState(false)
+
+  const clearRetry = useCallback(() => {
+    if (retryTimer.current != null) {
+      clearTimeout(retryTimer.current)
+      retryTimer.current = null
+    }
+    setReconnecting(false)
+  }, [])
+
+  const attachTrack = useCallback(
+    (track: RemoteTrack) => {
+      if (!isAudioTrack(track)) return
+      if (audioEls.current.has(track)) return
+      const el = track.attach() // crée un <audio> et y branche le MediaStream
+      el.autoplay = true
+      el.controls = false
+      audioHostRef.current?.appendChild(el)
+      audioEls.current.set(track, el)
+      setPhase('listening')
+      // Autoplay policy : si le navigateur bloque, on propose un geste.
+      const p = el.play()
+      if (p && typeof p.then === 'function') p.catch(() => setNeedGesture(true))
+    },
+    [audioHostRef],
+  )
+
+  const detachTrack = useCallback((track: RemoteAudioTrack) => {
+    const el = audioEls.current.get(track)
+    if (!el) return
+    track.detach(el)
+    el.remove()
+    audioEls.current.delete(track)
+  }, [])
+
+  const detachAll = useCallback(() => {
+    for (const [track, el] of audioEls.current) {
+      try {
+        track.detach(el)
+      } catch {
+        // track déjà détachée — on ignore
+      }
+      el.remove()
+    }
+    audioEls.current.clear()
+  }, [])
+
+  const teardown = useCallback(() => {
+    detachAll()
+    const room = roomRef.current
+    roomRef.current = null
+    if (room) {
+      room.removeAllListeners()
+      void room.disconnect().catch(() => {})
+    }
+  }, [detachAll])
+
+  const connect = useCallback(async () => {
+    if (startingRef.current) return
+    startingRef.current = true
+    setPhase('connecting')
+    setError(null)
+    setLost(false)
+    setNeedGesture(false)
+    try {
+      const res = await connectToRoom({ role: 'listener', identity, roomName })
+      teardown() // au cas où une room précédente traîne
+      const room = res.room
+      roomRef.current = room
+      attemptsRef.current = 0
+      clearRetry()
+      setPhase('connected')
+
+      room.on(RoomEvent.TrackSubscribed, (track: RemoteTrack) => attachTrack(track))
+      room.on(RoomEvent.TrackUnsubscribed, (track: RemoteTrack) => {
+        if (isAudioTrack(track)) detachTrack(track)
+      })
+      room.on(RoomEvent.Reconnecting, () => {
+        setReconnecting(true)
+        setLost(true)
+      })
+      room.on(RoomEvent.Reconnected, () => {
+        attemptsRef.current = 0
+        clearRetry()
+        setLost(false)
+        setReconnecting(false)
+        setPhase((prev) => (prev === 'listening' ? 'listening' : 'connected'))
+      })
+      room.on(RoomEvent.Disconnected, () => {
+        if (userStoppedRef.current) {
+          setPhase('disconnected')
+          return
+        }
+        detachAll()
+        if (attemptsRef.current < MAX_ATTEMPTS) {
+          const delay = 1000 * 2 ** attemptsRef.current // 1s, 2s, 4s
+          attemptsRef.current += 1
+          setLost(true)
+          setReconnecting(true)
+          retryTimer.current = window.setTimeout(() => {
+            void connectRef.current()
+          }, delay)
+        } else {
+          // max tentatives → on attend une action manuelle (bouton Reconnect)
+          setReconnecting(false)
+          setLost(true)
+          setPhase('disconnected')
+        }
+      })
+
+      // Pistes audio déjà publiées avant la connexion du listener.
+      for (const p of room.remoteParticipants.values()) {
+        for (const pub of p.audioTrackPublications.values()) {
+          if (pub.track) attachTrack(pub.track)
+        }
+      }
+    } catch (e) {
+      setPhase('error')
+      setError(e instanceof Error ? e.message : String(e))
+      teardown()
+    } finally {
+      startingRef.current = false
+    }
+  }, [identity, roomName, teardown, clearRetry, attachTrack, detachTrack, detachAll])
+
+  // Tient le ref à jour pour le retry interne du handler Disconnected.
+  useEffect(() => {
+    connectRef.current = connect
+  }, [connect])
+
+  const listenLive = useCallback(async () => {
+    userStoppedRef.current = false
+    attemptsRef.current = 0
+    clearRetry()
+    await connect()
+  }, [clearRetry, connect])
+
+  const reconnect = useCallback(async () => {
+    userStoppedRef.current = false
+    attemptsRef.current = 0
+    clearRetry()
+    await connect()
+  }, [clearRetry, connect])
+
+  const stopListening = useCallback(() => {
+    userStoppedRef.current = true
+    clearRetry()
+    teardown()
+    setPhase('disconnected')
+    setLost(false)
+    setReconnecting(false)
+    setNeedGesture(false)
+  }, [clearRetry, teardown])
+
+  // Débloque l'autoplay : appelé depuis un clic utilisateur (US-3.1).
+  const startAudio = useCallback(async () => {
+    const room = roomRef.current
+    if (!room) return
+    try {
+      await room.startAudio()
+      setNeedGesture(false)
+      for (const el of audioEls.current.values()) {
+        const p = el.play()
+        if (p && typeof p.then === 'function') p.catch(() => {})
+      }
+    } catch {
+      // garde needGesture true
+    }
+  }, [])
+
+  // Nettoie le timer + la room au démontage (US-4.1) — pas de retry orphelin.
+  useEffect(() => {
+    return () => {
+      if (retryTimer.current != null) clearTimeout(retryTimer.current)
+      userStoppedRef.current = true
+      const room = roomRef.current
+      if (room) {
+        room.removeAllListeners()
+        void room.disconnect().catch(() => {})
+      }
+      for (const [, el] of audioEls.current) el.remove()
+      audioEls.current.clear()
+    }
+  }, [])
+
+  return {
+    phase,
+    error,
+    identity,
+    roomName,
+    lost,
+    reconnecting,
+    needGesture,
+    listenLive,
+    stopListening,
+    reconnect,
+    startAudio,
+  }
+}
