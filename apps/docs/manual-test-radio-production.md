@@ -112,6 +112,40 @@ URLs :
 - [ ] Publier → la page publique `/` et `/listen` appliquent le même défilement.
 - [ ] Mode Paginé et Statique → comportement inchangé (pas de défilement).
 
+## Audio Monitor (page listener)
+
+Visualisations audio temps réel côté listener (locales au navigateur — elles
+n'affectent pas le flux LiveKit ni l'écoute, et ne remplacent pas un vrai meter
+LUFS broadcast). Panneau repliable sous le split-flap, rAF stoppé tant que fermé.
+
+- [ ] `/` sans stream : panneau « AUDIO MONITOR » fermé par défaut → « Afficher ▸ ».
+      Statut « EN ATTENTE AUDIO » (point gris).
+- [ ] Performer diffuse → listener « Listen live » → statut passe à « ANALYZING »
+      (point jaune) dès qu'une remote audio track est attachée.
+- [ ] Onglet **VU** : deux barres L/R bougent (RMS), montée rapide / descente lente,
+      peak hold court. -60 → 0 dB.
+- [ ] Onglet **dB** : peak L/R, RMS L/R, master approx + label
+      (SILENCE / NORMAL / FORT / PROCHE CLIP / CLIP).
+- [ ] Onglet **Spectrum** : spectre log 20 Hz → 20 kHz (audioMotion-analyzer),
+      gradient radio-amber. Fond sombre transparent.
+- [ ] Onglet **Spectrogram** : waterfall (canvas), bas = graves, haut = aigus.
+      Se clear au reset / reconnect.
+- [ ] Onglet **Stereo** : vectorscope (x = L−R, y = L+R), label MONO / STEREO /
+      PHASE RISK + corrélation −1..1.
+- [ ] Onglet **Spectral** : 4 bandes (Bass / Lo-mid / Hi-mid / Air), centroid Hz,
+      balance dominante, RMS dB.
+- [ ] PAD -30 dB activé : l'écoute baisse, les visualisations continuent (elles
+      tapent le flux brut, pas le <audio>).
+- [ ] Mute : les visualisations continuent si le flux arrive encore (mute =
+      volume <audio> à 0, pas l'analyse).
+- [ ] « Stop » listener : statut repasse à « EN ATTENTE AUDIO », rAF/canvas nettoyés.
+- [ ] « Reconnect » : l'analyse relance (nouveau graphe, même panneau).
+- [ ] Changer d'onglet : seul l'onglet visible anime (rAF des autres stoppé).
+- [ ] `prefers-reduced-motion` (DevTools → Rendering) : FPS réduit (8 fps),
+      animations ralenties, pas de waterfall rapide.
+- [ ] Onglet du navigateur en arrière-plan : rAF en pause (pas de fuite CPU).
+- [ ] Recharger `/` : aucun AudioContext orphelin (nettoyage unmount).
+
 ## Backend
 
 - [ ] `GET /api/health` → `{"ok":true,...}`

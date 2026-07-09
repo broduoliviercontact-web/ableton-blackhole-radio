@@ -145,4 +145,27 @@ for (const c of accents) {
   assert(DEFAULT_HOTFX_CHARACTERS.includes(c), `accent de la phrase « ${c} » présent dans l'alphabet`)
 }
 
-console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered, ticker+scroll, trim -30 dB, accents HotFX)')
+// Audio monitor helpers (analysisUtils purs) : RMS/dBFS, bandes, centroid, corrélation.
+const { timeLevel, dbLabel, freqBands, spectralCentroid, correlation } = await import(
+  './src/components/audio-monitor/analysisUtils'
+)
+const silence = timeLevel(new Float32Array(1024))
+assert(silence.rms === 0 && silence.peak === 0 && !Number.isFinite(silence.db), 'timeLevel silence → -Inf dB')
+const loud = timeLevel(new Float32Array(1024).fill(0.5))
+assert(Math.abs(loud.rms - 0.5) < 1e-9 && Math.abs(loud.db - 20 * Math.log10(0.5)) < 1e-6, 'timeLevel 0.5 → -6.0 dB')
+assert(dbLabel(-Infinity) === 'SILENCE' && dbLabel(-30) === 'NORMAL' && dbLabel(-10) === 'FORT' && dbLabel(0) === 'CLIP', 'dbLabel seuils')
+// frequencyData synthétique : tout à 0 sauf un pic au bin 4 → centroid ~ freq du bin 4.
+const sr = 48000
+const fft = 2048
+const freq = new Uint8Array(fft / 2)
+freq[4] = 200
+const fb = freqBands(freq, sr, fft)
+assert(fb.bass > 0 && fb.lowMid === 0 && fb.midHigh === 0 && fb.air === 0, 'freqBands : bin 4 (~94 Hz) → bass seul')
+const sc = spectralCentroid(freq, sr, fft)
+assert(Math.abs(sc - ((4 * sr) / fft)) < 1, `spectralCentroid ≈ freq(bin4) = ${sc}`)
+// corrélation : deux signaux identiques → 1 ; opposés → -1.
+const sigL = new Float32Array([0.1, 0.2, 0.3, 0.4])
+assert(Math.abs(correlation(sigL, sigL) - 1) < 1e-6, 'correlation identique → 1')
+assert(Math.abs(correlation(sigL, new Float32Array([-0.1, -0.2, -0.3, -0.4])) + 1) < 1e-6, 'correlation opposé → -1')
+
+console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered, ticker+scroll, trim -30 dB, accents HotFX, audio monitor)')

@@ -4,6 +4,7 @@ import { Room, RoomEvent, isAudioTrack } from 'livekit-client'
 import type { RemoteAudioTrack, RemoteTrack } from 'livekit-client'
 import { connectToRoom } from '../livekit/livekitClient'
 import { getEffectiveVolume } from '../audio/listenerVolume'
+import type { ListenerAudioAnalyser } from '../audio/listenerAnalysis'
 
 export type ListenPhase = 'disconnected' | 'connecting' | 'connected' | 'listening' | 'error'
 
@@ -41,6 +42,7 @@ export function useLiveKitListen(
   roomName: string,
   identity: string,
   audioHostRef: RefObject<HTMLDivElement | null>,
+  analyser?: ListenerAudioAnalyser | null,
 ): UseLiveKitListenResult {
   const startingRef = useRef(false)
   const userStoppedRef = useRef(false)
@@ -85,12 +87,14 @@ export function useLiveKitListen(
       el.volume = getEffectiveVolume(listenerVolumeRef.current, trimMinus30DbRef.current)
       audioHostRef.current?.appendChild(el)
       audioEls.current.set(track, el)
+      // Bus d'analyse : tappe le MediaStreamTrack sans toucher à l'écoute.
+      analyser?.addTrack(track.mediaStreamTrack)
       setPhase('listening')
       // Autoplay policy : si le navigateur bloque, on propose un geste.
       const p = el.play()
       if (p && typeof p.then === 'function') p.catch(() => setNeedGesture(true))
     },
-    [audioHostRef],
+    [audioHostRef, analyser],
   )
 
   const detachTrack = useCallback((track: RemoteAudioTrack) => {
@@ -99,7 +103,8 @@ export function useLiveKitListen(
     track.detach(el)
     el.remove()
     audioEls.current.delete(track)
-  }, [])
+    analyser?.removeTrack(track.mediaStreamTrack)
+  }, [analyser])
 
   const detachAll = useCallback(() => {
     for (const [track, el] of audioEls.current) {
@@ -109,9 +114,10 @@ export function useLiveKitListen(
         // track déjà détachée — on ignore
       }
       el.remove()
+      analyser?.removeTrack(track.mediaStreamTrack)
     }
     audioEls.current.clear()
-  }, [])
+  }, [analyser])
 
   const teardown = useCallback(() => {
     detachAll()

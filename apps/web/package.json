@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "audiomotion-analyzer": "^4.5.4",
     "livekit-client": "^2.20.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"

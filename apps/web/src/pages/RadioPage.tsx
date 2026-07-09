@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useLiveKitListen } from '../hooks/useLiveKitListen'
 import { useBroadcastMessage } from '../hooks/useBroadcastMessage'
+import { useListenerAudioAnalysis } from '../hooks/useListenerAudioAnalysis'
 import { ListenerVolume } from '../components/ListenerVolume'
+import { AudioMonitorPanel } from '../components/audio-monitor/AudioMonitorPanel'
 import { getOrCreateIdentity } from '../utils/identity'
 import { SplitFlapDisplay } from '../components/splitflap/SplitFlapDisplay'
 import { RadioTicker } from '../components/splitflap/RadioTicker'
@@ -42,6 +44,7 @@ export function RadioPage() {
     return q === 'internal' || q === 'hotfx' ? q : null
   })
   const audioHostRef = useRef<HTMLDivElement>(null)
+  const analyser = useListenerAudioAnalysis()
   const {
     phase,
     error,
@@ -58,7 +61,7 @@ export function RadioPage() {
     setListenerVolume,
     toggleMute,
     toggleTrimMinus30Db,
-  } = useLiveKitListen(ROOM_NAME, myIdentity, audioHostRef)
+  } = useLiveKitListen(ROOM_NAME, myIdentity, audioHostRef, analyser)
   const { display: broadcast } = useBroadcastMessage()
 
   const board = formatBroadcastMessage(broadcast)
@@ -254,6 +257,10 @@ export function RadioPage() {
       )}
 
       <p className="sf-footer">RADIO BLACKHOLE · PIRATE WEBRTC · LISTEN LIVE</p>
+
+      {/* Audio Monitor (visualisations temps réel sur le flux LiveKit, sans
+          l'altérer). Repliable par défaut → rAF stoppé tant que fermé. */}
+      <AudioMonitorPanel analyser={analyser} active={phase === 'listening'} />
 
       {/* Conteneur invisible pour les <audio> distants. */}
       <div ref={audioHostRef} style={{ width: 0, height: 0, overflow: 'hidden' }} />

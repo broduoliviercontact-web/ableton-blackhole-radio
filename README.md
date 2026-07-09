@@ -5,7 +5,7 @@ Mac vers des auditeurs web avec LiveKit/WebRTC. Pensé pour les musiciens qui
 veulent envoyer la sortie de leur DAW (Ableton, et autres) vers un public
 distinct via un simple lien.
 
-React · Vite · TypeScript · Node · Express · LiveKit · WebRTC · Vercel · Render
+React · Vite · TypeScript · Node · Express · LiveKit · WebRTC · audioMotion-analyzer · Vercel · Render
 
 ## Démo
 
@@ -37,6 +37,10 @@ Le projet est déployé en production :
 - **Messages radio** : le performer publie un message (titre, artiste/album,
   note, ticker) affiché sur la page publique ; les listeners récupèrent le
   message courant par polling.
+- **Audio Monitor (listener)** : panneau repliable sur `/` avec 6 visualisations
+  temps réel du flux LiveKit — VU L/R, Peak/dB, Spectrum (audioMotion-analyzer),
+  Spectrogram waterfall, Stereo vectorscope, Spectral info. Locales au navigateur,
+  n'affectent pas l'écoute ni le stream (≠ meter LUFS broadcast).
 
 ## Flux audio
 
@@ -201,6 +205,40 @@ HotFX partagent la même fenêtre de défilement (`useScrollingTextWindow`).
 > transition `flip` : animation mécanique chargée (toutes les tuiles re-flipent
 > à chaque tick) ; pour un défilement fluide, préférer transition `instant` ou
 > un `noteScrollSpeedMs` plus lent.
+
+## Audio Monitor (listener)
+
+Le panneau « AUDIO MONITOR » (`/`, repliable sous le split-flap) expose 6
+visualisations temps réel du flux LiveKit entendu par le listener :
+
+- **VU L/R** (maison) — RMS par canal, ballistique VU (montée rapide / descente
+  lente), peak hold court, -60 → 0 dB.
+- **Peak / dB** (maison) — peak L/R, RMS L/R, master approx + label d'ambiance
+  (SILENCE / NORMAL / FORT / PROCHE CLIP / CLIP).
+- **Spectrum** — `audiomotion-analyzer` (log 20 Hz → 20 kHz, gradient radio-amber,
+  `connectSpeakers: false`).
+- **Spectrogram** (maison, canvas) — waterfall, bas = graves, FPS ≤ 24.
+- **Stereo / vectorscope** (maison) — x = L−R, y = L+R, corrélation L/R
+  (MONO / STEREO / PHASE RISK).
+- **Spectral** (maison) — bandes Bass / Lo-mid / Hi-mid / Air, centroid spectral,
+  balance dominante, RMS.
+
+**Connexion au flux** : `useLiveKitListen` tappe chaque `RemoteAudioTrack` via
+`track.mediaStreamTrack` et l'envoie au bus d'analyse (`apps/web/src/audio/listenerAnalysis.ts`).
+Ce bus crée un `AudioContext` partagé (paresseux, après le geste « Listen live »),
+un `AnalyserNode` stéréo + `ChannelSplitter` + analyseurs L/R. Les sources
+d'analyse ne sont **jamais** connectées à la `destination` → aucun doublage
+audible, l'écoute (volume / mute / PAD -30 dB) reste gérée par les `<audio>`
+existants. `stop()` ferme le graphe (unmount / arrêt).
+
+**Perf** : un seul rAF par onglet visible (throttlé `maxFps`), stoppé quand le
+panneau est fermé ou l'onglet caché (rAF ne tourne pas en arrière-plan).
+`prefers-reduced-motion` → FPS réduit à 8. Nettoyage strict à l'unmount (pas de
+fuite AudioContext / rAF).
+
+> Limites : monitoring local navigateur (dBFS, pas LUFS broadcast). Sans remote
+> track → « EN ATTENTE AUDIO ». **Meyda** (spectral features propres) et
+> **Butterchurn** (visualizer WebGL MilkDrop) non intégrés — phase 2 si besoin.
 
 ## Sécurité
 
