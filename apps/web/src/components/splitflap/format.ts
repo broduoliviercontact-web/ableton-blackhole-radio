@@ -1,4 +1,13 @@
-import type { BroadcastMessage } from '../../api/broadcastMessage'
+// Entrée minimale pour le formattage du panneau : accepte BroadcastMessage,
+// BroadcastInput, ou null (seuls les champs texte sont lus).
+export interface SplitFlapInput {
+  mainTitle?: string
+  subtitle?: string
+  artist?: string
+  album?: string
+  note?: string
+  ticker?: string
+}
 
 // Dimensions du panneau : grille UNIFORME 32 colonnes (toutes les zones ont la
 // même largeur → colonnes alignées = vrai panneau continu). Ponytail: fixes,
@@ -10,9 +19,8 @@ export const SPLIT_FLAP_NOTE_ROWS = 4
 export const SPLIT_FLAP_PAGE_DURATION_MS = 6000
 
 const FALLBACK_TITLE = 'RADIO BLACKHOLE'
-const FALLBACK_SECONDARY = 'LIVE WEB AUDIO STREAM'
-const FALLBACK_NOTE = 'En attente du message performer.'
-const FALLBACK_TICKER = 'RADIO ONLINE · LISTEN LIVE · WEBRTC STREAM'
+const FALLBACK_NOTE = 'EN ATTENTE DU MESSAGE PERFORMER.'
+const FALLBACK_TICKER = 'RADIO BLACKHOLE · PIRATE WEBRTC STREAM · LISTEN LIVE'
 
 export interface SplitFlapBoard {
   title: string
@@ -21,13 +29,21 @@ export interface SplitFlapBoard {
   ticker: string
 }
 
-function pad(line: string, cols: number): string {
+// Centre un texte dans `cols` (espaces de chaque côté). Tronque si trop long.
+export function centerLine(text: string, cols: number): string {
+  const clean = text.length > cols ? text.slice(0, cols) : text
+  if (clean.length >= cols) return clean
+  const pad = cols - clean.length
+  const left = Math.floor(pad / 2)
+  return `${' '.repeat(left)}${clean}${' '.repeat(pad - left)}`
+}
+
+function padRight(line: string, cols: number): string {
   const clean = line.length > cols ? line.slice(0, cols) : line
   return clean.padEnd(cols, ' ')
 }
 
-// Wrap mot par mot sur `cols` caractères. ponytail: wrap simple, pas de
-// césure fine — suffisant pour un affichage radio.
+// Wrap mot par mot sur `cols` caractères. ponytail: wrap simple, pas de césure fine.
 function wrapWords(text: string, cols: number): string[] {
   const words = text.split(/\s+/).filter((w) => w.length > 0)
   const lines: string[] = []
@@ -36,7 +52,6 @@ function wrapWords(text: string, cols: number): string[] {
     const candidate = cur ? `${cur} ${w}` : w
     if (candidate.length > cols) {
       if (cur) lines.push(cur)
-      // mot seul plus long que la ligne : on le coupe brutalement.
       if (w.length > cols) {
         for (let i = 0; i < w.length; i += cols) lines.push(w.slice(i, i + cols))
         cur = ''
@@ -51,49 +66,39 @@ function wrapWords(text: string, cols: number): string[] {
   return lines.length > 0 ? lines : ['']
 }
 
-// Découpe un texte en pages de NOTE_ROWS lignes chacune.
+// Découpe un texte en pages de NOTE_ROWS lignes chacune (toutes les pages —
+// le mode static/paged est décidé par le consommateur, pas ici).
 function toPages(text: string, cols: number, rows: number): string[][] {
   const lines = wrapWords(text.toUpperCase(), cols)
   const pages: string[][] = []
   for (let i = 0; i < lines.length; i += rows) {
-    const page = lines.slice(i, i + rows).map((l) => pad(l, cols))
-    while (page.length < rows) page.push(pad('', cols))
+    const page = lines.slice(i, i + rows).map((l) => padRight(l, cols))
+    while (page.length < rows) page.push(padRight('', cols))
     pages.push(page)
   }
-  return pages.length > 0 ? pages : [Array.from({ length: rows }, () => pad('', cols))]
+  return pages.length > 0 ? pages : [Array.from({ length: rows }, () => padRight('', cols))]
 }
 
 /**
- * Transforme un BroadcastMessage en contenu prêt pour le panneau split-flap :
- * titre (1 ligne), secondaire (1 ligne), note paginée, ticker. Fallbacks si
- * champs vides. Uppercase partout (look affichage gare).
+ * Transforme un message en contenu du panneau split-flap : titre centré,
+ * secondaire centré (ou ligne vide si pas de métadonnées), note paginée,
+ * ticker. Fallbacks si champs vides. Uppercase (look affichage gare).
  */
-export function formatBroadcastMessage(message: BroadcastMessage | null): SplitFlapBoard {
+export function formatBroadcastMessage(message: SplitFlapInput | null): SplitFlapBoard {
   const m = message
   const titleRaw = (m?.mainTitle?.trim() || FALLBACK_TITLE).toUpperCase()
   const secondaryParts = [m?.subtitle, m?.artist, m?.album]
     .map((s) => (s ?? '').trim())
     .filter((s) => s.length > 0)
-  const secondaryRaw = (secondaryParts.length > 0 ? secondaryParts.join(' · ') : FALLBACK_SECONDARY).toUpperCase()
+  // Pas de métadonnées → ligne vide (tuiles vides, pas de texte inutile).
+  const secondaryRaw = secondaryParts.length > 0 ? secondaryParts.join(' · ').toUpperCase() : ''
   const noteRaw = (m?.note?.trim() || FALLBACK_NOTE).toUpperCase()
   const tickerRaw = (m?.ticker?.trim() || FALLBACK_TICKER).toUpperCase()
 
-  const notePages = toPages(noteRaw, SPLIT_FLAP_NOTE_COLS, SPLIT_FLAP_NOTE_ROWS)
-
-  // displayMode 'static' → on ne garde que la première page (pas de cycle).
-  if (m?.displayMode === 'static' && notePages.length > 1) {
-    return {
-      title: pad(titleRaw, SPLIT_FLAP_TITLE_COLS),
-      secondary: pad(secondaryRaw, SPLIT_FLAP_SECONDARY_COLS),
-      notePages: [notePages[0]],
-      ticker: tickerRaw,
-    }
-  }
-
   return {
-    title: pad(titleRaw, SPLIT_FLAP_TITLE_COLS),
-    secondary: pad(secondaryRaw, SPLIT_FLAP_SECONDARY_COLS),
-    notePages,
+    title: centerLine(titleRaw, SPLIT_FLAP_TITLE_COLS),
+    secondary: secondaryRaw ? centerLine(secondaryRaw, SPLIT_FLAP_SECONDARY_COLS) : padRight('', SPLIT_FLAP_SECONDARY_COLS),
+    notePages: toPages(noteRaw, SPLIT_FLAP_NOTE_COLS, SPLIT_FLAP_NOTE_ROWS),
     ticker: tickerRaw,
   }
 }

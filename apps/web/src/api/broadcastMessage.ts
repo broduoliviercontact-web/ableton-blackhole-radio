@@ -3,6 +3,21 @@ import { API_BASE } from './base'
 export type BroadcastType = 'track' | 'show' | 'announcement' | 'note'
 export type DisplayMode = 'static' | 'paged' | 'scroll'
 
+export type VisualPreset = 'pirate-industrial' | 'airport-classic' | 'terminal-amber' | 'minimal-black'
+export type VisualTransition = 'flip' | 'scramble' | 'flip-scramble' | 'instant'
+export type VisualNoteMode = 'paged' | 'scroll' | 'static'
+
+export interface BroadcastVisual {
+  preset?: VisualPreset
+  transition?: VisualTransition
+  noteMode?: VisualNoteMode
+  scrambleDurationMs?: number
+  staggerDelayMs?: number
+  pageDurationMs?: number
+  scrambleColors?: string[]
+  accentColors?: string[]
+}
+
 export interface BroadcastMessage {
   type: BroadcastType
   mainTitle: string
@@ -13,6 +28,7 @@ export interface BroadcastMessage {
   ticker?: string
   url?: string
   displayMode?: DisplayMode
+  visual?: BroadcastVisual
   updatedAt: string
 }
 
@@ -27,6 +43,7 @@ export interface BroadcastInput {
   ticker?: string
   url?: string
   displayMode?: DisplayMode
+  visual?: BroadcastVisual
 }
 
 export async function fetchBroadcastMessage(): Promise<BroadcastMessage | null> {

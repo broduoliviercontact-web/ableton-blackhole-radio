@@ -75,7 +75,42 @@ async function main(): Promise<void> {
   setBroadcastMessage(msg)
   assert(getBroadcastMessage()?.mainTitle === 'Song', 'store round-trip')
   setBroadcastMessage(null)
-  console.log('✅ broadcast message OK (parse, updatedAt serveur, store mémoire)')
+
+  // Visual : optionnel, clamp des nombres, filtre des couleurs, max 8, objet vide → undefined.
+  const noVisual = parseBroadcastMessage({ type: 'track', mainTitle: 'NoVis' })
+  assert(noVisual.visual === undefined, 'sans visual → undefined (rétro-compat)')
+  const vis = parseBroadcastMessage({
+    type: 'track',
+    mainTitle: 'Vis',
+    visual: {
+      preset: 'terminal-amber',
+      transition: 'flip-scramble',
+      noteMode: 'static',
+      scrambleDurationMs: 99999, // > max 3000 → clamp 3000
+      staggerDelayMs: -5, // < min 0 → clamp 0
+      pageDurationMs: 500, // < min 2000 → clamp 2000
+      scrambleColors: ['#ff0000', 'nope', '#00ff00', '#123', '#0000ff', '#ffffff', '#aaaaaa', '#bbbbbb', '#cccccc', '#dddddd', '#eeeeee'], // 9 valides + invalides → max 8
+      accentColors: ['#e6c84f'],
+    },
+  })
+  assert(vis.visual?.preset === 'terminal-amber', 'visual preset')
+  assert(vis.visual?.scrambleDurationMs === 3000, 'scrambleDurationMs clamp 3000')
+  assert(vis.visual?.staggerDelayMs === 0, 'staggerDelayMs clamp 0')
+  assert(vis.visual?.pageDurationMs === 2000, 'pageDurationMs clamp 2000')
+  assert(vis.visual?.scrambleColors?.length === 8, 'scrambleColors max 8 (invalides filtrés)')
+  assert(vis.visual?.scrambleColors?.[0] === '#ff0000', 'scrambleColors hex conservé')
+  assert(!vis.visual?.scrambleColors?.includes('nope'), 'couleur non-hex filtrée')
+  assert(vis.visual?.accentColors?.length === 1, 'accentColors')
+  const emptyVis = parseBroadcastMessage({ type: 'track', mainTitle: 'EmptyVis', visual: {} })
+  assert(emptyVis.visual === undefined, 'visual vide → undefined')
+  let badPreset = false
+  try {
+    parseBroadcastMessage({ type: 'track', mainTitle: 'x', visual: { preset: 'nope' } })
+  } catch {
+    badPreset = true
+  }
+  assert(badPreset, 'preset invalide refusé')
+  console.log('✅ broadcast message OK (parse, updatedAt serveur, store mémoire, visual clamp/filter)')
 }
 
 main().catch((e) => {

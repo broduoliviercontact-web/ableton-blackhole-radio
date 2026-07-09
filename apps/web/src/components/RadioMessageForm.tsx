@@ -1,13 +1,18 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
   postBroadcastMessage,
   type BroadcastInput,
   type BroadcastMessage,
   type BroadcastType,
+  type BroadcastVisual,
   type DisplayMode,
+  type VisualNoteMode,
+  type VisualPreset,
+  type VisualTransition,
 } from '../api/broadcastMessage'
-import { BroadcastMessagePanel } from './BroadcastMessagePanel'
+import { SplitFlapPreview } from './splitflap/SplitFlapPreview'
+import { parseColors } from './splitflap/visual'
 
 interface Props {
   performerPassword: string
@@ -15,34 +20,73 @@ interface Props {
 
 const TYPES: BroadcastType[] = ['track', 'show', 'announcement', 'note']
 const MODES: DisplayMode[] = ['static', 'paged', 'scroll']
+const PRESETS: VisualPreset[] = ['pirate-industrial', 'airport-classic', 'terminal-amber', 'minimal-black']
+const TRANSITIONS: VisualTransition[] = ['flip', 'scramble', 'flip-scramble', 'instant']
+const NOTE_MODES: VisualNoteMode[] = ['paged', 'scroll', 'static']
+
+const PRESET_LABELS: Record<VisualPreset, string> = {
+  'pirate-industrial': 'Pirate industrial',
+  'airport-classic': 'Airport classic',
+  'terminal-amber': 'Terminal amber',
+  'minimal-black': 'Minimal black',
+}
+const TRANSITION_LABELS: Record<VisualTransition, string> = {
+  flip: 'Flip mécanique',
+  scramble: 'Scramble',
+  'flip-scramble': 'Flip + scramble',
+  instant: 'Instant',
+}
+const NOTE_MODE_LABELS: Record<VisualNoteMode, string> = {
+  paged: 'Paginé',
+  scroll: 'Déroulement',
+  static: 'Statique',
+}
 
 const empty: BroadcastInput = { type: 'track', mainTitle: '' }
+// Defaults = preset pirate-industrial (bouton « Réinitialiser visuel »).
+const DEFAULT_VISUAL_FORM: BroadcastVisual = {
+  preset: 'pirate-industrial',
+  transition: 'flip',
+  noteMode: 'paged',
+  scrambleDurationMs: 600,
+  staggerDelayMs: 12,
+  pageDurationMs: 6000,
+}
 
 /**
- * Section « Radio Message » : publie le message affiché sur la page publique.
- * Indépendant du broadcast audio (publiable même sans live). Utilise le
- * performerPassword validé par PerformerGate (jamais persisté ici).
+ * Section « Radio Message » : publie le message + réglages visuels split-flap
+ * affichés sur la page publique. Indépendant du broadcast audio (publiable
+ * même sans live). Utilise le performerPassword validé par PerformerGate
+ * (jamais persisté ici). La validation finale reste côté serveur.
  */
 export function RadioMessageForm({ performerPassword }: Props) {
   const [form, setForm] = useState<BroadcastInput>(empty)
+  const [visual, setVisual] = useState<BroadcastVisual>(DEFAULT_VISUAL_FORM)
+  const [scrambleColorsText, setScrambleColorsText] = useState('')
+  const [accentColorsText, setAccentColorsText] = useState('')
   const [status, setStatus] = useState<'idle' | 'publishing' | 'ok' | 'error'>('idle')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [published, setPublished] = useState<BroadcastMessage | null>(null)
 
   const set = <K extends keyof BroadcastInput>(key: K, value: BroadcastInput[K]) =>
     setForm((f) => ({ ...f, [key]: value }))
+  const setVis = <K extends keyof BroadcastVisual>(key: K, value: BroadcastVisual[K]) =>
+    setVisual((v) => ({ ...v, [key]: value }))
 
-  const preview = useMemo<BroadcastMessage>(
-    () => ({ ...form, updatedAt: published?.updatedAt ?? '' }),
-    [form, published],
-  )
+  // visual complet pour preview + submit (couleurs parsées depuis les inputs texte).
+  const visualFull: BroadcastVisual = {
+    ...visual,
+    scrambleColors: parseColors(scrambleColorsText),
+    accentColors: parseColors(accentColorsText),
+  }
+  const previewMessage: BroadcastInput = { ...form, visual: visualFull }
 
   async function publish() {
     if (!form.mainTitle.trim() || status === 'publishing') return
     setStatus('publishing')
     setFeedback(null)
     try {
-      const msg = await postBroadcastMessage(performerPassword, form)
+      const msg = await postBroadcastMessage(performerPassword, { ...form, visual: visualFull })
       setPublished(msg)
       setStatus('ok')
       setFeedback('Message publié.')
@@ -54,9 +98,18 @@ export function RadioMessageForm({ performerPassword }: Props) {
 
   function reset() {
     setForm(empty)
+    setVisual(DEFAULT_VISUAL_FORM)
+    setScrambleColorsText('')
+    setAccentColorsText('')
     setStatus('idle')
     setFeedback(null)
     setPublished(null)
+  }
+
+  function resetVisual() {
+    setVisual(DEFAULT_VISUAL_FORM)
+    setScrambleColorsText('')
+    setAccentColorsText('')
   }
 
   return (
@@ -150,6 +203,108 @@ export function RadioMessageForm({ performerPassword }: Props) {
         </label>
       </div>
 
+      <h3 style={h3Style}>Visualisation split-flap</h3>
+      <div style={gridStyle}>
+        <label style={labelStyle}>
+          Preset visuel
+          <select
+            value={visual.preset ?? 'pirate-industrial'}
+            onChange={(e) => setVis('preset', e.target.value as VisualPreset)}
+            style={inputStyle}
+          >
+            {PRESETS.map((p) => (
+              <option key={p} value={p}>
+                {PRESET_LABELS[p]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label style={labelStyle}>
+          Transition
+          <select
+            value={visual.transition ?? 'flip'}
+            onChange={(e) => setVis('transition', e.target.value as VisualTransition)}
+            style={inputStyle}
+          >
+            {TRANSITIONS.map((t) => (
+              <option key={t} value={t}>
+                {TRANSITION_LABELS[t]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label style={labelStyle}>
+          Mode de note
+          <select
+            value={visual.noteMode ?? 'paged'}
+            onChange={(e) => setVis('noteMode', e.target.value as VisualNoteMode)}
+            style={inputStyle}
+          >
+            {NOTE_MODES.map((m) => (
+              <option key={m} value={m}>
+                {NOTE_MODE_LABELS[m]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label style={labelStyle}>
+          Scramble duration (ms)
+          <input
+            type="number"
+            min={100}
+            max={3000}
+            value={visual.scrambleDurationMs ?? 600}
+            onChange={(e) => setVis('scrambleDurationMs', e.target.value === '' ? undefined : Number(e.target.value))}
+            style={inputStyle}
+          />
+        </label>
+        <label style={labelStyle}>
+          Stagger delay (ms)
+          <input
+            type="number"
+            min={0}
+            max={200}
+            value={visual.staggerDelayMs ?? 12}
+            onChange={(e) => setVis('staggerDelayMs', e.target.value === '' ? undefined : Number(e.target.value))}
+            style={inputStyle}
+          />
+        </label>
+        <label style={labelStyle}>
+          Page duration (ms)
+          <input
+            type="number"
+            min={2000}
+            max={30000}
+            value={visual.pageDurationMs ?? 6000}
+            onChange={(e) => setVis('pageDurationMs', e.target.value === '' ? undefined : Number(e.target.value))}
+            style={inputStyle}
+          />
+        </label>
+        <label style={fullLabelStyle}>
+          Scramble colors (hex séparés par virgule)
+          <input
+            value={scrambleColorsText}
+            onChange={(e) => setScrambleColorsText(e.target.value)}
+            placeholder="#e6c84f,#f2ead2,#d94b45"
+            style={inputStyle}
+          />
+        </label>
+        <label style={fullLabelStyle}>
+          Accent colors (hex séparés par virgule)
+          <input
+            value={accentColorsText}
+            onChange={(e) => setAccentColorsText(e.target.value)}
+            placeholder="#f5d76b"
+            style={inputStyle}
+          />
+        </label>
+      </div>
+      <div style={rowStyle}>
+        <button type="button" onClick={resetVisual}>
+          Réinitialiser visuel
+        </button>
+      </div>
+
       <div style={rowStyle}>
         <button type="button" onClick={publish} disabled={!form.mainTitle.trim() || status === 'publishing'}>
           {status === 'publishing' ? 'Publication…' : 'Publier le message'}
@@ -163,8 +318,11 @@ export function RadioMessageForm({ performerPassword }: Props) {
       )}
 
       <div style={{ marginTop: 16 }}>
-        <p style={mutedStyle}>Aperçu (rendu local) :</p>
-        <BroadcastMessagePanel message={preview} />
+        <p style={mutedStyle}>Aperçu public (rendu split-flap) :</p>
+        <SplitFlapPreview message={previewMessage} />
+        {published && (
+          <p style={mutedStyle}>Dernier message publié · updatedAt : {published.updatedAt}</p>
+        )}
       </div>
     </section>
   )
@@ -172,6 +330,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
 
 const sectionStyle: CSSProperties = { borderTop: '1px solid #e5e7eb', marginTop: 16, paddingTop: 16 }
 const h2Style: CSSProperties = { fontSize: 18, margin: '0 0 8px' }
+const h3Style: CSSProperties = { fontSize: 15, margin: '12px 0 6px' }
 const mutedStyle: CSSProperties = { color: '#6b7280', fontSize: 14, margin: '0 0 8px' }
 const gridStyle: CSSProperties = {
   display: 'grid',

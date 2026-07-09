@@ -36,6 +36,11 @@
    tassées avec un sillon constant (gap 4px) — plus de trous noirs entre
    sections. */
 .sf-cabinet {
+  --sf-bg-from: #171922;
+  --sf-bg-to: #0b0d13;
+  --sf-border: #2a2d36;
+  --sf-text: #efe9d6;
+  --sf-accent: #f5d76b;
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -49,6 +54,18 @@
   align-self: center;
   width: 100%;
   max-width: 1080px;
+}
+
+/* Presets visuels : surchargent les variables de couleur. */
+.sf-cabinet--pirate-industrial { /* défaut, vars de base */ }
+.sf-cabinet--airport-classic {
+  --sf-bg-from: #0a0a0a; --sf-bg-to: #000; --sf-border: #3a3a3a; --sf-text: #f2e6c4; --sf-accent: #ffb000;
+}
+.sf-cabinet--terminal-amber {
+  --sf-bg-from: #120c02; --sf-bg-to: #0a0600; --sf-border: #3a2a10; --sf-text: #ffb000; --sf-accent: #ffd060;
+}
+.sf-cabinet--minimal-black {
+  --sf-bg-from: #0a0a0a; --sf-bg-to: #000; --sf-border: #222; --sf-text: #e8e8e8; --sf-accent: #e8e8e8;
 }
 
 /* Région = bloc de lignes de tuiles, même sillon qu'entre régions. */
@@ -68,11 +85,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(#171922, #0b0d13);
-  border: 1px solid #2a2d36;
+  background: linear-gradient(var(--sf-bg-from), var(--sf-bg-to));
+  border: 1px solid var(--sf-border);
   border-bottom-width: 2px;
   border-radius: 3px;
-  color: #efe9d6;
+  color: var(--sf-text);
   font-family: var(--mono);
   line-height: 1;
   position: relative;
@@ -121,9 +138,10 @@
 .sf-face--back { transform: rotateX(180deg); }
 
 /* Tailles : largeur de tuile uniforme (colonnes alignées = vraie grille).
-   Hauteur varie par zone (titre plus haut). */
+   Hauteur varie par zone (titre plus haut). Le titre et le ticker utilisent
+   la couleur d'accent du preset. */
 .sf-region .sf-tile { width: 30px; }
-.sf-region--title .sf-tile { font-size: 24px; height: 46px; }
+.sf-region--title .sf-tile { font-size: 24px; height: 46px; color: var(--sf-accent); }
 .sf-region--secondary .sf-tile { font-size: 15px; height: 32px; }
 .sf-region--note .sf-tile { font-size: 18px; }
 
@@ -135,6 +153,21 @@
   .sf-line { gap: 2px; }
   .sf-region { gap: 2px; }
 }
+
+/* Aperçu performer : même panneau, plus petit (scaled down). */
+.sf-cabinet--preview {
+  max-width: 520px;
+  padding: 8px;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+.sf-cabinet--preview .sf-region { gap: 2px; }
+.sf-cabinet--preview .sf-line { gap: 2px; }
+.sf-cabinet--preview .sf-tile { width: 14px; border-radius: 2px; }
+.sf-cabinet--preview .sf-region--title .sf-tile { font-size: 12px; height: 22px; }
+.sf-cabinet--preview .sf-region--secondary .sf-tile { font-size: 8px; height: 16px; }
+.sf-cabinet--preview .sf-region--note .sf-tile { font-size: 9px; }
+.sf-cabinet--preview .sf-ticker { font-size: 10px; letter-spacing: 2px; padding: 4px 0 1px; }
 
 /* Bandeau contrôles audio intégré au panneau */
 .sf-controls {
@@ -170,7 +203,7 @@
   padding: 8px 0 2px;
   font-size: 15px;
   letter-spacing: 3px;
-  color: #f5d76b;
+  color: var(--sf-accent);
 }
 .sf-ticker__track { display: inline-block; padding-left: 100%; animation: sf-scroll 22s linear infinite; }
 @keyframes sf-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
