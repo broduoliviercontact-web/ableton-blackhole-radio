@@ -68,6 +68,9 @@ export function PerformerGate() {
         </button>
       </form>
       {status === 'error' && error && <p style={errorStyle}>❌ {error}</p>}
+      <p style={homeRowStyle}>
+        <a href="/" style={homeLinkStyle}>← Retour à la radio</a>
+      </p>
     </main>
   )
 }
@@ -85,3 +88,17 @@ const labelStyle: CSSProperties = { fontWeight: 600, fontSize: 14 }
 const inputStyle: CSSProperties = { padding: '8px 10px', fontSize: 16 }
 const errorStyle: CSSProperties = { color: 'crimson', marginTop: 8 }
 const fallbackStyle: CSSProperties = { padding: 24, fontFamily: 'system-ui, sans-serif' }
+const homeRowStyle: CSSProperties = { textAlign: 'center', marginTop: 24 }
+const homeLinkStyle: CSSProperties = {
+  fontFamily: 'var(--mono, ui-monospace, Consolas, monospace)',
+  fontSize: 13,
+  letterSpacing: 2,
+  color: '#f5d76b',
+  textTransform: 'uppercase',
+  textDecoration: 'none',
+  border: '1px solid #2a2d36',
+  padding: '6px 14px',
+  borderRadius: 4,
+  background: '#14161e',
+  opacity: 0.85,
+}

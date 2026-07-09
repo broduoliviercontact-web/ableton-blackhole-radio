@@ -8,6 +8,7 @@ import { SplitFlapDisplay } from '../components/splitflap/SplitFlapDisplay'
 import { RadioTicker } from '../components/splitflap/RadioTicker'
 import {
   formatBroadcastMessage,
+  wrapCentered,
   SPLIT_FLAP_TITLE_COLS,
   SPLIT_FLAP_SECONDARY_COLS,
   SPLIT_FLAP_NOTE_COLS,
@@ -98,6 +99,13 @@ export function RadioPage() {
 
   const rawNoteLines = visual.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0]
   const noteHeight = hotfx ? noteHeightFor(visual, rawNoteLines.length) : SPLIT_FLAP_NOTE_ROWS
+  // Lignes titre/secondaire selon les rows du layout (grille continue, largeur uniforme).
+  const titleLines = wrapCentered(board.titleRaw, SPLIT_FLAP_TITLE_COLS, visual.layout.titleRows)
+  const secondaryLines = board.secondaryRaw.trim()
+    ? wrapCentered(board.secondaryRaw, SPLIT_FLAP_SECONDARY_COLS, visual.layout.secondaryRows)
+    : [board.secondary]
+  const showSecondary = visual.layout.secondaryRows > 0
+  const brandLabel = broadcast?.brandLabel ?? 'RADIO BLACKHOLE'
   const accent = accentColor(visual)
   const fxClasses = [
     visual.edgeGlow ? 'sf-cabinet--glow' : '',
@@ -111,7 +119,7 @@ export function RadioPage() {
   return (
     <main className="sf-page">
       <header className="sf-header">
-        <span className="sf-brand">RADIO BLACKHOLE</span>
+        <span className="sf-brand">{brandLabel}</span>
         <span className="sf-status">
           <span className={`sf-dot${statusKey === 'live' ? ' live' : statusKey === 'connecting' ? ' connecting' : ''}`} />
           {statusLabel}
@@ -155,8 +163,10 @@ export function RadioPage() {
             </>
           ) : (
             <>
-              <SplitFlapDisplay key={`title:${messageKey}`} lines={[board.title]} variant="title" />
-              <SplitFlapDisplay key={`secondary:${messageKey}`} lines={[board.secondary]} variant="secondary" />
+              <SplitFlapDisplay key={`title:${messageKey}`} lines={titleLines} variant="title" />
+              {showSecondary && (
+                <SplitFlapDisplay key={`secondary:${messageKey}`} lines={secondaryLines} variant="secondary" />
+              )}
               <SplitFlapDisplay key={`note:${messageKey}:${notePage}`} lines={rawNoteLines} variant="note" />
             </>
           )}

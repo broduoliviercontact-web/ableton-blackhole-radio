@@ -52,6 +52,16 @@ URLs :
 
 ## Moteur split-flap & éditeur visuel
 
+- [ ] `/performer` : champ « Nom de la radio (header public) » → publier un
+      brandLabel (ex. `BLACKHOLE FM`) → la page publique `/` affiche ce nom dans
+      le header (fallback `RADIO BLACKHOLE` si vide). ≠ mainTitle (titre/piste).
+- [ ] `/performer` : « Paramètres avancés » → « Tailles du panneau » : régler
+      Titre/Secondaire/Note/Ticker/Panneau (scales %), Titre lignes (1–3),
+      Secondaire lignes (0 = caché, 1–2) → la preview reflète les changements live.
+- [ ] Publier → la page publique applique les mêmes tailles. Secondaire à 0 →
+      la zone disparaît. Titre 2/3 lignes → le titre se wrappe sur plusieurs
+      lignes (grille continue, colonnes alignées).
+- [ ] « Réinitialiser tailles » → retour aux défauts (100 %, 1 ligne, 1 ligne).
 - [ ] `/performer` : section « Visualisation split-flap » → « Moteur split-flap »
       propose Internal / HotFX. Choisir HotFX → la preview bascule en demi-clapets.
 - [ ] Publier avec moteur HotFX → la page publique `/` affiche HotFX après polling

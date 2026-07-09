@@ -157,7 +157,52 @@ async function main(): Promise<void> {
   // Alphabet vide → undefined (pas de stockage du champ).
   const emptyChars = parseBroadcastMessage({ type: 'track', mainTitle: 'C', visual: { hotfxCharacters: '' } })
   assert(emptyChars.visual === undefined, 'hotfxCharacters vide → visual vide → undefined')
-  console.log('✅ broadcast message OK (parse, updatedAt serveur, store mémoire, visual clamp/filter, engine+hotfx+style)')
+
+  // brandLabel : trim, max 60, vide → undefined, ≠ mainTitle.
+  const branded = parseBroadcastMessage({ type: 'track', mainTitle: 'Song', brandLabel: '  BLACKHOLE FM  ' })
+  assert(branded.brandLabel === 'BLACKHOLE FM', 'brandLabel trim + stocké')
+  assert(branded.mainTitle === 'Song', 'brandLabel ≠ mainTitle')
+  const emptyBrand = parseBroadcastMessage({ type: 'track', mainTitle: 'X', brandLabel: '   ' })
+  assert(emptyBrand.brandLabel === undefined, 'brandLabel vide → undefined')
+  let longBrand = ''
+  try {
+    parseBroadcastMessage({ type: 'track', mainTitle: 'X', brandLabel: 'B'.repeat(61) })
+  } catch {
+    longBrand = 'rejected'
+  }
+  assert(longBrand === 'rejected', 'brandLabel > 60 refusé')
+
+  // layout : scales clamp, rows clamp, layout vide → undefined.
+  const lay = parseBroadcastMessage({
+    type: 'track',
+    mainTitle: 'L',
+    visual: {
+      layout: {
+        titleScale: 10, // < 50 → 50
+        secondaryScale: 999, // > 200 → 200
+        noteScale: 90,
+        tickerScale: 110,
+        boardScale: 50, // < 70 → 70
+        titleRows: 9, // > 3 → 3
+        secondaryRows: -1, // < 0 → 0
+      },
+    },
+  })
+  assert(lay.visual?.layout?.titleScale === 50, 'titleScale clamp 50')
+  assert(lay.visual?.layout?.secondaryScale === 200, 'secondaryScale clamp 200')
+  assert(lay.visual?.layout?.boardScale === 70, 'boardScale clamp 70')
+  assert(lay.visual?.layout?.titleRows === 3, 'titleRows clamp 3')
+  assert(lay.visual?.layout?.secondaryRows === 0, 'secondaryRows clamp 0')
+  const emptyLay = parseBroadcastMessage({ type: 'track', mainTitle: 'E', visual: { layout: {} } })
+  assert(emptyLay.visual === undefined, 'layout vide → visual vide → undefined')
+  let badLayoutKey = false
+  try {
+    parseBroadcastMessage({ type: 'track', mainTitle: 'X', visual: { layout: { nope: 1 } } })
+  } catch {
+    badLayoutKey = true
+  }
+  assert(badLayoutKey, 'layout clé inconnue refusée (.strict)')
+  console.log('✅ broadcast message OK (parse, updatedAt serveur, store mémoire, visual clamp/filter, engine+hotfx+style, brandLabel+layout)')
 }
 
 main().catch((e) => {

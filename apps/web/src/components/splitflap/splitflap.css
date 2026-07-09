@@ -141,11 +141,12 @@
 
 /* Tailles : largeur de tuile uniforme (colonnes alignées = vraie grille).
    Hauteur varie par zone (titre plus haut). Le titre et le ticker utilisent
-   la couleur d'accent du preset. Density scale (compact/normal/large). */
-.sf-region .sf-tile { width: calc(30px * var(--sf-density-scale, 1)); }
-.sf-region--title .sf-tile { font-size: calc(24px * var(--sf-density-scale, 1)); height: calc(46px * var(--sf-density-scale, 1)); color: var(--sf-accent); }
-.sf-region--secondary .sf-tile { font-size: calc(15px * var(--sf-density-scale, 1)); height: calc(32px * var(--sf-density-scale, 1)); }
-.sf-region--note .sf-tile { font-size: calc(18px * var(--sf-density-scale, 1)); }
+   la couleur d'accent du preset. Density scale (compact/normal/large) +
+   layout scales (board-scale = base, <zone>-scale = emphase par zone). */
+.sf-region .sf-tile { width: calc(30px * var(--sf-density-scale, 1) * var(--sf-board-scale, 1)); }
+.sf-region--title .sf-tile { font-size: calc(24px * var(--sf-density-scale, 1) * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); height: calc(46px * var(--sf-density-scale, 1) * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); color: var(--sf-accent); }
+.sf-region--secondary .sf-tile { font-size: calc(15px * var(--sf-density-scale, 1) * var(--sf-board-scale, 1) * var(--sf-secondary-scale, 1)); height: calc(32px * var(--sf-density-scale, 1) * var(--sf-board-scale, 1) * var(--sf-secondary-scale, 1)); }
+.sf-region--note .sf-tile { font-size: calc(18px * var(--sf-density-scale, 1) * var(--sf-board-scale, 1) * var(--sf-note-scale, 1)); }
 
 @media (max-width: 760px) {
   .sf-region .sf-tile { width: 9px; }
@@ -156,7 +157,8 @@
   .sf-region { gap: 2px; }
 }
 
-/* Aperçu performer : même panneau, plus petit (scaled down). */
+/* Aperçu performer : même panneau, plus petit (scaled down). Consomme les
+   mêmes vars de layout que la page publique → reflète les scales live. */
 .sf-cabinet--preview {
   max-width: 520px;
   padding: 8px;
@@ -165,11 +167,11 @@
 }
 .sf-cabinet--preview .sf-region { gap: 2px; }
 .sf-cabinet--preview .sf-line { gap: 2px; }
-.sf-cabinet--preview .sf-tile { width: 14px; border-radius: 2px; }
-.sf-cabinet--preview .sf-region--title .sf-tile { font-size: 12px; height: 22px; }
-.sf-cabinet--preview .sf-region--secondary .sf-tile { font-size: 8px; height: 16px; }
-.sf-cabinet--preview .sf-region--note .sf-tile { font-size: 9px; }
-.sf-cabinet--preview .sf-ticker { font-size: 10px; letter-spacing: 2px; padding: 4px 0 1px; }
+.sf-cabinet--preview .sf-tile { width: calc(14px * var(--sf-board-scale, 1)); border-radius: 2px; }
+.sf-cabinet--preview .sf-region--title .sf-tile { font-size: calc(12px * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); height: calc(22px * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); }
+.sf-cabinet--preview .sf-region--secondary .sf-tile { font-size: calc(8px * var(--sf-board-scale, 1) * var(--sf-secondary-scale, 1)); height: calc(16px * var(--sf-board-scale, 1) * var(--sf-secondary-scale, 1)); }
+.sf-cabinet--preview .sf-region--note .sf-tile { font-size: calc(9px * var(--sf-board-scale, 1) * var(--sf-note-scale, 1)); }
+.sf-cabinet--preview .sf-ticker { font-size: calc(10px * var(--sf-ticker-scale, 1)); letter-spacing: 2px; padding: 4px 0 1px; }
 
 /* Bandeau contrôles audio intégré au panneau */
 .sf-controls {
@@ -203,7 +205,7 @@
   white-space: nowrap;
   border-top: 1px solid #1a1d25;
   padding: 8px 0 2px;
-  font-size: 15px;
+  font-size: calc(15px * var(--sf-board-scale, 1) * var(--sf-ticker-scale, 1));
   letter-spacing: 3px;
   color: var(--sf-accent);
 }

@@ -10,6 +10,17 @@ export type VisualEngine = 'internal' | 'hotfx'
 export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'
 
+// Tailles du panneau (scales en %, rows en nb de lignes).
+export interface BroadcastLayout {
+  titleScale?: number
+  secondaryScale?: number
+  noteScale?: number
+  tickerScale?: number
+  boardScale?: number
+  titleRows?: number
+  secondaryRows?: number
+}
+
 export interface BroadcastVisual {
   preset?: VisualPreset
   transition?: VisualTransition
@@ -37,6 +48,8 @@ export interface BroadcastVisual {
   panelDensity?: PanelDensity
   tileRadius?: number
   tileBorderWidth?: number
+  // Tailles du panneau.
+  layout?: BroadcastLayout
 }
 
 export interface BroadcastMessage {
@@ -50,6 +63,8 @@ export interface BroadcastMessage {
   url?: string
   displayMode?: DisplayMode
   visual?: BroadcastVisual
+  // Nom de la radio / label du panneau (header public). ≠ mainTitle.
+  brandLabel?: string
   updatedAt: string // généré côté serveur, jamais confiance au client
 }
 
@@ -92,6 +107,30 @@ const visualSchema = z
     panelDensity: z.enum(['compact', 'normal', 'large']).optional(),
     tileRadius: z.coerce.number().optional(),
     tileBorderWidth: z.coerce.number().optional(),
+    layout: z
+      .object({
+        titleScale: z.coerce.number().optional(),
+        secondaryScale: z.coerce.number().optional(),
+        noteScale: z.coerce.number().optional(),
+        tickerScale: z.coerce.number().optional(),
+        boardScale: z.coerce.number().optional(),
+        titleRows: z.coerce.number().optional(),
+        secondaryRows: z.coerce.number().optional(),
+      })
+      .strict()
+      .optional()
+      .transform((l) => {
+        if (!l) return undefined
+        const out: BroadcastLayout = {}
+        if (l.titleScale != null) out.titleScale = clampInt(l.titleScale, 50, 200)
+        if (l.secondaryScale != null) out.secondaryScale = clampInt(l.secondaryScale, 50, 200)
+        if (l.noteScale != null) out.noteScale = clampInt(l.noteScale, 50, 200)
+        if (l.tickerScale != null) out.tickerScale = clampInt(l.tickerScale, 50, 200)
+        if (l.boardScale != null) out.boardScale = clampInt(l.boardScale, 70, 130)
+        if (l.titleRows != null) out.titleRows = clampInt(l.titleRows, 1, 3)
+        if (l.secondaryRows != null) out.secondaryRows = clampInt(l.secondaryRows, 0, 2)
+        return Object.keys(out).length > 0 ? out : undefined
+      }),
   })
   .strict()
   .optional()
@@ -126,6 +165,7 @@ const visualSchema = z
     if (v.panelDensity) out.panelDensity = v.panelDensity
     if (v.tileRadius != null) out.tileRadius = clampInt(v.tileRadius, 0, 8)
     if (v.tileBorderWidth != null) out.tileBorderWidth = clampInt(v.tileBorderWidth, 1, 4)
+    if (v.layout) out.layout = v.layout
     // Fallback propre (pas de rejet) : noteRowsMax >= noteRowsMin.
     if (out.noteRowsMin != null && out.noteRowsMax != null && out.noteRowsMax < out.noteRowsMin) {
       out.noteRowsMax = out.noteRowsMin
@@ -152,6 +192,7 @@ const messageSchema = z
       .optional(),
     displayMode: z.enum(['static', 'paged', 'scroll']).optional(),
     visual: visualSchema,
+    brandLabel: z.string().trim().max(60).optional(),
   })
   .strict()
 
@@ -171,6 +212,7 @@ export function parseBroadcastMessage(input: unknown): BroadcastMessage {
     url: clean(data.url),
     displayMode: data.displayMode,
     visual: data.visual,
+    brandLabel: clean(data.brandLabel),
     updatedAt: new Date().toISOString(),
   }
 }

@@ -62,4 +62,23 @@ assert(/^performer-[a-z0-9]{6}$/.test(p), `identity performer format: ${p}`)
 const l = getOrCreateIdentity('listener')
 assert(/^listener-[a-z0-9]{6}$/.test(l), `identity listener format: ${l}`)
 
-console.log('✅ web utils self-check OK (isBlackHole, isLoopback, pickPreferredAudioInput, looksLikeBuiltInMic, identity)')
+// Layout (tailles du panneau) : clamp client + défauts + wrapCentered rows.
+const { resolveVisual, DEFAULT_LAYOUT } = await import('./src/components/splitflap/visual')
+const { wrapCentered } = await import('./src/components/splitflap/format')
+const def = resolveVisual()
+assert(def.layout.titleScale === DEFAULT_LAYOUT.titleScale, 'layout défaut sans visual')
+const lay = resolveVisual({
+  layout: { titleScale: 10, secondaryScale: 999, noteScale: 90, tickerScale: 110, boardScale: 50, titleRows: 9, secondaryRows: -1 },
+})
+assert(lay.layout.titleScale === 50, 'client titleScale clamp 50')
+assert(lay.layout.secondaryScale === 200, 'client secondaryScale clamp 200')
+assert(lay.layout.boardScale === 70, 'client boardScale clamp 70')
+assert(lay.layout.titleRows === 3, 'client titleRows clamp 3')
+assert(lay.layout.secondaryRows === 0, 'client secondaryRows clamp 0')
+// wrapCentered : texte court → 1 ligne ; long → borné par maxRows ; lignes ≤ cols.
+const one = wrapCentered('RADIO BLACKHOLE', 32, 3)
+assert(one.length === 1 && one[0].length === 32, 'wrapCentered court → 1 ligne paddée')
+const many = wrapCentered('A'.repeat(200), 32, 2)
+assert(many.length === 2 && many.every((ln) => ln.length === 32), 'wrapCentered long → maxRows lignes, chacune ≤ cols')
+
+console.log('✅ web utils self-check OK (isBlackHole, isLoopback, pickPreferredAudioInput, looksLikeBuiltInMic, identity, layout+wrapCentered)')

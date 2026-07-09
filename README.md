@@ -162,6 +162,14 @@ transition, mode de note, pagination, couleurs, moteur, réglages HotFX natifs
 preview reproduit fidèlement la page publique. Override debug local :
 `/?engine=hotfx` ou `/?engine=internal`.
 
+**Branding & tailles du panneau** : `brandLabel` (nom de la radio affiché dans
+le header public, ≠ `mainTitle` qui est le titre/piste ; fallback
+`RADIO BLACKHOLE`) et `visual.layout` (scales % par zone — titre/secondaire/
+note/ticker 50–200, panneau 70–130 ; lignes titre 1–3, secondaire 0–2). Les
+scales pilotent la taille des tuiles via des variables CSS (grille continue,
+colonnes alignées). Réinitialisable d'un clic. Anciens messages sans
+`brandLabel`/`layout` restent valides (défauts 100 %, 1 ligne).
+
 > Limites HotFX : uppercase forcé, alphabet Latin (accents → espace), animation
 > séquentielle (pas un scramble aléatoire), `duration` = ms par clapet (≠ durée
 > totale). `prefers-reduced-motion` → `duration` 1 ms (snap).

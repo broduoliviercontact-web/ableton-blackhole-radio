@@ -10,6 +10,17 @@ export type VisualEngine = 'internal' | 'hotfx'
 export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'
 
+// Tailles du panneau (scales en %, rows en nb de lignes). Optionnel : vide → défauts.
+export interface BroadcastLayout {
+  titleScale?: number
+  secondaryScale?: number
+  noteScale?: number
+  tickerScale?: number
+  boardScale?: number
+  titleRows?: number
+  secondaryRows?: number
+}
+
 export interface BroadcastVisual {
   preset?: VisualPreset
   transition?: VisualTransition
@@ -37,6 +48,8 @@ export interface BroadcastVisual {
   panelDensity?: PanelDensity
   tileRadius?: number
   tileBorderWidth?: number
+  // Tailles du panneau.
+  layout?: BroadcastLayout
 }
 
 export interface BroadcastMessage {
@@ -50,6 +63,8 @@ export interface BroadcastMessage {
   url?: string
   displayMode?: DisplayMode
   visual?: BroadcastVisual
+  // Nom de la radio / label du panneau (header public). ≠ mainTitle.
+  brandLabel?: string
   updatedAt: string
 }
 
@@ -65,6 +80,7 @@ export interface BroadcastInput {
   url?: string
   displayMode?: DisplayMode
   visual?: BroadcastVisual
+  brandLabel?: string
 }
 
 export async function fetchBroadcastMessage(): Promise<BroadcastMessage | null> {

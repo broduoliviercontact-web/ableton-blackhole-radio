@@ -1,5 +1,6 @@
 import type {
   BroadcastVisual,
+  BroadcastLayout,
   VisualPreset,
   VisualTransition,
   VisualNoteMode,
@@ -10,6 +11,27 @@ import type {
 
 // Alphabet HotFX par défaut (espace initial significatif).
 export const DEFAULT_HOTFX_CHARACTERS = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-·.'
+
+// Layout résolu (toutes valeurs bornées). Scales en %, rows en lignes.
+export interface ResolvedLayout {
+  titleScale: number
+  secondaryScale: number
+  noteScale: number
+  tickerScale: number
+  boardScale: number
+  titleRows: number
+  secondaryRows: number
+}
+
+export const DEFAULT_LAYOUT: ResolvedLayout = {
+  titleScale: 100,
+  secondaryScale: 100,
+  noteScale: 100,
+  tickerScale: 100,
+  boardScale: 100,
+  titleRows: 1,
+  secondaryRows: 1,
+}
 
 export interface ResolvedVisual {
   preset: VisualPreset
@@ -38,6 +60,7 @@ export interface ResolvedVisual {
   panelDensity: PanelDensity
   tileRadius: number
   tileBorderWidth: number
+  layout: ResolvedLayout
 }
 
 // Valeurs par défaut = preset « pirate-industrial » actuel.
@@ -66,6 +89,7 @@ export const DEFAULT_VISUAL: ResolvedVisual = {
   panelDensity: 'normal',
   tileRadius: 3,
   tileBorderWidth: 1,
+  layout: { ...DEFAULT_LAYOUT },
 }
 
 // Couleur d'accent par preset (utilisée si accentColors vide).
@@ -78,6 +102,20 @@ const PRESET_ACCENT: Record<VisualPreset, string> = {
 
 const clamp = (n: number | undefined, fallback: number, min: number, max: number): number =>
   n == null || Number.isNaN(n) ? fallback : Math.max(min, Math.min(max, Math.round(n)))
+
+// ponytail: layout résolu côté client (borne pour l'UI). La vraie validation reste serveur.
+function resolveLayout(l?: BroadcastLayout): ResolvedLayout {
+  if (!l) return { ...DEFAULT_LAYOUT }
+  return {
+    titleScale: clamp(l.titleScale, DEFAULT_LAYOUT.titleScale, 50, 200),
+    secondaryScale: clamp(l.secondaryScale, DEFAULT_LAYOUT.secondaryScale, 50, 200),
+    noteScale: clamp(l.noteScale, DEFAULT_LAYOUT.noteScale, 50, 200),
+    tickerScale: clamp(l.tickerScale, DEFAULT_LAYOUT.tickerScale, 50, 200),
+    boardScale: clamp(l.boardScale, DEFAULT_LAYOUT.boardScale, 70, 130),
+    titleRows: clamp(l.titleRows, DEFAULT_LAYOUT.titleRows, 1, 3),
+    secondaryRows: clamp(l.secondaryRows, DEFAULT_LAYOUT.secondaryRows, 0, 2),
+  }
+}
 
 /** Fusionne un visual partiel avec les défauts (client). La vraie validation
  *  reste côté serveur ; ici on borne juste pour ne pas casser l'UI. Garantit
@@ -111,6 +149,7 @@ export function resolveVisual(v?: BroadcastVisual): ResolvedVisual {
     panelDensity: v.panelDensity ?? DEFAULT_VISUAL.panelDensity,
     tileRadius: clamp(v.tileRadius, DEFAULT_VISUAL.tileRadius, 0, 8),
     tileBorderWidth: clamp(v.tileBorderWidth, DEFAULT_VISUAL.tileBorderWidth, 1, 4),
+    layout: resolveLayout(v.layout),
   }
 }
 
@@ -151,6 +190,13 @@ export function styleVars(v: ResolvedVisual): Record<string, string> {
     '--sf-contrast': (1 + contrastAmp).toFixed(3),
     '--sf-panel-noise': v.panelNoise ? '1' : '0',
     '--sf-density-scale': densityScale,
+    // Tailles du panneau (layout) : scales % → multiplicateurs CSS. boardScale
+    // pilote la taille de base (largeur tuile), les scales par zone s'ajoutent.
+    '--sf-board-scale': (v.layout.boardScale / 100).toFixed(3),
+    '--sf-title-scale': (v.layout.titleScale / 100).toFixed(3),
+    '--sf-secondary-scale': (v.layout.secondaryScale / 100).toFixed(3),
+    '--sf-note-scale': (v.layout.noteScale / 100).toFixed(3),
+    '--sf-ticker-scale': (v.layout.tickerScale / 100).toFixed(3),
     // Var réelle du web component HotFX (lue par son #container grid).
     '--hotfx-split-flap-grid-gap': `${v.hotfxGridGapPx}px`,
   }

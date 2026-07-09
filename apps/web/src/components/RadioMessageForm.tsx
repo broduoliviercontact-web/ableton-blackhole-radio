@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import {
   postBroadcastMessage,
   type BroadcastInput,
+  type BroadcastLayout,
   type BroadcastMessage,
   type BroadcastType,
   type BroadcastVisual,
@@ -85,6 +86,29 @@ export function RadioMessageForm({ performerPassword }: Props) {
     setForm((f) => ({ ...f, [key]: value }))
   const setVis = <K extends keyof BroadcastVisual>(key: K, value: BroadcastVisual[K]) =>
     setVisual((v) => ({ ...v, [key]: value }))
+  // Layout (tailles du panneau) : sous-champs de visual.layout.
+  const setLayout = (key: keyof BroadcastLayout, value: number | undefined) =>
+    setVisual((v) => ({ ...v, layout: { ...v.layout, [key]: value } }))
+  const resetLayout = () => setVisual((v) => ({ ...v, layout: undefined }))
+
+  // Champ scale (%) : range + affichage live. ponytail: helper local DRY (5 scales identiques).
+  const scaleField = (key: keyof BroadcastLayout, label: string, min: number, max: number) => {
+    const val = visual.layout?.[key] ?? 100
+    return (
+      <label style={labelStyle}>
+        {label} — {val}%
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={1}
+          value={val}
+          onChange={(e) => setLayout(key, Number(e.target.value))}
+          style={inputStyle}
+        />
+      </label>
+    )
+  }
 
   // visual complet pour preview + submit (couleurs parsées depuis les inputs texte).
   const visualFull: BroadcastVisual = {
@@ -136,6 +160,16 @@ export function RadioMessageForm({ performerPassword }: Props) {
       {/* 1. Contenu radio */}
       <h3 style={h3Style}>Contenu radio</h3>
       <div style={gridStyle}>
+        <label style={fullLabelStyle}>
+          Nom de la radio (header public)
+          <input
+            value={form.brandLabel ?? ''}
+            onChange={(e) => set('brandLabel', e.target.value)}
+            maxLength={60}
+            placeholder="RADIO BLACKHOLE"
+            style={inputStyle}
+          />
+        </label>
         <label style={labelStyle}>
           Type
           <select value={form.type} onChange={(e) => set('type', e.target.value as BroadcastType)} style={inputStyle}>
@@ -327,6 +361,42 @@ export function RadioMessageForm({ performerPassword }: Props) {
       {/* 3. Paramètres avancés (fermé par défaut) */}
       <details style={detailsStyle}>
         <summary style={summaryStyle}>Paramètres avancés (HotFX, hauteur, style industriel)</summary>
+
+        <h4 style={h4Style}>Tailles du panneau</h4>
+        <div style={gridStyle}>
+          {scaleField('titleScale', 'Titre', 50, 200)}
+          {scaleField('secondaryScale', 'Secondaire', 50, 200)}
+          {scaleField('noteScale', 'Note', 50, 200)}
+          {scaleField('tickerScale', 'Ticker', 50, 200)}
+          {scaleField('boardScale', 'Panneau (base)', 70, 130)}
+          <label style={labelStyle}>
+            Titre — lignes (1–3)
+            <input
+              type="number"
+              min={1}
+              max={3}
+              value={visual.layout?.titleRows ?? 1}
+              onChange={(e) => setLayout('titleRows', e.target.value === '' ? undefined : Number(e.target.value))}
+              style={inputStyle}
+            />
+          </label>
+          <label style={labelStyle}>
+            Secondaire — lignes (0 = caché, 1–2)
+            <input
+              type="number"
+              min={0}
+              max={2}
+              value={visual.layout?.secondaryRows ?? 1}
+              onChange={(e) => setLayout('secondaryRows', e.target.value === '' ? undefined : Number(e.target.value))}
+              style={inputStyle}
+            />
+          </label>
+        </div>
+        <div style={rowStyle}>
+          <button type="button" onClick={resetLayout}>
+            Réinitialiser tailles
+          </button>
+        </div>
 
         <h4 style={h4Style}>HotFX natif</h4>
         <div style={gridStyle}>

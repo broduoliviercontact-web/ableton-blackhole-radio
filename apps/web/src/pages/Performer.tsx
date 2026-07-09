@@ -257,6 +257,10 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
         </p>
         <ConfigCheckButton />
       </section>
+
+      <p style={homeRowStyle}>
+        <a href="/" style={homeLinkStyle}>← Retour à la radio</a>
+      </p>
     </main>
   )
 }
@@ -278,3 +282,17 @@ const diagStyle: CSSProperties = { margin: 0, paddingLeft: 20, fontSize: 14, col
 const tipStyle: CSSProperties = { color: '#6b7280', fontSize: 13, margin: '0 0 12px' }
 const labelStyle: CSSProperties = { display: 'block', fontWeight: 600, marginBottom: 4 }
 const rangeStyle: CSSProperties = { width: '100%' }
+const homeRowStyle: CSSProperties = { textAlign: 'center', marginTop: 24 }
+const homeLinkStyle: CSSProperties = {
+  fontFamily: 'var(--mono, ui-monospace, Consolas, monospace)',
+  fontSize: 13,
+  letterSpacing: 2,
+  color: '#f5d76b',
+  textTransform: 'uppercase',
+  textDecoration: 'none',
+  border: '1px solid #2a2d36',
+  padding: '6px 14px',
+  borderRadius: 4,
+  background: '#14161e',
+  opacity: 0.85,
+}

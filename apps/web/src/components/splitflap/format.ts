@@ -27,8 +27,9 @@ export interface SplitFlapBoard {
   secondary: string
   notePages: string[][]
   ticker: string
-  // Versions brutes (uppercase, fallback) pour le layout HotFX (wrap dynamique).
+  // Versions brutes (uppercase, fallback) pour le layout dynamique (wrap rows).
   titleRaw: string
+  secondaryRaw: string
   noteRaw: string
 }
 
@@ -67,6 +68,15 @@ export function wrapWords(text: string, cols: number): string[] {
   }
   if (cur) lines.push(cur)
   return lines.length > 0 ? lines : ['']
+}
+
+// Wrap + centre sur `cols`, max `maxRows` lignes, chacune paddée à `cols`.
+// ponytail: wrap mot simple, tronque au-delà de maxRows. Sert au titre (1–3
+// lignes) et au secondaire (0–2 lignes) — grille continue (largeur uniforme).
+export function wrapCentered(raw: string, cols: number, maxRows: number): string[] {
+  return wrapWords(raw, cols)
+    .slice(0, Math.max(1, maxRows))
+    .map((l) => centerLine(l, cols))
 }
 
 // Découpe un texte en pages de NOTE_ROWS lignes chacune (toutes les pages —
@@ -113,6 +123,7 @@ export function formatBroadcastMessage(message: SplitFlapInput | null): SplitFla
     notePages: toPages(noteRaw, SPLIT_FLAP_NOTE_COLS, SPLIT_FLAP_NOTE_ROWS),
     ticker: tickerRaw,
     titleRaw,
+    secondaryRaw,
     noteRaw,
   }
 }

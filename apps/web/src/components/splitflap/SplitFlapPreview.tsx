@@ -4,6 +4,7 @@ import { SplitFlapDisplay } from './SplitFlapDisplay'
 import { RadioTicker } from './RadioTicker'
 import {
   formatBroadcastMessage,
+  wrapCentered,
   SPLIT_FLAP_TITLE_COLS,
   SPLIT_FLAP_SECONDARY_COLS,
   SPLIT_FLAP_NOTE_COLS,
@@ -52,6 +53,12 @@ export function SplitFlapPreview({ message }: Props) {
 
   const rawNoteLines = v.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0]
   const noteHeight = hotfx ? noteHeightFor(v, rawNoteLines.length) : SPLIT_FLAP_NOTE_ROWS
+  const titleLines = wrapCentered(board.titleRaw, SPLIT_FLAP_TITLE_COLS, v.layout.titleRows)
+  const secondaryLines = board.secondaryRaw.trim()
+    ? wrapCentered(board.secondaryRaw, SPLIT_FLAP_SECONDARY_COLS, v.layout.secondaryRows)
+    : [board.secondary]
+  const showSecondary = v.layout.secondaryRows > 0
+  const brandLabel = message?.brandLabel ?? 'RADIO BLACKHOLE'
   const accent = accentColor(v)
   const fxClasses = [
     v.edgeGlow ? 'sf-cabinet--glow' : '',
@@ -64,6 +71,10 @@ export function SplitFlapPreview({ message }: Props) {
 
   return (
     <SplitFlapVisualProvider value={settings}>
+      <div style={brandRowStyle}>
+        <span style={brandStyle}>{brandLabel}</span>
+        <span style={aperçuStyle}>APERÇU</span>
+      </div>
       <div className={`sf-cabinet sf-cabinet--preview ${presetClass(v.preset)} ${fxClasses}`.trim()} style={cabinetStyle}>
         {useHotFx && hotfx ? (
           <>
@@ -96,8 +107,8 @@ export function SplitFlapPreview({ message }: Props) {
           </>
         ) : (
           <>
-            <SplitFlapDisplay lines={[board.title]} variant="title" />
-            <SplitFlapDisplay lines={[board.secondary]} variant="secondary" />
+            <SplitFlapDisplay lines={titleLines} variant="title" />
+            {showSecondary && <SplitFlapDisplay lines={secondaryLines} variant="secondary" />}
             <SplitFlapDisplay key={`note:${notePage}`} lines={rawNoteLines} variant="note" />
           </>
         )}
@@ -106,3 +117,18 @@ export function SplitFlapPreview({ message }: Props) {
     </SplitFlapVisualProvider>
   )
 }
+
+// Bandeau brand au-dessus de l'aperçu : reflète brandLabel live (≠ mainTitle).
+const brandRowStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  fontFamily: 'var(--mono, ui-monospace, Consolas, monospace)',
+  fontSize: 11,
+  letterSpacing: 2,
+  color: '#9ca3af',
+  textTransform: 'uppercase',
+  padding: '0 2px 4px',
+}
+const brandStyle: CSSProperties = { fontWeight: 700, color: '#f5d76b' }
+const aperçuStyle: CSSProperties = { color: '#6b7280' }
