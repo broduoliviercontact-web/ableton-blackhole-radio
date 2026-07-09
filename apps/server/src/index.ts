@@ -1,13 +1,17 @@
 import express from 'express'
 import cors from 'cors'
-import { config } from './config'
-import { healthRouter } from './routes/health'
-import { tokenRouter } from './routes/token'
-import { configRouter } from './routes/config'
+import { config } from './config.js'
+import { healthRouter } from './routes/health.js'
+import { tokenRouter } from './routes/token.js'
+import { configRouter } from './routes/config.js'
 
 const app = express()
 app.use(express.json())
-app.use(cors({ origin: ['http://localhost:5173'] }))
+
+// CORS : localhost en dev + origine frontend en prod si fournie. Pas de wildcard.
+const allowedOrigins = ['http://localhost:5173']
+if (config.WEB_ORIGIN) allowedOrigins.push(config.WEB_ORIGIN)
+app.use(cors({ origin: allowedOrigins }))
 
 app.use('/api', healthRouter)
 app.use('/api', tokenRouter)

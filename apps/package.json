@@ -18,6 +18,8 @@
     "selfcheck:server": "tsx server/src/selfcheck.ts",
     "selfcheck:web": "tsx web/selfcheck.ts",
     "typecheck:server": "tsc -p server/tsconfig.json --noEmit",
+    "build:server": "tsc -p server/tsconfig.json",
+    "start:server": "node server/dist/index.js",
     "build:web": "npm --prefix web run build"
   },
   "keywords": [],

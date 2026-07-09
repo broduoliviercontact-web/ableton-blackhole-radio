@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { createToken } from '../livekit'
+import { createToken } from '../livekit.js'
 
 const bodySchema = z.object({
   roomName: z.string().min(1),

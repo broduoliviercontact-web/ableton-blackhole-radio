@@ -6,6 +6,8 @@ const envSchema = z.object({
   LIVEKIT_API_KEY: z.string().min(1),
   LIVEKIT_API_SECRET: z.string().min(1),
   PORT: z.coerce.number().int().positive().default(3001),
+  // Origine du frontend en production (CORS). Optionnel : absent en dev.
+  WEB_ORIGIN: z.string().url().optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)

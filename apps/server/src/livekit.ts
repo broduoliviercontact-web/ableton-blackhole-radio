@@ -1,5 +1,5 @@
 import { AccessToken, type VideoGrant } from 'livekit-server-sdk'
-import { config } from './config'
+import { config } from './config.js'
 
 export type Role = 'performer' | 'listener'
 

@@ -1,8 +1,8 @@
 // Self-check US-1.3 : signe un token performer + listener, vérifie les grants.
 // Lance : npm run selfcheck (depuis server/) ou `tsx server/src/selfcheck.ts` (racine).
 import { TokenVerifier } from 'livekit-server-sdk'
-import { createToken } from './livekit'
-import { config } from './config'
+import { createToken } from './livekit.js'
+import { config } from './config.js'
 
 function assert(cond: boolean, label: string): void {
   if (!cond) {

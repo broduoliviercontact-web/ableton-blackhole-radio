@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { config } from '../config'
+import { config } from '../config.js'
 
 // Heuristique "URL factice" : les placeholders .env.example utilisent example.com.
 function looksFake(url: string): boolean {

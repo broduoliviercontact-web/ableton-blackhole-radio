@@ -80,6 +80,10 @@ curl -X POST http://localhost:3001/api/token \
 
 Voir [`docs/manual-test-mac-audio-input-livekit.md`](docs/manual-test-mac-audio-input-livekit.md).
 
+## Déploiement
+
+Voir [`docs/deploy.md`](docs/deploy.md) — frontend Vercel + backend Render + LiveKit Cloud.
+
 ## Docs BMAD
 
 `docs/bmad/` — brief, prd, architecture, stories, definition-of-done.
