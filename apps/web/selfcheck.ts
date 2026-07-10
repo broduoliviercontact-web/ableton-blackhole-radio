@@ -393,4 +393,29 @@ try {
 const cs = computeRadioMidiChecksum(goodB64)
 assert(/^[0-9a-f]{1,4}$/.test(cs), `radio-midi: checksum hex borné (got ${cs})`)
 
-console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered+boardColumns+trim, ticker+scroll, paged note+resolveVisual, trim -30 dB, accents HotFX, audio monitor, audio rx stats, resizable panel clamp, radio-midi protocol roundtrip+rejets)')
+// Writer .mid (SMF type 0, canal 16) : START + payload + END présents sur le canal 16.
+const { buildRadioMidiFile, radioMidiClipDurationMs } = await import('./src/lib/midiFileWriter')
+const mid = buildRadioMidiFile(notes)
+// En-tête SMF : "MThd", longueur 6, format 0, 1 piste, division 480 (TPQN).
+assert(mid[0] === 0x4d && mid[1] === 0x54 && mid[2] === 0x68 && mid[3] === 0x64, 'midi: header MThd')
+// format = bytes[8..9], ntracks = [10..11], division = [12..13]
+assert(mid[8] === 0 && mid[9] === 0, 'midi: format 0')
+assert(mid[10] === 0 && mid[11] === 1, 'midi: 1 piste (type 0)')
+assert(mid[12] === 0x01 && mid[13] === 0xe0, 'midi: division 480 TPQN')
+// Scanne les note-on status 0x9F (canal 16 raw) → pitches dans l'ordre.
+// Les data bytes sont < 0x80, donc 0x9F n'apparaît qu'en tant que status.
+const onPitches: number[] = []
+for (let i = 0; i < mid.length - 2; i++) {
+  if (mid[i] === 0x9f) onPitches.push(mid[i + 1])
+}
+assert(onPitches[0] === MIDI_START_MESSAGE, 'midi: première note-on = START (pitch 1)')
+assert(onPitches[onPitches.length - 1] === MIDI_END_MESSAGE, 'midi: dernière note-on = END (pitch 2)')
+assert(onPitches.length === notes.length, 'midi: nombre de note-on = notes (START+payload+END)')
+assert(onPitches[1] === notes[1] && onPitches[2] === notes[2], 'midi: payload Base64 préservé (pitches)')
+// End-of-track meta 0xFF 0x2F 0x00 présent en fin de piste.
+assert(mid[mid.length - 3] === 0xff && mid[mid.length - 2] === 0x2f && mid[mid.length - 1] === 0x00, 'midi: End-of-Track meta')
+// Durée approx positive et cohérente (slot 1/32 ≈ 62.5 ms/note @120 BPM).
+const dur = radioMidiClipDurationMs(notes.length)
+assert(dur === notes.length * 62.5, 'midi: durée approx = notes × 62.5 ms (grille 1/32, 120 BPM)')
+
+console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered+boardColumns+trim, ticker+scroll, paged note+resolveVisual, trim -30 dB, accents HotFX, audio monitor, audio rx stats, resizable panel clamp, radio-midi protocol roundtrip+rejets, midi file writer canal 16)')
