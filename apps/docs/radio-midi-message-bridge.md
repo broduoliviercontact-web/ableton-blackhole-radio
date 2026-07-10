@@ -202,6 +202,10 @@ mémoire :
 Règle : si le **même `eventId`** revient dans les **2 secondes**, on **ne republie pas** et on
 log `duplicate ignored`. Au-delà de 2 s, on republie (changement volontaire de scène, par ex.).
 
+> **Changez d’`eventId` quand le contenu change.** Si le même `eventId` est rejoué dans les
+> 2 secondes, le bridge le considère comme un doublon et ignore la republication — même si
+> le contenu a changé (l’anti-dup se base sur l’`eventId`, pas sur le contenu).
+
 > L’anti-duplication vit **côté décodeur Max** (le backend ne sait pas qu’un message vient du
 > MIDI). C’est une protection locale, pas une garantie absolue.
 

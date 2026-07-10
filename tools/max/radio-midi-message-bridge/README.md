@@ -75,6 +75,32 @@ Aucun encodage MIDI nécessaire — c’est juste le formulaire `/performer` dep
 > Le `message` doit être compatible `BroadcastInput` (même forme que le formulaire
 > `/performer`). Le backend valide et renvoie 400 si invalide.
 
+> **`sendnow` envoie le message radio nu compatible `BroadcastMessage`, pas le paquet
+> `radio-midi-message` complet.** C’est le même objet `message` que le formulaire
+> `/performer` envoie dans `POST /api/broadcast-message`.
+
+✅ Correct — message nu (`BroadcastInput`) :
+
+```json
+{
+  "type": "track",
+  "mainTitle": "TEST MIDI",
+  "note": "Depuis Max",
+  "displayMode": "paged"
+}
+```
+
+❌ Incorrect — paquet `radio-midi-message` complet (le backend renvoie 400) :
+
+```json
+{
+  "protocol": "radio-midi-message",
+  "version": 1,
+  "eventId": "...",
+  "message": { ... }
+}
+```
+
 ## 5. Sécurité — performerPassword
 
 ⚠️ **Ne jamais committer le mot de passe.** Le `node.script` ne lit pas de `.env` ; il
@@ -106,6 +132,13 @@ Bonnes pratiques :
 - En cas d’erreur (décode, checksum, validation) : log sur outlet 1, **rien n’est posté**.
 
 L’anti-duplication vit **côté Max** (le backend ignore l’origine MIDI).
+
+> **`eventId`** : changez d’`eventId` quand le contenu change. Si le même `eventId` est
+> rejoué dans les 2 secondes, le bridge le considère comme un doublon et ignore la
+> republication (`duplicate ignored`).
+
+> **Checksum** : il détecte une transmission incomplète/corrompue (notes manquantes),
+> mais ce n’est pas une sécurité cryptographique.
 
 ## 7. Test sans Ableton
 
