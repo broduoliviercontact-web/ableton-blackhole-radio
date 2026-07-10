@@ -96,12 +96,18 @@ export function RadioPage() {
       ? hotfx.notePages
       : notePagesAligned(board.noteRaw, cols, SPLIT_FLAP_NOTE_ROWS, visual.layout.noteAlign)
   const [notePage, setNotePage] = useState(0)
+  // ponytail: la dépendance est le NOMBRE de pages (valeur stable), pas le
+  // tableau notePages (nouvelle référence à chaque render). Sinon le polling
+  // GET toutes les 5 s déclenche un re-render → l'effet se relance → setNotePage(0)
+  // + interval effacé → la note publique reste bloquée sur la page 0 (l'aperçu
+  // performer, non pollué, fonctionnait). messageKey reset sur nouveau message.
+  const pageCount = notePages.length
   useEffect(() => {
     setNotePage(0)
-    if (isScroll || visual.noteMode === 'static' || notePages.length <= 1) return
-    const t = window.setInterval(() => setNotePage((p) => (p + 1) % notePages.length), visual.pageDurationMs)
+    if (isScroll || visual.noteMode === 'static' || pageCount <= 1) return
+    const t = window.setInterval(() => setNotePage((p) => (p + 1) % pageCount), visual.pageDurationMs)
     return () => clearInterval(t)
-  }, [notePages, visual.noteMode, visual.pageDurationMs, isScroll])
+  }, [pageCount, visual.noteMode, visual.pageDurationMs, isScroll, messageKey])
 
   // Fenêtre défilante (scroll) : rows selon le moteur (internal = 4, HotFX = noteRowsMax).
   const scrollRows = hotfx ? visual.noteRowsMax : SPLIT_FLAP_NOTE_ROWS

@@ -53,12 +53,15 @@ export function SplitFlapPreview({ message }: Props) {
       ? hotfx.notePages
       : notePagesAligned(board.noteRaw, cols, SPLIT_FLAP_NOTE_ROWS, v.layout.noteAlign)
   const [notePage, setNotePage] = useState(0)
+  // ponytail: dépendance stable = nombre de pages (≠ identité du tableau, qui
+  // changerait à chaque render et relancerait l'effet). Aligné avec RadioPage.
+  const pageCount = notePages.length
   useEffect(() => {
     setNotePage(0)
-    if (isScroll || v.noteMode === 'static' || notePages.length <= 1) return
-    const t = window.setInterval(() => setNotePage((p) => (p + 1) % notePages.length), v.pageDurationMs)
+    if (isScroll || v.noteMode === 'static' || pageCount <= 1) return
+    const t = window.setInterval(() => setNotePage((p) => (p + 1) % pageCount), v.pageDurationMs)
     return () => clearInterval(t)
-  }, [notePages, v.noteMode, v.pageDurationMs, isScroll])
+  }, [pageCount, v.noteMode, v.pageDurationMs, isScroll])
 
   const scrollRows = hotfx ? v.noteRowsMax : SPLIT_FLAP_NOTE_ROWS
   const scrollLines = useScrollingTextWindow(

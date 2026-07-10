@@ -116,6 +116,24 @@ assert(tickerC.noteScrollSpeedMs === 100, 'noteScrollSpeedMs clamp 100')
 assert(tickerC.noteScrollStep === 8, 'noteScrollStep clamp 8')
 assert(tickerC.noteScrollLoop === false, 'noteScrollLoop false')
 
+// Mode note paged (longues notes lisibles) : resolveVisual conserve noteMode,
+// pageDurationMs, hotfxDurationMs ; défaut = paged. Le mode paged est orthogonal
+// à noteScrollSpeedMs (résolu indépendamment, ignoré au rendu paged — la page
+// publique et l'aperçu partagent resolveVisual, donc mêmes données publiées).
+assert(def.noteMode === 'paged', 'noteMode défaut = paged (lisible pour notes longues)')
+assert(def.pageDurationMs === 6000 && def.hotfxDurationMs === 100, 'paged défauts pageDuration 6000 / hotfxDuration 100 (flip rapide)')
+const paged = resolveVisual({ noteMode: 'paged', pageDurationMs: 9000, hotfxDurationMs: 100, noteScrollSpeedMs: 180 })
+assert(paged.noteMode === 'paged', 'resolveVisual conserve noteMode=paged')
+assert(paged.pageDurationMs === 9000, 'resolveVisual conserve pageDurationMs (9000 = temps par page)')
+assert(paged.hotfxDurationMs === 100, 'resolveVisual conserve hotfxDurationMs (vitesse clapet)')
+assert(paged.noteScrollSpeedMs === 180, 'resolveVisual conserve noteScrollSpeedMs (orthogonal : paged l\'ignore au rendu)')
+const pagedClamped = resolveVisual({ noteMode: 'paged', pageDurationMs: 600, hotfxDurationMs: 5 })
+assert(pagedClamped.pageDurationMs === 2000, 'pageDurationMs clamp min 2000 (paged)')
+assert(pagedClamped.hotfxDurationMs === 30, 'hotfxDurationMs clamp min 30 (flip rapide paged)')
+// scroll reste un mode explicite (effet bandeau), non forcé en paged par resolveVisual.
+assert(resolveVisual({ noteMode: 'scroll' }).noteMode === 'scroll', 'resolveVisual conserve noteMode=scroll')
+assert(resolveVisual({ noteMode: 'static' }).noteMode === 'static', 'resolveVisual conserve noteMode=static')
+
 // computeScrollLines : décalage char-par-char, lignes = tranches consécutives, loop reboucle.
 const { computeScrollLines } = await import('./src/components/splitflap/useScrollingTextWindow')
 const S = 'ABCDEFGH' // L=8
@@ -233,4 +251,4 @@ assert(clampHeight(9999) === 760, 'clampHeight au-dessus du max → 760')
 assert(clampHeight(450.7) === 451, 'clampHeight arrondit')
 assert(clampHeight(NaN) === 360 && clampHeight(Infinity) === 760, 'clampHeight NaN → défaut, Infinity → max')
 
-console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered+boardColumns+trim, ticker+scroll, trim -30 dB, accents HotFX, audio monitor, audio rx stats, resizable panel clamp)')
+console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered+boardColumns+trim, ticker+scroll, paged note+resolveVisual, trim -30 dB, accents HotFX, audio monitor, audio rx stats, resizable panel clamp)')
