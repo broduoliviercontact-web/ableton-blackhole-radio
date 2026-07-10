@@ -19,6 +19,9 @@ let performerPassword = "";
 max.addHandler("config", (url, pw) => {
   backendUrl = String(url || "");
   performerPassword = String(pw || "");
+  // Indicateur config pour le patch (alimente un comment/label). Password jamais loggé.
+  const ok = backendUrl && performerPassword;
+  max.outlet("status", "config", ok ? "CONFIG OK" : "NOT CONFIGURED");
   max.post(
     "radio-midi poster: backend=" +
       (backendUrl || "(vide)") +

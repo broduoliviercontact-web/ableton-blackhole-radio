@@ -242,6 +242,24 @@ function clear() {
   log("reset");
 }
 
+// TEST LOCAL (sans Ableton, sans clip) : injecte un paquet de test fixe (sans checksum,
+// accepté par finalize) et le décode via le même chemin que le MIDI réel. Permet de valider
+// le décodeur + le POST depuis Max sans générer de .mid. L'anti-dup s'applique : un 2e test
+// dans 2 s => "duplicate ignored" (normal).
+function test() {
+  var msg = {
+    type: "track",
+    mainTitle: "TEST LOCAL",
+    subtitle: "Decode Max sans Ableton",
+    note: "Test decode + POST depuis le panneau MIDI Message Bridge.",
+    displayMode: "paged",
+  };
+  var pkt = { protocol: PROTOCOL, version: VERSION, eventId: "test-local", message: msg };
+  buffer = utf8ToBase64(JSON.stringify(pkt)); // sans checksum => finalize l'accepte
+  receiving = false; // finalize ne teste pas receiving
+  finalize();
+}
+
 function anything() {
   log("message inconnu: " + messagename);
 }
