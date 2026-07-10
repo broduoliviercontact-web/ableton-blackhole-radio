@@ -148,6 +148,39 @@ qu'aucun message n'est publié.
 > redémarrage de Render. L'affichage split-flap est rendu en HTML/CSS, sans
 > dépendance externe. Plus tard : Supabase / Redis / LiveKit room metadata.
 
+### MIDI Message Bridge (Ableton → Max → Radio)
+
+Une **seconde source de publication**, parallèle au formulaire `/performer` : un clip
+MIDI « data » synchronisé avec un morceau Ableton transporte les métadonnées (titre,
+artiste, note, ticker, réglages visuels) via un patch **Max / Max for Live**, qui décode
+et POST au même endpoint `/api/broadcast-message`. La radio publique ne voit **aucune
+différence** — aucun nouvel endpoint, aucun changement de schéma, aucun nouveau listener.
+
+```
+Ableton (clip MIDI data, canal 16) → Max (décode) → POST /api/broadcast-message → page radio
+```
+
+**Usage** :
+
+1. `/performer` → panneau **MIDI Message Bridge** → `eventId` → **Générer fichier MIDI data**
+   → **Télécharger `.mid`** (type 0, canal 16, START + payload Base64 + END).
+2. Charger le `.mid` dans Ableton sur une piste MIDI (canal 16) synchronisée avec le
+   morceau, routée vers le patch Max.
+3. Le patch Max (`tools/max/radio-midi-message-bridge/`) décode le MIDI, vérifie le
+   checksum, applique l'anti-duplication `eventId` (2 s), et POST le `message` au backend
+   (avec le `performerPassword` saisi dans Max).
+
+**Modes** : MIDI Decoder (clip Ableton) ou Send Now (publication directe depuis Max, sans
+clip). Protocole v1 : JSON → UTF-8 → Base64 → notes MIDI (pitch = ASCII), checksum somme
+mod 65535, limite recommandée 4096 caractères Base64 (≈ 3 KB JSON). Adapté aux titres/notes/
+tickers/métadonnées — **pas** aux longs textes. Le MIDI ne transporte pas l'audio (LiveKit
+gère l'audio, chaîne existante).
+
+> Docs : `apps/docs/radio-midi-message-bridge.md` (protocole) ·
+> `tools/max/radio-midi-message-bridge/README.md` (câblage Max, sécurité, test sans Ableton).
+> Lib : `apps/web/src/lib/radioMidiMessageProtocol.ts`. **Le `performerPassword` ne doit
+> jamais être committé** — le patch Max le contenant reste local.
+
 ## Moteur split-flap & éditeur visuel
 
 Deux moteurs d'affichage split-flap, choisis par le performer (persistés dans

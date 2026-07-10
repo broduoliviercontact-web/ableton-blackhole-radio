@@ -251,4 +251,171 @@ assert(clampHeight(9999) === 760, 'clampHeight au-dessus du max → 760')
 assert(clampHeight(450.7) === 451, 'clampHeight arrondit')
 assert(clampHeight(NaN) === 360 && clampHeight(Infinity) === 760, 'clampHeight NaN → défaut, Infinity → max')
 
-console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered+boardColumns+trim, ticker+scroll, paged note+resolveVisual, trim -30 dB, accents HotFX, audio monitor, audio rx stats, resizable panel clamp)')
+// Radio MIDI Message Bridge — protocole v1 (encode/decode roundtrip + rejets).
+const {
+  createRadioMidiPacket,
+  encodePacketToMidiNotes,
+  decodePacketFromMidiNotes,
+  encodePacketToBase64,
+  decodePacketFromBase64,
+  isValidBase64MidiNote,
+  computeRadioMidiChecksum,
+  isDuplicateEventId,
+  MIDI_START_MESSAGE,
+  MIDI_END_MESSAGE,
+  MIDI_CLEAR_BUFFER,
+  RADIO_MIDI_PROTOCOL,
+  RADIO_MIDI_VERSION,
+  RADIO_MIDI_CHANNEL,
+  RADIO_MIDI_MAX_BASE64_LENGTH,
+} = await import('./src/lib/radioMidiMessageProtocol')
+
+// Roundtrip avec accents français (UTF-8 → Base64 → notes → decode).
+const accentedNote = "À l'échelle du globe, les pirates créèrent un réseau d'information."
+const midiMsg = {
+  type: 'track',
+  mainTitle: 'FM CLOUDS',
+  artist: 'Olivier',
+  note: accentedNote,
+  ticker: 'Ableton → MIDI → Max → JSON → Radio',
+  brandLabel: 'RADIO BLACKHOLE',
+  visual: { splitFlapEngine: 'hotfx', noteMode: 'paged', pageDurationMs: 6000, hotfxDurationMs: 100 },
+}
+const pkt = createRadioMidiPacket('track-001-intro', midiMsg)
+assert(pkt.protocol === RADIO_MIDI_PROTOCOL, 'radio-midi: protocol = radio-midi-message')
+assert(pkt.version === RADIO_MIDI_VERSION, 'radio-midi: version = 1')
+assert(pkt.eventId === 'track-001-intro', 'radio-midi: eventId conservé')
+assert(RADIO_MIDI_CHANNEL === 16, 'radio-midi: canal utilisateur = 16')
+const notes = encodePacketToMidiNotes(pkt)
+assert(notes[0] === MIDI_START_MESSAGE, 'radio-midi: START_MESSAGE en tête')
+assert(notes[notes.length - 1] === MIDI_END_MESSAGE, 'radio-midi: END_MESSAGE en fin')
+const decoded = decodePacketFromMidiNotes(notes)
+assert(decoded.protocol === RADIO_MIDI_PROTOCOL, 'radio-midi: decode protocol')
+assert(decoded.version === RADIO_MIDI_VERSION, 'radio-midi: decode version')
+assert(decoded.eventId === 'track-001-intro', 'radio-midi: decode eventId')
+assert((decoded.message as { note: string }).note === accentedNote, 'radio-midi: roundtrip accents UTF-8 intacts')
+assert((decoded.message as { visual: { noteMode: string } }).visual.noteMode === 'paged', 'radio-midi: decode visual.noteMode')
+assert(typeof decoded.checksum === 'string' && decoded.checksum.length > 0, 'radio-midi: checksum présent après decode')
+
+// Notes de contrôle absentes du payload ; START/END encadrent le Base64.
+const inner = notes.slice(1, -1)
+assert(inner.every((n) => n !== MIDI_START_MESSAGE && n !== MIDI_END_MESSAGE && n !== MIDI_CLEAR_BUFFER), 'radio-midi: notes contrôle absentes du payload')
+assert(inner.every(isValidBase64MidiNote), 'radio-midi: payload = notes Base64 valides (43–122)')
+
+// CLEAR (3) dans le payload → rejeté.
+try {
+  decodePacketFromMidiNotes([MIDI_START_MESSAGE, 65, MIDI_CLEAR_BUFFER, 66, MIDI_END_MESSAGE])
+  assert(false, 'radio-midi: CLEAR dans payload doit être rejeté')
+} catch (e) {
+  assert(/non-Base64|hors plage/i.test((e as Error).message), 'radio-midi: CLEAR rejeté avec message clair')
+}
+
+// Version incorrecte → rejetée.
+try {
+  decodePacketFromBase64(
+    encodePacketToBase64({ ...pkt, version: 2 as unknown as 1 }),
+  )
+  assert(false, 'radio-midi: version 2 doit être rejetée')
+} catch (e) {
+  assert(/version/i.test((e as Error).message), 'radio-midi: version incorrecte rejetée')
+}
+
+// Protocol incorrect → rejeté.
+try {
+  decodePacketFromBase64(encodePacketToBase64({ ...pkt, protocol: 'autre' as 'radio-midi-message' }))
+  assert(false, 'radio-midi: protocol étranger doit être rejeté')
+} catch (e) {
+  assert(/protocol/i.test((e as Error).message), 'radio-midi: protocol invalide rejeté')
+}
+
+// Notes hors 0–127 → rejetées.
+try {
+  decodePacketFromMidiNotes([MIDI_START_MESSAGE, 200, MIDI_END_MESSAGE])
+  assert(false, 'radio-midi: note 200 doit être rejetée')
+} catch (e) {
+  assert(/hors plage/i.test((e as Error).message), 'radio-midi: note >127 rejetée')
+}
+try {
+  decodePacketFromMidiNotes([MIDI_START_MESSAGE, -5, MIDI_END_MESSAGE])
+  assert(false, 'radio-midi: note -5 doit être rejetée')
+} catch (e) {
+  assert(/hors plage/i.test((e as Error).message), 'radio-midi: note <0 rejetée')
+}
+
+// Payload sans START/END → rejeté.
+try {
+  decodePacketFromMidiNotes([65, 66, 67])
+  assert(false, 'radio-midi: payload sans START doit être rejeté')
+} catch (e) {
+  assert(/START_MESSAGE/i.test((e as Error).message), 'radio-midi: START manquant rejeté')
+}
+try {
+  decodePacketFromMidiNotes([MIDI_START_MESSAGE, 65, 66])
+  assert(false, 'radio-midi: payload sans END doit être rejeté')
+} catch (e) {
+  assert(/END_MESSAGE/i.test((e as Error).message), 'radio-midi: END manquant rejeté')
+}
+
+// Checksum : corruption d'un caractère Base64 → mismatch détecté.
+const goodB64 = encodePacketToBase64(pkt)
+const corrupted = goodB64.slice(0, 4) + (goodB64[4] === 'A' ? 'B' : 'A') + goodB64.slice(5)
+try {
+  decodePacketFromBase64(corrupted)
+  assert(false, 'radio-midi: checksum doit détecter la corruption')
+} catch (e) {
+  assert(/checksum|décode JSON/i.test((e as Error).message), 'radio-midi: corruption détectée (checksum/JSON)')
+}
+
+// eventId vide → rejeté à la création.
+try {
+  createRadioMidiPacket('', midiMsg)
+  assert(false, 'radio-midi: eventId vide doit être rejeté')
+} catch (e) {
+  assert(/eventId/i.test((e as Error).message), 'radio-midi: eventId vide rejeté')
+}
+
+// Anti-duplication eventId : même eventId < 2 s = duplicate, > 2 s = ok.
+assert(isDuplicateEventId('a', 'a', 1000, 1500) === true, 'radio-midi: même eventId < 2s = duplicate')
+assert(isDuplicateEventId('a', 'a', 1000, 3500) === false, 'radio-midi: même eventId > 2s = non duplicate')
+assert(isDuplicateEventId('a', 'b', 1000, 1500) === false, 'radio-midi: eventId différent = non duplicate')
+assert(isDuplicateEventId('a', null, null, 1500) === false, "radio-midi: pas d'historique = non duplicate")
+
+// Limite taille : base64 trop long → refusé. On force un message énorme.
+const huge = createRadioMidiPacket('big', { note: 'X'.repeat(RADIO_MIDI_MAX_BASE64_LENGTH * 2) })
+try {
+  encodePacketToMidiNotes(huge)
+  assert(false, 'radio-midi: payload > limite doit être refusé')
+} catch (e) {
+  assert(/trop long/i.test((e as Error).message), 'radio-midi: payload trop long refusé avec message clair')
+}
+
+// Checksum déterministe et borné (hex, ≤ 4 chars car mod 65535 < 0x10000).
+const cs = computeRadioMidiChecksum(goodB64)
+assert(/^[0-9a-f]{1,4}$/.test(cs), `radio-midi: checksum hex borné (got ${cs})`)
+
+// Writer .mid (SMF type 0, canal 16) : START + payload + END présents sur le canal 16.
+const { buildRadioMidiFile, radioMidiClipDurationMs } = await import('./src/lib/midiFileWriter')
+const mid = buildRadioMidiFile(notes)
+// En-tête SMF : "MThd", longueur 6, format 0, 1 piste, division 480 (TPQN).
+assert(mid[0] === 0x4d && mid[1] === 0x54 && mid[2] === 0x68 && mid[3] === 0x64, 'midi: header MThd')
+// format = bytes[8..9], ntracks = [10..11], division = [12..13]
+assert(mid[8] === 0 && mid[9] === 0, 'midi: format 0')
+assert(mid[10] === 0 && mid[11] === 1, 'midi: 1 piste (type 0)')
+assert(mid[12] === 0x01 && mid[13] === 0xe0, 'midi: division 480 TPQN')
+// Scanne les note-on status 0x9F (canal 16 raw) → pitches dans l'ordre.
+// Les data bytes sont < 0x80, donc 0x9F n'apparaît qu'en tant que status.
+const onPitches: number[] = []
+for (let i = 0; i < mid.length - 2; i++) {
+  if (mid[i] === 0x9f) onPitches.push(mid[i + 1])
+}
+assert(onPitches[0] === MIDI_START_MESSAGE, 'midi: première note-on = START (pitch 1)')
+assert(onPitches[onPitches.length - 1] === MIDI_END_MESSAGE, 'midi: dernière note-on = END (pitch 2)')
+assert(onPitches.length === notes.length, 'midi: nombre de note-on = notes (START+payload+END)')
+assert(onPitches[1] === notes[1] && onPitches[2] === notes[2], 'midi: payload Base64 préservé (pitches)')
+// End-of-track meta 0xFF 0x2F 0x00 présent en fin de piste.
+assert(mid[mid.length - 3] === 0xff && mid[mid.length - 2] === 0x2f && mid[mid.length - 1] === 0x00, 'midi: End-of-Track meta')
+// Durée approx positive et cohérente (slot 1/32 ≈ 62.5 ms/note @120 BPM).
+const dur = radioMidiClipDurationMs(notes.length)
+assert(dur === notes.length * 62.5, 'midi: durée approx = notes × 62.5 ms (grille 1/32, 120 BPM)')
+
+console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered+boardColumns+trim, ticker+scroll, paged note+resolveVisual, trim -30 dB, accents HotFX, audio monitor, audio rx stats, resizable panel clamp, radio-midi protocol roundtrip+rejets, midi file writer canal 16)')

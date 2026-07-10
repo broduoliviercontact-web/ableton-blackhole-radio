@@ -18,6 +18,7 @@ import {
 import { SplitFlapPreview } from './splitflap/SplitFlapPreview'
 import { DEFAULT_VISUAL, parseColors } from './splitflap/visual'
 import { HelpTooltip } from './HelpTooltip'
+import { MidiMessageBridge } from './MidiMessageBridge'
 import { cr } from './controlRoom'
 
 interface Props {
@@ -838,6 +839,14 @@ export function RadioMessageForm({ performerPassword }: Props) {
             />
           </label>
         </div>
+      </details>
+
+      {/* Bloc F — MIDI Message Bridge : génère un clip MIDI « data » (canal 16)
+          encodant le message courant (previewMessage = form + visualFull). Parallèle
+          à la publication manuelle, n'oblige pas à republier pour générer le .mid. */}
+      <details className="rf-details">
+        <summary className="rf-summary">⑥ MIDI Message Bridge (Ableton → Max)</summary>
+        <MidiMessageBridge message={previewMessage} />
       </details>
         </div>
       </div>
