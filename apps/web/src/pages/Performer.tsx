@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { fetchToken } from '../api/token'
 import { isMediaDevicesSupported, looksLikeBuiltInMic, requestAudioPermission } from '../audio/mediaDevices'
 import { useAudioDevices } from '../hooks/useAudioDevices'
@@ -109,38 +109,38 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
   const statusInfo = STATUS_INFO[statusKey]
 
   return (
-    <main className="cr" style={mainStyle}>
-      <header style={headerStyle}>
-        <div style={brandStyle}>
-          <span style={brandTitleStyle}>CONTROL ROOM</span>
-          <span style={brandSubStyle}>RADIO BLACKHOLE · PERFORMER</span>
+    <main className="cr cr-page">
+      <header className="cr-header">
+        <div className="cr-brand">
+          <span className="cr-brand__title">CONTROL ROOM</span>
+          <span className="cr-brand__sub">RADIO BLACKHOLE · PERFORMER</span>
         </div>
-        <span style={{ ...badgeStyle, color: statusInfo.text }}>
-          <span style={{ ...dotStyle, background: statusInfo.dot, boxShadow: statusInfo.glow === 'transparent' ? 'none' : `0 0 8px ${statusInfo.glow}` }} />
+        <span className="cr-badge" style={{ color: statusInfo.text }}>
+          <span className="cr-badge__dot" style={{ background: statusInfo.dot, boxShadow: statusInfo.glow === 'transparent' ? 'none' : `0 0 8px ${statusInfo.glow}` }} />
           {statusInfo.label}
         </span>
-        <a href="/" target="_blank" rel="noopener noreferrer" style={publicLinkStyle}>
+        <a href="/" target="_blank" rel="noopener noreferrer" className="cr-link">
           Page publique ↗
         </a>
       </header>
 
       <div className="cr-grid">
         {/* Colonne gauche — Chaîne audio */}
-        <div style={colStyle}>
+        <div className="cr-col">
           <Card step="1" title="Autorisation">
             {permission === 'unsupported' && (
-              <p style={errorStyle}>API mediaDevices indisponible dans ce navigateur.</p>
+              <p className="cr-error">API mediaDevices indisponible dans ce navigateur.</p>
             )}
             {permission === 'idle' && (
-              <button type="button" onClick={handleAuthorize} style={btnPrimary}>
+              <button type="button" onClick={handleAuthorize} className="cr-btn--primary">
                 Autoriser l’audio
               </button>
             )}
-            {permission === 'requesting' && <p style={mutedStyle}>Demande de permission…</p>}
-            {permission === 'granted' && <p style={okStyle}>✅ Permission accordée</p>}
+            {permission === 'requesting' && <p className="cr-muted">Demande de permission…</p>}
+            {permission === 'granted' && <p className="cr-ok">✅ Permission accordée</p>}
             {permission === 'denied' && (
               <>
-                <p style={errorStyle}>❌ {permError ?? 'Permission refusée.'}</p>
+                <p className="cr-error">❌ {permError ?? 'Permission refusée.'}</p>
                 <button type="button" onClick={handleAuthorize}>Réessayer</button>
               </>
             )}
@@ -159,24 +159,24 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
 
           {permission === 'granted' && (
             <Card step="3" title="Capture locale">
-              <div style={rowStyle}>
-                <button type="button" onClick={handleStartCapture} disabled={!selectedId} style={btnPrimary}>
+              <div className="cr-row">
+                <button type="button" onClick={handleStartCapture} disabled={!selectedId} className="cr-btn--primary">
                   Démarrer la capture
                 </button>
                 {capturing && (
-                  <button type="button" onClick={handleStopCapture} style={btnDanger}>
+                  <button type="button" onClick={handleStopCapture} className="cr-btn--danger">
                     Arrêter la capture
                   </button>
                 )}
               </div>
-              <p style={mutedStyle}>
+              <p className="cr-muted">
                 État : {capture.status}
                 {capture.deviceLabel ? ` · ${capture.deviceLabel}` : ''}
               </p>
-              {capture.error && <p style={errorStyle}>❌ {capture.error}</p>}
+              {capture.error && <p className="cr-error">❌ {capture.error}</p>}
               {capturing && (
                 <>
-                  <h3 style={h3Style}>Niveau source</h3>
+                  <h3 className="cr-h3">Niveau source</h3>
                   <AudioMeter stream={capture.stream} />
                 </>
               )}
@@ -186,17 +186,17 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
           {permission === 'granted' && (
             <Card step="4" title="Diffusion LiveKit">
               {capturing && capture.deviceLabel && (
-                <p style={mutedStyle}>Source active : {capture.deviceLabel}</p>
+                <p className="cr-muted">Source active : {capture.deviceLabel}</p>
               )}
               {capturing && capture.deviceLabel && looksLikeBuiltInMic(capture.deviceLabel) && (
-                <p style={tipStyle}>
+                <p className="cr-tip">
                   Cette source semble être un micro. Pour diffuser Ableton, sélectionne une entrée
                   virtuelle comme BlackHole ou Loopback.
                 </p>
               )}
               {capturing && (
                 <div style={{ marginBottom: 12 }}>
-                  <label style={labelStyle} htmlFor="master-volume">
+                  <label className="cr-label" htmlFor="master-volume">
                     Volume master : {masterVolume} %
                   </label>
                   <input
@@ -207,36 +207,36 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
                     step={1}
                     value={masterVolume}
                     onChange={(e) => handleVolumeChange(Number(e.target.value))}
-                    style={rangeStyle}
+                    className="cr-range"
                   />
-                  <p style={tipStyle}>
+                  <p className="cr-tip">
                     0 % = mute du broadcast · 100 % = niveau original. Réglable en direct pendant la
                     diffusion.
                   </p>
                 </div>
               )}
               {capturing && (
-                <p style={mutedStyle}>
+                <p className="cr-muted">
                   Mot de passe performer déverrouillé (validé côté serveur). Requis pour démarrer
                   la diffusion.
                 </p>
               )}
-              <div style={rowStyle}>
+              <div className="cr-row">
                 <button
                   type="button"
                   onClick={() => void broadcast.start(myIdentity, masterVolume, performerPassword)}
                   disabled={!canStartBroadcast}
-                  style={btnPrimary}
+                  className="cr-btn--primary"
                 >
                   Démarrer la diffusion
                 </button>
                 {canStopBroadcast && (
-                  <button type="button" onClick={() => void broadcast.stop()} style={btnDanger}>
+                  <button type="button" onClick={() => void broadcast.stop()} className="cr-btn--danger">
                     Arrêter la diffusion
                   </button>
                 )}
               </div>
-              <p style={mutedStyle}>
+              <p className="cr-muted">
                 Broadcast : {broadcast.status}
                 {broadcast.roomName ? ` · room : ${broadcast.roomName}` : ''}
                 {broadcast.identity ? ` · identity : ${broadcast.identity}` : ''}
@@ -244,30 +244,30 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
               </p>
               {postFaderStream && (
                 <>
-                  <h3 style={h3Style}>Niveau envoyé aux auditeurs</h3>
+                  <h3 className="cr-h3">Niveau envoyé aux auditeurs</h3>
                   <AudioMeter stream={postFaderStream} />
                 </>
               )}
-              {broadcast.error && <p style={errorStyle}>❌ {broadcast.error}</p>}
-              {!capturing && <p style={mutedStyle}>Démarre la capture locale avant la diffusion.</p>}
+              {broadcast.error && <p className="cr-error">❌ {broadcast.error}</p>}
+              {!capturing && <p className="cr-muted">Démarre la capture locale avant la diffusion.</p>}
             </Card>
           )}
         </div>
 
         {/* Colonne droite — Message & affichage */}
-        <div style={colStyle}>
+        <div className="cr-col">
           <RadioMessageForm performerPassword={performerPassword} />
         </div>
       </div>
 
       {/* Réglages techniques repliés : diagnostic + debug + test token + config-check.
           Outils cachés visuellement, logique intacte. */}
-      <details style={techDetailsStyle}>
-        <summary style={techSummaryStyle}>Réglages techniques — diagnostic & debug</summary>
-        <div style={techBodyStyle}>
+      <details className="cr-tech">
+        <summary className="cr-tech__summary">Réglages techniques — diagnostic & debug</summary>
+        <div className="cr-tech__body">
           <div>
-            <h3 style={techH3Style}>Diagnostic</h3>
-            <ul style={diagStyle}>
+            <h3 className="cr-tech__h3">Diagnostic</h3>
+            <ul className="cr-diag">
               <li>Capture locale : {capturing ? 'active' : 'inactive'}</li>
               <li>Device sélectionné : {capture.deviceLabel ?? devices.find((d) => d.deviceId === selectedId)?.label ?? '—'}</li>
               <li>Broadcast : {broadcast.status === 'live' ? 'live' : 'offline'}</li>
@@ -278,9 +278,9 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
             </ul>
           </div>
           <div>
-            <h3 style={techH3Style}>Debug</h3>
+            <h3 className="cr-tech__h3">Debug</h3>
             <button type="button" onClick={testToken}>Test token performer</button>
-            <p style={{ color: tokenOk === false ? cr.err : tokenOk === true ? cr.ok : undefined, margin: '8px 0 0', fontSize: 13, fontFamily: cr.mono, wordBreak: 'break-all' }}>
+            <p className="cr-token-status" style={{ color: tokenOk === false ? cr.err : tokenOk === true ? cr.ok : undefined }}>
               {tokenStatus}
             </p>
             <ConfigCheckButton />
@@ -288,8 +288,8 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
         </div>
       </details>
 
-      <p style={homeRowStyle}>
-        <a href="/" style={homeLinkStyle}>← Retour à la radio</a>
+      <p className="cr-home-row">
+        <a href="/" className="cr-home-link">← Retour à la radio</a>
       </p>
     </main>
   )
@@ -306,162 +306,11 @@ const STATUS_INFO = {
 // Card sombre de section audio. ponytail: helper local DRY (4 cartes chaîne).
 function Card({ step, title, children }: { step: string; title: string; children: ReactNode }) {
   return (
-    <section style={cardStyle}>
-      <h2 style={cardTitleStyle}>
-        <span style={cardStepStyle}>{step}</span> {title}
+    <section className="cr-card">
+      <h2 className="cr-card__title">
+        <span className="cr-card__step">{step}</span> {title}
       </h2>
       {children}
     </section>
   )
-}
-
-const mainStyle: CSSProperties = {
-  background: cr.bgPage,
-  color: cr.text,
-  fontFamily: cr.mono,
-  margin: '0 auto',
-  width: '100%',
-  maxWidth: 1180,
-  minHeight: '100svh',
-  padding: '24px 20px 40px',
-}
-const headerStyle: CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  alignItems: 'center',
-  gap: 12,
-  marginBottom: 20,
-  paddingBottom: 16,
-  borderBottom: `1px solid ${cr.border}`,
-}
-const brandStyle: CSSProperties = { display: 'flex', flexDirection: 'column', lineHeight: 1.1 }
-const brandTitleStyle: CSSProperties = {
-  fontFamily: cr.mono,
-  fontSize: 18,
-  letterSpacing: 3,
-  textTransform: 'uppercase',
-  color: cr.text,
-  fontWeight: 600,
-}
-const brandSubStyle: CSSProperties = {
-  fontSize: 10,
-  letterSpacing: 2,
-  textTransform: 'uppercase',
-  color: cr.accent,
-  marginTop: 2,
-}
-const badgeStyle: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 8,
-  fontFamily: cr.mono,
-  fontSize: 12,
-  fontWeight: 700,
-  letterSpacing: 2,
-  textTransform: 'uppercase',
-  padding: '5px 10px',
-  border: `1px solid ${cr.borderStrong}`,
-  borderRadius: 4,
-  background: cr.surfaceSunken,
-}
-const dotStyle: CSSProperties = { width: 8, height: 8, borderRadius: '50%' }
-const publicLinkStyle: CSSProperties = {
-  marginLeft: 'auto',
-  fontFamily: cr.mono,
-  fontSize: 11,
-  letterSpacing: 1,
-  textTransform: 'uppercase',
-  color: cr.accent,
-  textDecoration: 'none',
-  border: `1px solid ${cr.borderStrong}`,
-  padding: '6px 12px',
-  borderRadius: 4,
-  background: cr.surfaceSunken,
-}
-const colStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }
-const cardStyle: CSSProperties = {
-  background: cr.surface,
-  border: `1px solid ${cr.border}`,
-  borderRadius: 8,
-  padding: 16,
-}
-const cardTitleStyle: CSSProperties = {
-  margin: '0 0 10px',
-  fontFamily: cr.mono,
-  fontSize: 11,
-  letterSpacing: 2,
-  textTransform: 'uppercase',
-  color: cr.textMuted,
-  display: 'flex',
-  alignItems: 'baseline',
-  gap: 8,
-  fontWeight: 600,
-}
-const cardStepStyle: CSSProperties = { color: cr.accent, fontWeight: 700 }
-const h3Style: CSSProperties = {
-  fontSize: 11,
-  margin: '10px 0 4px',
-  fontFamily: cr.mono,
-  letterSpacing: 1,
-  textTransform: 'uppercase',
-  color: cr.textDim,
-  fontWeight: 600,
-}
-const rowStyle: CSSProperties = { display: 'flex', gap: 8, flexWrap: 'wrap' }
-const btnPrimary: CSSProperties = { background: cr.accent, color: '#0e1117', border: `1px solid ${cr.accentDeep}` }
-const btnDanger: CSSProperties = { color: cr.err, borderColor: 'rgba(239,68,68,.45)' }
-const okStyle: CSSProperties = { color: cr.ok, margin: 0, fontSize: 13 }
-const errorStyle: CSSProperties = { color: cr.err, margin: '0 0 8px', fontSize: 13 }
-const mutedStyle: CSSProperties = { color: cr.textMuted, fontSize: 13, lineHeight: 1.5, margin: '6px 0' }
-const tipStyle: CSSProperties = { color: cr.textDim, fontSize: 12, margin: '6px 0 12px', lineHeight: 1.5 }
-const labelStyle: CSSProperties = {
-  display: 'block',
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: 1,
-  textTransform: 'uppercase',
-  color: cr.textMuted,
-  marginBottom: 6,
-}
-const rangeStyle: CSSProperties = { width: '100%', accentColor: cr.accent }
-const techDetailsStyle: CSSProperties = {
-  marginTop: 16,
-  background: cr.surfaceSunken,
-  border: `1px solid ${cr.border}`,
-  borderRadius: 8,
-  padding: '10px 14px',
-}
-const techSummaryStyle: CSSProperties = {
-  cursor: 'pointer',
-  fontSize: 11,
-  letterSpacing: 2,
-  textTransform: 'uppercase',
-  color: cr.textDim,
-  fontFamily: cr.mono,
-  fontWeight: 600,
-}
-const techBodyStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }
-const techH3Style: CSSProperties = {
-  fontSize: 11,
-  letterSpacing: 1,
-  textTransform: 'uppercase',
-  color: cr.textMuted,
-  margin: '0 0 6px',
-  fontFamily: cr.mono,
-  fontWeight: 600,
-}
-const diagStyle: CSSProperties = { margin: 0, paddingLeft: 18, fontSize: 13, color: cr.textMuted, lineHeight: 1.7, fontFamily: cr.mono }
-const homeRowStyle: CSSProperties = { textAlign: 'center', marginTop: 24 }
-const homeLinkStyle: CSSProperties = {
-  fontFamily: 'var(--mono, ui-monospace, Consolas, monospace)',
-  fontSize: 13,
-  letterSpacing: 2,
-  color: '#f5d76b',
-  textTransform: 'uppercase',
-  textDecoration: 'none',
-  border: '1px solid #2a2d36',
-  padding: '6px 14px',
-  borderRadius: 4,
-  background: '#14161e',
-  opacity: 0.85,
 }

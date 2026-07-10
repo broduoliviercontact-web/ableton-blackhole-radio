@@ -314,7 +314,7 @@ export function RadioPage() {
       </footer>
 
       {/* Conteneur invisible pour les <audio> distants. */}
-      <div ref={audioHostRef} style={{ width: 0, height: 0, overflow: 'hidden' }} />
+      <div ref={audioHostRef} className="pub-audio-host" />
     </main>
   )
 }

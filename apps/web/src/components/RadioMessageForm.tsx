@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import type { CSSProperties } from 'react'
 import {
   postBroadcastMessage,
   type BroadcastInput,
@@ -147,7 +146,7 @@ const ALIGN_LABELS: Record<TextAlign, string> = { left: 'Gauche', center: 'Centr
 // tout en restant accessible (hover/focus/clic). ponytail: helper DRY pour ~40 champs.
 function FieldHead({ text, tip }: { text: string; tip: string }) {
   return (
-    <span style={headStyle}>
+    <span className="rf-head">
       {text} <HelpTooltip text={tip} label={text} />
     </span>
   )
@@ -187,7 +186,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
   const scaleField = (key: keyof BroadcastLayout, label: string, min: number, max: number, tip: string) => {
     const val = visual.layout?.[key] ?? 100
     return (
-      <label style={labelStyle}>
+      <label className="rf-label">
         <FieldHead text={`${label} — ${val}%`} tip={tip} />
         <input
           type="range"
@@ -196,7 +195,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           step={1}
           value={val}
           onChange={(e) => setLayout(key, Number(e.target.value))}
-          style={inputStyle}
+          className="rf-input"
         />
       </label>
     )
@@ -206,16 +205,16 @@ export function RadioMessageForm({ performerPassword }: Props) {
   const alignControl = (key: keyof BroadcastLayout, label: string, tip: string) => {
     const val = (visual.layout?.[key] as TextAlign | undefined) ?? 'left'
     return (
-      <label style={labelStyle}>
+      <label className="rf-label">
         <FieldHead text={label} tip={tip} />
-        <div role="group" style={segGroupStyle}>
+        <div role="group" className="rf-seg">
           {ALIGNS.map((a) => (
             <button
               key={a}
               type="button"
               onClick={() => setLayout(key, a)}
               aria-pressed={val === a}
-              style={val === a ? segBtnActiveStyle : segBtnStyle}
+              className={val === a ? 'rf-seg__btn rf-seg__btn--active' : 'rf-seg__btn'}
             >
               {ALIGN_LABELS[a]}
             </button>
@@ -265,9 +264,9 @@ export function RadioMessageForm({ performerPassword }: Props) {
   }
 
   return (
-    <section style={sectionStyle}>
-      <h2 style={h2Style}>Message radio &amp; affichage</h2>
-      <p style={mutedStyle}>
+    <section className="rf-section">
+      <h2 className="rf-h2">Message radio &amp; affichage</h2>
+      <p className="rf-muted">
         Pilote le message affiché sur la page publique <code>/</code>. Indépendant du
         broadcast audio — publiable même sans live. La page publique recharge le message
         publié après quelques secondes.
@@ -278,55 +277,55 @@ export function RadioMessageForm({ performerPassword }: Props) {
           bloc ⑥ en tête de layout. Aperçu = écran principal, contrôles sur le côté. */}
       <div className="rf-layout">
         <div className="rf-preview">
-          <h3 style={h3Style}>Aperçu public</h3>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-            <p style={{ ...mutedStyle, margin: 0, fontSize: 11 }}>Rendu split-flap · moteur = message.visual.splitFlapEngine</p>
-            <button type="button" onClick={() => setPreviewNonce((n) => n + 1)} style={smallBtnStyle}>
+          <h3 className="rf-h3">Aperçu public</h3>
+          <div className="rf-preview__bar">
+            <p className="rf-preview__hint">Rendu split-flap · moteur = message.visual.splitFlapEngine</p>
+            <button type="button" onClick={() => setPreviewNonce((n) => n + 1)} className="rf-btn--small">
               ↻ Relancer
             </button>
           </div>
           <SplitFlapPreview key={previewNonce} message={previewMessage} />
-          <p style={mutedStyle}>Aperçu non publié — publier le message pour l’envoyer aux auditeurs.</p>
+          <p className="rf-muted">Aperçu non publié — publier le message pour l’envoyer aux auditeurs.</p>
           {published && (
-            <p style={mutedStyle}>Dernier message publié · updatedAt : {published.updatedAt}</p>
+            <p className="rf-muted">Dernier message publié · updatedAt : {published.updatedAt}</p>
           )}
         </div>
 
         <div className="rf-controls">
       {/* Bloc A — Publication : statut + actions + lien public (en haut pour publier vite). */}
-      <h3 style={h3Style}>① Publication</h3>
-      <div style={pubRowStyle}>
-        <span style={status === 'ok' ? pubOkStyle : status === 'error' ? pubErrStyle : pubIdleStyle}>
+      <h3 className="rf-h3">① Publication</h3>
+      <div className="rf-pub-row">
+        <span className={status === 'ok' ? 'rf-pub-badge rf-pub-badge--ok' : status === 'error' ? 'rf-pub-badge rf-pub-badge--err' : 'rf-pub-badge'}>
           {status === 'publishing' ? 'Publication…' : status === 'ok' ? 'Publié' : status === 'error' ? 'Erreur' : 'Brouillon'}
         </span>
-        <button type="button" onClick={publish} disabled={!form.mainTitle.trim() || status === 'publishing'} style={publishBtnStyle}>
+        <button type="button" onClick={publish} disabled={!form.mainTitle.trim() || status === 'publishing'} className="rf-btn--publish">
           {status === 'publishing' ? 'Publication…' : 'Publier le message'}
         </button>
         <button type="button" onClick={reset}>Réinitialiser</button>
-        <a href="/" target="_blank" rel="noopener noreferrer" style={pubLinkStyle}>
+        <a href="/" target="_blank" rel="noopener noreferrer" className="rf-pub-link">
           Ouvrir la page publique ↗
         </a>
       </div>
       {feedback && (
-        <p style={status === 'error' ? errorStyle : okStyle}>{status === 'error' ? `❌ ${feedback}` : `✅ ${feedback}`}</p>
+        <p className={status === 'error' ? 'rf-error' : 'rf-ok'}>{status === 'error' ? `❌ ${feedback}` : `✅ ${feedback}`}</p>
       )}
 
       {/* Bloc B — Contenu radio */}
-      <h3 style={h3Style}>② Contenu radio</h3>
-      <div style={gridStyle}>
-        <label style={fullLabelStyle}>
+      <h3 className="rf-h3">② Contenu radio</h3>
+      <div className="rf-grid">
+        <label className="rf-label rf-label--full">
           <FieldHead text="Nom de la radio (header public)" tip={TIPS.brandLabel} />
           <input
             value={form.brandLabel ?? ''}
             onChange={(e) => set('brandLabel', e.target.value)}
             maxLength={60}
             placeholder="RADIO BLACKHOLE"
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Type" tip={TIPS.type} />
-          <select value={form.type} onChange={(e) => set('type', e.target.value as BroadcastType)} style={inputStyle}>
+          <select value={form.type} onChange={(e) => set('type', e.target.value as BroadcastType)} className="rf-input">
             {TYPES.map((t) => (
               <option key={t} value={t}>
                 {t}
@@ -334,64 +333,64 @@ export function RadioMessageForm({ performerPassword }: Props) {
             ))}
           </select>
         </label>
-        <label style={fullLabelStyle}>
+        <label className="rf-label rf-label--full">
           <FieldHead text="Titre principal *" tip={TIPS.mainTitle} />
           <input
             value={form.mainTitle}
             onChange={(e) => set('mainTitle', e.target.value)}
             maxLength={120}
             placeholder="Ex : Late Night Tape"
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Sous-titre" tip={TIPS.subtitle} />
           <input
             value={form.subtitle ?? ''}
             onChange={(e) => set('subtitle', e.target.value)}
             maxLength={160}
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Artiste" tip={TIPS.artist} />
-          <input value={form.artist ?? ''} onChange={(e) => set('artist', e.target.value)} maxLength={120} style={inputStyle} />
+          <input value={form.artist ?? ''} onChange={(e) => set('artist', e.target.value)} maxLength={120} className="rf-input" />
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Album" tip={TIPS.album} />
-          <input value={form.album ?? ''} onChange={(e) => set('album', e.target.value)} maxLength={120} style={inputStyle} />
+          <input value={form.album ?? ''} onChange={(e) => set('album', e.target.value)} maxLength={120} className="rf-input" />
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="URL" tip={TIPS.url} />
           <input
             value={form.url ?? ''}
             onChange={(e) => set('url', e.target.value)}
             maxLength={500}
             placeholder="https://…"
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
-        <label style={fullLabelStyle}>
+        <label className="rf-label rf-label--full">
           <FieldHead text="Note longue" tip={TIPS.note} />
           <textarea
             value={form.note ?? ''}
             onChange={(e) => set('note', e.target.value)}
             maxLength={2000}
             rows={3}
-            style={textareaStyle}
+            className="rf-textarea"
           />
         </label>
       </div>
 
       {/* Bloc C — Affichage public : moteur, preset, transition, mode note, alignements, tailles. */}
-      <h3 style={h3Style}>③ Affichage public</h3>
-      <div style={gridStyle}>
-        <label style={labelStyle}>
+      <h3 className="rf-h3">③ Affichage public</h3>
+      <div className="rf-grid">
+        <label className="rf-label">
           <FieldHead text="Moteur split-flap" tip={TIPS.engine} />
           <select
             value={visual.splitFlapEngine ?? 'internal'}
             onChange={(e) => setVis('splitFlapEngine', e.target.value as VisualEngine)}
-            style={inputStyle}
+            className="rf-input"
           >
             {ENGINES.map((en) => (
               <option key={en} value={en}>
@@ -400,12 +399,12 @@ export function RadioMessageForm({ performerPassword }: Props) {
             ))}
           </select>
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Preset visuel" tip={TIPS.preset} />
           <select
             value={visual.preset ?? 'pirate-industrial'}
             onChange={(e) => setVis('preset', e.target.value as VisualPreset)}
-            style={inputStyle}
+            className="rf-input"
           >
             {PRESETS.map((p) => (
               <option key={p} value={p}>
@@ -414,12 +413,12 @@ export function RadioMessageForm({ performerPassword }: Props) {
             ))}
           </select>
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Transition (moteur internal)" tip={TIPS.transition} />
           <select
             value={visual.transition ?? 'flip'}
             onChange={(e) => setVis('transition', e.target.value as VisualTransition)}
-            style={inputStyle}
+            className="rf-input"
           >
             {TRANSITIONS.map((t) => (
               <option key={t} value={t}>
@@ -428,12 +427,12 @@ export function RadioMessageForm({ performerPassword }: Props) {
             ))}
           </select>
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Mode de note" tip={TIPS.noteMode} />
           <select
             value={visual.noteMode ?? 'paged'}
             onChange={(e) => setVis('noteMode', e.target.value as VisualNoteMode)}
-            style={inputStyle}
+            className="rf-input"
           >
             {NOTE_MODES.map((m) => (
               <option key={m} value={m}>
@@ -442,7 +441,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
             ))}
           </select>
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Temps par page (ms)" tip={TIPS.pageDuration} />
           <input
             type="number"
@@ -450,10 +449,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
             max={30000}
             value={visual.pageDurationMs ?? 6000}
             onChange={(e) => setVis('pageDurationMs', e.target.value === '' ? undefined : Number(e.target.value))}
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Stagger delay (ms)" tip={TIPS.staggerDelay} />
           <input
             type="number"
@@ -461,25 +460,25 @@ export function RadioMessageForm({ performerPassword }: Props) {
             max={200}
             value={visual.staggerDelayMs ?? 12}
             onChange={(e) => setVis('staggerDelayMs', e.target.value === '' ? undefined : Number(e.target.value))}
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
-        <label style={fullLabelStyle}>
+        <label className="rf-label rf-label--full">
           <FieldHead text="Scramble colors (hex séparés par virgule)" tip={TIPS.scrambleColors} />
           <input
             value={scrambleColorsText}
             onChange={(e) => setScrambleColorsText(e.target.value)}
             placeholder="#e6c84f,#f2ead2,#d94b45"
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
-        <label style={fullLabelStyle}>
+        <label className="rf-label rf-label--full">
           <FieldHead text="Accent colors (hex séparés par virgule)" tip={TIPS.accentColors} />
           <input
             value={accentColorsText}
             onChange={(e) => setAccentColorsText(e.target.value)}
             placeholder="#f5d76b"
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
       </div>
@@ -487,25 +486,25 @@ export function RadioMessageForm({ performerPassword }: Props) {
           conditionnel plutôt que de dupliquer les inputs (Temps par page est
           ci-dessus, Vitesse clapet HotFX en ⑤) — on guide sans réinventer. */}
       {visual.noteMode === 'scroll' ? (
-        <p style={{ ...mutedStyle, color: cr.warn }}>
+        <p className="rf-muted" style={{ color: cr.warn }}>
           ⚠ Ce mode anime en continu. Pour un texte long lisible, préfère Pages split-flap.
         </p>
       ) : visual.noteMode === 'paged' ? (
-        <p style={mutedStyle}>
+        <p className="rf-muted">
           Pages split-flap : la note est découpée en pages (cases/ligne × lignes). Chaque page
           s’anime rapidement (règle la « Vitesse clapet HotFX » en ⑤, 80–120 ms) puis reste fixe
           pendant le « Temps par page » avant la page suivante.
         </p>
       ) : null}
-      <div style={rowStyle}>
+      <div className="rf-row">
         <button type="button" onClick={resetVisual}>
           Réinitialiser visuel
         </button>
       </div>
 
       {/* Alignement des textes — padding grille (titre/secondaire/note) + CSS (header). */}
-      <h4 style={h4Style}>Alignement des textes</h4>
-      <div style={gridStyle}>
+      <h4 className="rf-h4">Alignement des textes</h4>
+      <div className="rf-grid">
         {alignControl('brandAlign', 'Header', TIPS.brandAlign)}
         {alignControl('titleAlign', 'Titre', TIPS.titleAlign)}
         {alignControl('secondaryAlign', 'Secondaire', TIPS.secondaryAlign)}
@@ -513,14 +512,14 @@ export function RadioMessageForm({ performerPassword }: Props) {
       </div>
 
       {/* Tailles du panneau — scales % + lignes (déplacé ici depuis les détails avancés). */}
-      <h4 style={h4Style}>Tailles du panneau</h4>
-      <div style={gridStyle}>
+      <h4 className="rf-h4">Tailles du panneau</h4>
+      <div className="rf-grid">
         {scaleField('titleScale', 'Titre', 50, 200, TIPS.titleScale)}
         {scaleField('secondaryScale', 'Secondaire', 50, 200, TIPS.secondaryScale)}
         {scaleField('noteScale', 'Note', 50, 200, TIPS.noteScale)}
         {scaleField('tickerScale', 'Ticker', 50, 200, TIPS.tickerScale)}
         {scaleField('boardScale', 'Panneau (base)', 70, 130, TIPS.boardScale)}
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Nombre de cases par ligne (12–64)" tip={TIPS.boardColumns} />
           <input
             type="number"
@@ -528,10 +527,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
             max={64}
             value={visual.layout?.boardColumns ?? 32}
             onChange={(e) => setLayout('boardColumns', e.target.value === '' ? undefined : Number(e.target.value))}
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Titre — lignes (1–3)" tip={TIPS.titleRows} />
           <input
             type="number"
@@ -539,10 +538,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
             max={3}
             value={visual.layout?.titleRows ?? 1}
             onChange={(e) => setLayout('titleRows', e.target.value === '' ? undefined : Number(e.target.value))}
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Secondaire — lignes (0 = caché, 1–2)" tip={TIPS.secondaryRows} />
           <input
             type="number"
@@ -550,11 +549,11 @@ export function RadioMessageForm({ performerPassword }: Props) {
             max={2}
             value={visual.layout?.secondaryRows ?? 1}
             onChange={(e) => setLayout('secondaryRows', e.target.value === '' ? undefined : Number(e.target.value))}
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
       </div>
-      <div style={rowStyle}>
+      <div className="rf-row">
         <button type="button" onClick={resetLayout}>
           Réinitialiser tailles
         </button>
@@ -563,9 +562,9 @@ export function RadioMessageForm({ performerPassword }: Props) {
       {/* Défilement continu — visible seulement en mode Défilement continu. */}
       {visual.noteMode === 'scroll' && (
         <>
-          <h4 style={h4Style}>Défilement continu</h4>
-          <div style={gridStyle}>
-            <label style={labelStyle}>
+          <h4 className="rf-h4">Défilement continu</h4>
+          <div className="rf-grid">
+            <label className="rf-label">
               <FieldHead text={`Vitesse défilement continu (ms) — ${visual.noteScrollSpeedMs ?? 180} ms`} tip={TIPS.noteScrollSpeed} />
               <input
                 type="range"
@@ -574,10 +573,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
                 step={20}
                 value={visual.noteScrollSpeedMs ?? 180}
                 onChange={(e) => setVis('noteScrollSpeedMs', Number(e.target.value))}
-                style={inputStyle}
+                className="rf-input"
               />
             </label>
-            <label style={labelStyle}>
+            <label className="rf-label">
               <FieldHead text={`Pas (caractères/tick) — ${visual.noteScrollStep ?? 1}`} tip={TIPS.noteScrollStep} />
               <input
                 type="range"
@@ -586,10 +585,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
                 step={1}
                 value={visual.noteScrollStep ?? 1}
                 onChange={(e) => setVis('noteScrollStep', Number(e.target.value))}
-                style={inputStyle}
+                className="rf-input"
               />
             </label>
-            <label style={checkLabelStyle}>
+            <label className="rf-check">
               <input
                 type="checkbox"
                 checked={visual.noteScrollLoop ?? true}
@@ -603,19 +602,19 @@ export function RadioMessageForm({ performerPassword }: Props) {
       )}
 
       {/* Bloc D — Bandeau roulant (ticker) : texte + vitesse + sens + séparateur + activation. */}
-      <h3 style={h3Style}>④ Bandeau roulant</h3>
-      <div style={gridStyle}>
-        <label style={fullLabelStyle}>
+      <h3 className="rf-h3">④ Bandeau roulant</h3>
+      <div className="rf-grid">
+        <label className="rf-label rf-label--full">
           <FieldHead text="Texte du bandeau" tip={TIPS.tickerText} />
           <input
             value={form.ticker ?? ''}
             onChange={(e) => set('ticker', e.target.value)}
             maxLength={500}
             placeholder="RADIO BLACKHOLE · LIVE FROM PANTIN · NEXT SESSION SOON"
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
-        <label style={checkLabelStyle}>
+        <label className="rf-check">
           <input
             type="checkbox"
             checked={visual.tickerEnabled ?? true}
@@ -624,7 +623,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           Activer le bandeau
           <HelpTooltip text={TIPS.tickerEnabled} label="Activer le bandeau" />
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text={`Vitesse du bandeau (ms) — ${visual.tickerSpeedMs ?? 22000} ms`} tip={TIPS.tickerSpeed} />
           <input
             type="range"
@@ -633,15 +632,15 @@ export function RadioMessageForm({ performerPassword }: Props) {
             step={1000}
             value={visual.tickerSpeedMs ?? 22000}
             onChange={(e) => setVis('tickerSpeedMs', Number(e.target.value))}
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Sens du défilement" tip={TIPS.tickerDirection} />
           <select
             value={visual.tickerDirection ?? 'left'}
             onChange={(e) => setVis('tickerDirection', e.target.value as TickerDirection)}
-            style={inputStyle}
+            className="rf-input"
           >
             {DIRECTIONS.map((d) => (
               <option key={d} value={d}>
@@ -650,24 +649,24 @@ export function RadioMessageForm({ performerPassword }: Props) {
             ))}
           </select>
         </label>
-        <label style={labelStyle}>
+        <label className="rf-label">
           <FieldHead text="Séparateur (max 12)" tip={TIPS.tickerSeparator} />
           <input
             value={visual.tickerSeparator ?? ' · '}
             onChange={(e) => setVis('tickerSeparator', e.target.value)}
             maxLength={12}
-            style={inputStyle}
+            className="rf-input"
           />
         </label>
       </div>
 
       {/* Bloc E — Détails avancés (HotFX, hauteur, style industriel) — fermé par défaut. */}
-      <details style={detailsStyle}>
-        <summary style={summaryStyle}>⑤ Détails avancés (HotFX, hauteur, style industriel)</summary>
+      <details className="rf-details">
+        <summary className="rf-summary">⑤ Détails avancés (HotFX, hauteur, style industriel)</summary>
 
-        <h4 style={h4Style}>HotFX natif</h4>
-        <div style={gridStyle}>
-          <label style={labelStyle}>
+        <h4 className="rf-h4">HotFX natif</h4>
+        <div className="rf-grid">
+          <label className="rf-label">
             <FieldHead text="Vitesse clapet HotFX (ms)" tip={TIPS.hotfxDuration} />
             <input
               type="number"
@@ -675,10 +674,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
               max={1000}
               value={visual.hotfxDurationMs ?? 200}
               onChange={(e) => setVis('hotfxDurationMs', e.target.value === '' ? undefined : Number(e.target.value))}
-              style={inputStyle}
+              className="rf-input"
             />
           </label>
-          <label style={labelStyle}>
+          <label className="rf-label">
             <FieldHead text="Gap grille HotFX (px)" tip={TIPS.hotfxGridGap} />
             <input
               type="number"
@@ -686,28 +685,28 @@ export function RadioMessageForm({ performerPassword }: Props) {
               max={12}
               value={visual.hotfxGridGapPx ?? 3}
               onChange={(e) => setVis('hotfxGridGapPx', e.target.value === '' ? undefined : Number(e.target.value))}
-              style={inputStyle}
+              className="rf-input"
             />
           </label>
-          <label style={fullLabelStyle}>
+          <label className="rf-label rf-label--full">
             <FieldHead text="Alphabet HotFX (max 120 ; espace initial significatif)" tip={TIPS.hotfxCharacters} />
             <input
               value={visual.hotfxCharacters ?? ''}
               onChange={(e) => setVis('hotfxCharacters', e.target.value)}
               maxLength={120}
-              style={inputStyle}
+              className="rf-input"
             />
           </label>
         </div>
 
-        <h4 style={h4Style}>Hauteur des zones (HotFX)</h4>
-        <div style={gridStyle}>
-          <label style={labelStyle}>
+        <h4 className="rf-h4">Hauteur des zones (HotFX)</h4>
+        <div className="rf-grid">
+          <label className="rf-label">
             <FieldHead text="Mode hauteur" tip={TIPS.hotfxHeightMode} />
             <select
               value={visual.hotfxHeightMode ?? 'auto'}
               onChange={(e) => setVis('hotfxHeightMode', e.target.value as HotfxHeightMode)}
-              style={inputStyle}
+              className="rf-input"
             >
               {HEIGHT_MODES.map((m) => (
                 <option key={m} value={m}>
@@ -716,7 +715,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
               ))}
             </select>
           </label>
-          <label style={labelStyle}>
+          <label className="rf-label">
             <FieldHead text="Note lignes min (1–8)" tip={TIPS.noteRows} />
             <input
               type="number"
@@ -724,10 +723,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
               max={8}
               value={visual.noteRowsMin ?? 2}
               onChange={(e) => setVis('noteRowsMin', e.target.value === '' ? undefined : Number(e.target.value))}
-              style={inputStyle}
+              className="rf-input"
             />
           </label>
-          <label style={labelStyle}>
+          <label className="rf-label">
             <FieldHead text="Note lignes max (1–12)" tip={TIPS.noteRows} />
             <input
               type="number"
@@ -735,14 +734,14 @@ export function RadioMessageForm({ performerPassword }: Props) {
               max={12}
               value={visual.noteRowsMax ?? 5}
               onChange={(e) => setVis('noteRowsMax', e.target.value === '' ? undefined : Number(e.target.value))}
-              style={inputStyle}
+              className="rf-input"
             />
           </label>
         </div>
 
-        <h4 style={h4Style}>Style industriel</h4>
-        <div style={gridStyle}>
-          <label style={checkLabelStyle}>
+        <h4 className="rf-h4">Style industriel</h4>
+        <div className="rf-grid">
+          <label className="rf-check">
             <input
               type="checkbox"
               checked={visual.flicker ?? false}
@@ -751,7 +750,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
             Flicker
             <HelpTooltip text={TIPS.flicker} label="Flicker" />
           </label>
-          <label style={labelStyle}>
+          <label className="rf-label">
             <FieldHead text="Flicker intensity (0–100)" tip={TIPS.flickerIntensity} />
             <input
               type="number"
@@ -759,10 +758,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
               max={100}
               value={visual.flickerIntensity ?? 35}
               onChange={(e) => setVis('flickerIntensity', e.target.value === '' ? undefined : Number(e.target.value))}
-              style={inputStyle}
+              className="rf-input"
             />
           </label>
-          <label style={checkLabelStyle}>
+          <label className="rf-check">
             <input
               type="checkbox"
               checked={visual.edgeGlow ?? true}
@@ -771,7 +770,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
             Edge glow
             <HelpTooltip text={TIPS.edgeGlow} label="Edge glow" />
           </label>
-          <label style={labelStyle}>
+          <label className="rf-label">
             <FieldHead text="Edge glow intensity (0–100)" tip={TIPS.edgeGlowIntensity} />
             <input
               type="number"
@@ -779,10 +778,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
               max={100}
               value={visual.edgeGlowIntensity ?? 45}
               onChange={(e) => setVis('edgeGlowIntensity', e.target.value === '' ? undefined : Number(e.target.value))}
-              style={inputStyle}
+              className="rf-input"
             />
           </label>
-          <label style={labelStyle}>
+          <label className="rf-label">
             <FieldHead text="Tile contrast (0–100)" tip={TIPS.tileContrast} />
             <input
               type="number"
@@ -790,10 +789,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
               max={100}
               value={visual.tileContrast ?? 40}
               onChange={(e) => setVis('tileContrast', e.target.value === '' ? undefined : Number(e.target.value))}
-              style={inputStyle}
+              className="rf-input"
             />
           </label>
-          <label style={checkLabelStyle}>
+          <label className="rf-check">
             <input
               type="checkbox"
               checked={visual.panelNoise ?? false}
@@ -802,12 +801,12 @@ export function RadioMessageForm({ performerPassword }: Props) {
             Panel noise
             <HelpTooltip text={TIPS.panelNoise} label="Panel noise" />
           </label>
-          <label style={labelStyle}>
+          <label className="rf-label">
             <FieldHead text="Panel density" tip={TIPS.panelDensity} />
             <select
               value={visual.panelDensity ?? 'normal'}
               onChange={(e) => setVis('panelDensity', e.target.value as PanelDensity)}
-              style={inputStyle}
+              className="rf-input"
             >
               {DENSITIES.map((d) => (
                 <option key={d} value={d}>
@@ -816,7 +815,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
               ))}
             </select>
           </label>
-          <label style={labelStyle}>
+          <label className="rf-label">
             <FieldHead text="Tile radius (0–8)" tip={TIPS.tileRadius} />
             <input
               type="number"
@@ -824,10 +823,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
               max={8}
               value={visual.tileRadius ?? 3}
               onChange={(e) => setVis('tileRadius', e.target.value === '' ? undefined : Number(e.target.value))}
-              style={inputStyle}
+              className="rf-input"
             />
           </label>
-          <label style={labelStyle}>
+          <label className="rf-label">
             <FieldHead text="Tile border width (1–4)" tip={TIPS.tileBorderWidth} />
             <input
               type="number"
@@ -835,7 +834,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
               max={4}
               value={visual.tileBorderWidth ?? 1}
               onChange={(e) => setVis('tileBorderWidth', e.target.value === '' ? undefined : Number(e.target.value))}
-              style={inputStyle}
+              className="rf-input"
             />
           </label>
         </div>
@@ -845,46 +844,3 @@ export function RadioMessageForm({ performerPassword }: Props) {
     </section>
   )
 }
-
-const sectionStyle: CSSProperties = { background: cr.surface, border: `1px solid ${cr.border}`, borderRadius: 8, padding: 18, marginTop: 0 }
-const h2Style: CSSProperties = { margin: '0 0 6px', fontFamily: cr.mono, fontSize: 14, letterSpacing: 2, textTransform: 'uppercase', color: cr.accent, fontWeight: 600 }
-const h3Style: CSSProperties = { fontSize: 11, margin: '14px 0 6px', fontFamily: cr.mono, letterSpacing: 2, textTransform: 'uppercase', color: cr.textMuted, fontWeight: 600 }
-const h4Style: CSSProperties = { fontSize: 10, margin: '10px 0 4px', color: cr.textDim, fontFamily: cr.mono, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 600 }
-const mutedStyle: CSSProperties = { color: cr.textDim, fontSize: 13, margin: '0 0 8px', lineHeight: 1.5 }
-const gridStyle: CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-  gap: 10,
-  marginBottom: 8,
-}
-const labelStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', color: cr.textMuted }
-const fullLabelStyle: CSSProperties = { ...labelStyle, gridColumn: '1 / -1' }
-const checkLabelStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 6,
-  fontSize: 13,
-  fontWeight: 500,
-  color: cr.text,
-  textTransform: 'none',
-  letterSpacing: 0,
-}
-const inputStyle: CSSProperties = { padding: '7px 9px', fontSize: 14, fontWeight: 400, fontFamily: cr.mono, color: cr.text, background: cr.surfaceSunken, border: `1px solid ${cr.borderStrong}`, borderRadius: 4 }
-const textareaStyle: CSSProperties = { ...inputStyle, fontFamily: cr.mono, resize: 'vertical' }
-const headStyle: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6 }
-const rowStyle: CSSProperties = { display: 'flex', gap: 8, marginTop: 8 }
-const okStyle: CSSProperties = { color: cr.ok, marginTop: 8, fontSize: 13 }
-const errorStyle: CSSProperties = { color: cr.err, marginTop: 8, fontSize: 13 }
-const detailsStyle: CSSProperties = { marginTop: 10, marginBottom: 8, borderTop: `1px solid ${cr.border}`, padding: '10px 0 0' }
-const summaryStyle: CSSProperties = { cursor: 'pointer', fontSize: 11, fontWeight: 600, color: cr.textMuted, letterSpacing: 1, textTransform: 'uppercase', fontFamily: cr.mono }
-const smallBtnStyle: CSSProperties = { padding: '4px 8px', fontSize: 11, cursor: 'pointer', fontFamily: cr.mono, letterSpacing: 1, textTransform: 'uppercase', color: cr.text, background: cr.surfaceRaised, border: `1px solid ${cr.borderStrong}`, borderRadius: 4 }
-const segGroupStyle: CSSProperties = { display: 'inline-flex', gap: 4 }
-const segBtnStyle: CSSProperties = { padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${cr.borderStrong}`, background: cr.surfaceRaised, color: cr.textMuted, fontFamily: cr.mono, borderRadius: 4 }
-const segBtnActiveStyle: CSSProperties = { ...segBtnStyle, border: `1px solid ${cr.accentDeep}`, background: cr.accent, color: '#0e1117' }
-const publishBtnStyle: CSSProperties = { padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', letterSpacing: 1, textTransform: 'uppercase', fontFamily: cr.mono, border: `1px solid ${cr.accentDeep}`, background: cr.accent, color: '#0e1117', borderRadius: 4 }
-const pubRowStyle: CSSProperties = { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 4 }
-const pubLinkStyle: CSSProperties = { fontSize: 12, fontWeight: 600, color: cr.accent, textTransform: 'uppercase', letterSpacing: 1, fontFamily: cr.mono, textDecoration: 'none' }
-const pubIdleStyle: CSSProperties = { fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 3, background: cr.surfaceSunken, color: cr.textMuted, fontFamily: cr.mono, letterSpacing: 1, textTransform: 'uppercase' }
-const pubOkStyle: CSSProperties = { ...pubIdleStyle, background: 'rgba(34,197,94,.18)', color: cr.ok }
-const pubErrStyle: CSSProperties = { ...pubIdleStyle, background: 'rgba(239,68,68,.18)', color: cr.err }

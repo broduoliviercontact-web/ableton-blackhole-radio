@@ -17,6 +17,27 @@
   --pub-live: #ef4444;
   --pub-warn: #f59e0b;
 
+  /* Palette Control Room (régie performer, toujours sombre). Source unique des
+     couleurs régie : controlRoom.ts référence ces vars (var(--cr-*)) au lieu de
+     dupliquer les littéraux hex. La page publique n'en dépend pas. */
+  --cr-bg-page: #06080c;
+  --cr-surface: #0e1117;
+  --cr-surface-sunken: #0b0d12;
+  --cr-surface-raised: #14161e;
+  --cr-border: #23262f;
+  --cr-border-strong: #2a2d36;
+  --cr-text: #efe9d6;
+  --cr-text-muted: #9ca3af;
+  --cr-text-dim: #6b7280;
+  --cr-accent: #f5d76b;
+  --cr-accent-deep: #d8b32a;
+  --cr-accent-bright: #f2ead2;
+  --cr-live: #ef4444;
+  --cr-warn: #f59e0b;
+  --cr-ok: #86efac;
+  --cr-err: #fca5a5;
+  --cr-idle: #3a3f4b;
+
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
@@ -110,6 +131,9 @@ code {
    dupliqués en inline sur chaque bouton. */
 .cr {
   color-scheme: dark;
+  background: var(--cr-bg-page);
+  color: var(--cr-text);
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
 }
 .cr button {
   padding: 7px 12px;
@@ -138,6 +162,23 @@ code {
 .cr a:focus-visible {
   outline: 2px solid #f5d76b;
   outline-offset: 2px;
+}
+
+/* Variantes de boutons régie (surclassent .cr button via la classe).
+   ponytail: seuls les delta vs .cr button — background/border/color de base
+   sont déjà #14161e/#2a2d36/#efe9d6 (= surfaceRaised/borderStrong/text). */
+.cr button.cr-btn--primary {
+  background: var(--cr-accent);
+  color: #0e1117;
+  border: 1px solid var(--cr-accent-deep);
+}
+.cr button.cr-btn--danger {
+  color: var(--cr-err);
+  border-color: rgba(239, 68, 68, 0.45);
+}
+.cr button.cr-btn--ghost {
+  padding: 8px 12px;
+  font-size: 12px;
 }
 
 /* Grille 2 colonnes régie : chaîne audio (rail étroit à gauche) | formulaire
@@ -435,4 +476,559 @@ code {
    basculent pas. On harmonise juste le focus du board avec le thème. */
 .pub-boardwrap .sf-cabinet:focus-within {
   outline: none;
+}
+
+/* Conteneur invisible pour les <audio> distants (page publique). */
+.pub-audio-host {
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* === Performer control room (Performer.tsx) ===
+   Layout/typo/couleurs de la régie. Les valeurs dynamiques (couleur de badge
+   selon le statut, dot background/boxShadow, couleur tokenStatus) restent inline. */
+.cr-page {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1180px;
+  min-height: 100svh;
+  padding: 24px 20px 40px;
+}
+.cr-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--cr-border);
+}
+.cr-brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.cr-brand__title {
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-size: 18px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--cr-text);
+  font-weight: 600;
+}
+.cr-brand__sub {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cr-accent);
+  margin-top: 2px;
+}
+.cr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border: 1px solid var(--cr-border-strong);
+  border-radius: 4px;
+  background: var(--cr-surface-sunken);
+}
+.cr-badge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.cr-link {
+  margin-left: auto;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cr-accent);
+  text-decoration: none;
+  border: 1px solid var(--cr-border-strong);
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: var(--cr-surface-sunken);
+}
+.cr-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.cr-card {
+  background: var(--cr-surface);
+  border: 1px solid var(--cr-border);
+  border-radius: 8px;
+  padding: 16px;
+}
+.cr-card__title {
+  margin: 0 0 10px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cr-text-muted);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 600;
+}
+.cr-card__step {
+  color: var(--cr-accent);
+  font-weight: 700;
+}
+.cr-h3 {
+  font-size: 11px;
+  margin: 10px 0 4px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cr-text-dim);
+  font-weight: 600;
+}
+.cr-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cr-ok {
+  color: var(--cr-ok);
+  margin: 0;
+  font-size: 13px;
+}
+.cr-error {
+  color: var(--cr-err);
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.cr-muted {
+  color: var(--cr-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 6px 0;
+}
+.cr-tip {
+  color: var(--cr-text-dim);
+  font-size: 12px;
+  margin: 6px 0 12px;
+  line-height: 1.5;
+}
+.cr-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cr-text-muted);
+  margin-bottom: 6px;
+}
+.cr-range {
+  width: 100%;
+}
+.cr-token-status {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  word-break: break-all;
+}
+.cr-tech {
+  margin-top: 16px;
+  background: var(--cr-surface-sunken);
+  border: 1px solid var(--cr-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+.cr-tech__summary {
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cr-text-dim);
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-weight: 600;
+}
+.cr-tech__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 12px;
+}
+.cr-tech__h3 {
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cr-text-muted);
+  margin: 0 0 6px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-weight: 600;
+}
+.cr-diag {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--cr-text-muted);
+  line-height: 1.7;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+}
+.cr-home-row {
+  text-align: center;
+  margin-top: 24px;
+}
+
+/* Lien « Retour à la radio » (Performer + PerformerGate identiques). */
+.cr-home-link {
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #f5d76b;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid #2a2d36;
+  padding: 6px 14px;
+  border-radius: 4px;
+  background: #14161e;
+  opacity: 0.85;
+}
+
+/* Source audio (AudioDeviceSelect.tsx) — select + bouton Rafraîchir. */
+.cr-dev-row {
+  display: flex;
+  gap: 8px;
+}
+.cr-select {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  color: var(--cr-text);
+  background: var(--cr-surface-sunken);
+  border: 1px solid var(--cr-border-strong);
+  border-radius: 4px;
+}
+.cr-dev-tip {
+  color: var(--cr-text-dim);
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ConfigCheckButton.tsx — liste + erreurs. */
+.cr-config-wrap {
+  margin-top: 8px;
+}
+.cr-config-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--cr-text-muted);
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+}
+.cr-config-error {
+  color: var(--cr-err);
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+.cr-config-warn {
+  color: var(--cr-warn);
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* === Performer gate (PerformerGate.tsx) ===
+   Écran de mot de passe centré. La couleur du badge d'erreur et le fallback
+   Suspense (rendu hors .cr) utilisent les vars --cr-* globales. */
+.cr-gate {
+  margin: 0;
+  padding: 24px;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+.cr-gate__card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--cr-surface);
+  border: 1px solid var(--cr-border);
+  border-radius: 8px;
+  padding: 28px;
+}
+.cr-gate__title {
+  margin: 0;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-size: 22px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--cr-accent);
+  font-weight: 600;
+}
+.cr-gate__kicker {
+  margin: 2px 0 16px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cr-text-dim);
+}
+.cr-gate__muted {
+  color: var(--cr-text-muted);
+  font-size: 13px;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+.cr-gate__form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cr-gate__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cr-text-muted);
+}
+.cr-gate__input {
+  padding: 10px 12px;
+  font-size: 16px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  color: var(--cr-text);
+  background: var(--cr-surface-sunken);
+  border: 1px solid var(--cr-border-strong);
+  border-radius: 4px;
+}
+.cr-gate__btn {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  color: #0e1117;
+  background: var(--cr-accent);
+  border: 1px solid var(--cr-accent-deep);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.cr-gate__error {
+  color: var(--cr-err);
+  margin-top: 12px;
+  font-size: 13px;
+}
+.cr-gate__fallback {
+  padding: 24px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  color: var(--cr-text-muted);
+}
+.cr-gate__home-row {
+  text-align: center;
+  margin: 0;
+}
+
+/* === Radio message form (RadioMessageForm.tsx) ===
+   Section « Message radio & affichage » : publie le message + réglages visuels.
+   Les couleurs dynamiques (warn selon noteMode, ok/err selon statut) restent
+   inline. Les inputs/selects/textarea partagent .rf-input. */
+.rf-section {
+  background: var(--cr-surface);
+  border: 1px solid var(--cr-border);
+  border-radius: 8px;
+  padding: 18px;
+  margin-top: 0;
+}
+.rf-h2 {
+  margin: 0 0 6px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cr-accent);
+  font-weight: 600;
+}
+.rf-h3 {
+  font-size: 11px;
+  margin: 14px 0 6px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cr-text-muted);
+  font-weight: 600;
+}
+.rf-h4 {
+  font-size: 10px;
+  margin: 10px 0 4px;
+  color: var(--cr-text-dim);
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.rf-muted {
+  color: var(--cr-text-dim);
+  font-size: 13px;
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+.rf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.rf-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--cr-text-muted);
+}
+.rf-label--full {
+  grid-column: 1 / -1;
+}
+.rf-check {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cr-text);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.rf-input,
+.rf-textarea {
+  padding: 7px 9px;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  color: var(--cr-text);
+  background: var(--cr-surface-sunken);
+  border: 1px solid var(--cr-border-strong);
+  border-radius: 4px;
+}
+.rf-textarea {
+  resize: vertical;
+}
+.rf-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rf-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.rf-ok {
+  color: var(--cr-ok);
+  margin-top: 8px;
+  font-size: 13px;
+}
+.rf-error {
+  color: var(--cr-err);
+  margin-top: 8px;
+  font-size: 13px;
+}
+.rf-details {
+  margin-top: 10px;
+  margin-bottom: 8px;
+  border-top: 1px solid var(--cr-border);
+  padding: 10px 0 0;
+}
+.rf-summary {
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cr-text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+}
+.rf-preview__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.rf-preview__hint {
+  color: var(--cr-text-dim);
+  font-size: 11px;
+  margin: 0;
+  line-height: 1.5;
+}
+/* Boutons RF (surclassent .cr button). ponytail: delta uniquement. */
+.cr button.rf-btn--publish {
+  padding: 8px 16px;
+  font-weight: 700;
+  background: var(--cr-accent);
+  color: #0e1117;
+  border: 1px solid var(--cr-accent-deep);
+}
+.cr button.rf-btn--small {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+.rf-seg {
+  display: inline-flex;
+  gap: 4px;
+}
+.cr button.rf-seg__btn {
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--cr-text-muted);
+}
+.cr button.rf-seg__btn--active {
+  border: 1px solid var(--cr-accent-deep);
+  background: var(--cr-accent);
+  color: #0e1117;
+}
+.rf-pub-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.rf-pub-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cr-accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  text-decoration: none;
+}
+.rf-pub-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 3px;
+  background: var(--cr-surface-sunken);
+  color: var(--cr-text-muted);
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.rf-pub-badge--ok {
+  background: rgba(34, 197, 94, 0.18);
+  color: var(--cr-ok);
+}
+.rf-pub-badge--err {
+  background: rgba(239, 68, 68, 0.18);
+  color: var(--cr-err);
 }
