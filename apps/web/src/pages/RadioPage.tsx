@@ -4,9 +4,9 @@ import { useLiveKitListen } from '../hooks/useLiveKitListen'
 import { useBroadcastMessage } from '../hooks/useBroadcastMessage'
 import { useListenerAudioAnalysis } from '../hooks/useListenerAudioAnalysis'
 import { useAudioReceiverStats } from '../audio/audioReceiverStats'
-import { AudioRxStats } from '../components/AudioRxStats'
 import { ListenerVolume } from '../components/ListenerVolume'
 import { AudioMonitorPanel } from '../components/audio-monitor/AudioMonitorPanel'
+import { ThemeToggle, useTheme } from '../components/ThemeToggle'
 import { getOrCreateIdentity } from '../utils/identity'
 import { SplitFlapDisplay } from '../components/splitflap/SplitFlapDisplay'
 import { RadioTicker } from '../components/splitflap/RadioTicker'
@@ -130,6 +130,14 @@ export function RadioPage() {
       : 'offline'
   const statusLabel = statusKey === 'live' ? 'LIVE' : statusKey === 'connecting' ? 'CONNECTING' : 'OFFLINE'
 
+  // Thème Day / Night (toggle header, persisté localStorage). Cf. ThemeToggle.
+  const { theme, toggle } = useTheme()
+  // Synthèse RX pour le hero + lignes détaillées du rail (trafic réseau entrant,
+  // ≠ niveau sonore).
+  const rxKbps = isLive && audioRx.available ? `${audioRx.kbps ?? '—'}` : '—'
+  const rxJitter = isLive && audioRx.available ? `${audioRx.jitterMs ?? '—'}` : '—'
+  const rxLoss = isLive && audioRx.available && audioRx.lossPct != null ? audioRx.lossPct.toFixed(1) : '—'
+
   const rawNoteLines = trimEmptyDisplayLines(
     isScroll ? [] : visual.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0],
   )
@@ -154,123 +162,208 @@ export function RadioPage() {
   const cabinetStyle = { '--sf-accent': accent, ...styleVars(visual) } as CSSProperties
 
   return (
-    <main className="sf-page">
-      <header className="sf-header">
-        <span className="sf-brand" style={{ flex: 1, textAlign: visual.layout.brandAlign }}>{brandLabel}</span>
-        <span className="sf-status">
-          <span className={`sf-dot${statusKey === 'live' ? ' live' : statusKey === 'connecting' ? ' connecting' : ''}`} />
-          {statusLabel}
-        </span>
+    <main className="pub">
+      {/* Header éditorial fin */}
+      <header className="pub-header">
+        <a className="pub-logo" href="/">RADIO BLACKHOLE</a>
+        <nav className="pub-nav" aria-label="Navigation radio">
+          <a href="/">HOME</a>
+          <a href="/listen">LISTEN</a>
+          <a href="#monitor">MONITOR</a>
+          <a href="#info">INFO</a>
+        </nav>
+        <div className="pub-header__right">
+          <span className="pub-status" title={`Statut flux : ${statusLabel}`}>
+            <span className={`sf-dot${statusKey === 'live' ? ' live' : statusKey === 'connecting' ? ' connecting' : ''}`} />
+            {statusLabel}
+          </span>
+          <ThemeToggle theme={theme} onToggle={toggle} />
+        </div>
       </header>
 
-      {/* Un seul cadre continu : les 4 zones split-flap vivent dedans. En mode
-          internal les régions sont keyées par messageKey/pageKey → reflip intégral
-          à tout changement. En mode HotFX le textContent change → MutationObserver
-          relance l'animation (pas de remount). */}
-      <SplitFlapVisualProvider value={settings}>
-        <div className={`sf-cabinet ${presetClass(visual.preset)} ${fxClasses}`.trim()} style={cabinetStyle}>
-          {useHotFx && hotfx ? (
-            <>
-              <HotFxSplitFlap
-                className="sf-hotfx sf-hotfx--title"
-                text={hotfx.titleText}
-                width={cols}
-                height={hotfx.titleHeight}
-                durationMs={visual.hotfxDurationMs}
-                characters={visual.hotfxCharacters}
-              />
-              {hotfx.secondaryHeight > 0 && (
-                <HotFxSplitFlap
-                  className="sf-hotfx sf-hotfx--secondary"
-                  text={hotfx.secondaryText}
-                  width={cols}
-                  height={hotfx.secondaryHeight}
-                  durationMs={visual.hotfxDurationMs}
-                  characters={visual.hotfxCharacters}
-                />
-              )}
-              <HotFxSplitFlap
-                className="sf-hotfx sf-hotfx--note"
-                text={isScroll ? noteScrollDisplay.join('\n') : rawNoteLines.join('\n')}
-                width={cols}
-                height={noteHeight}
-                durationMs={visual.hotfxDurationMs}
-                characters={visual.hotfxCharacters}
-              />
-            </>
-          ) : (
-            <>
-              <SplitFlapDisplay key={`title:${messageKey}`} lines={titleLines} variant="title" />
-              {showSecondary && (
-                <SplitFlapDisplay key={`secondary:${messageKey}`} lines={secondaryLines} variant="secondary" />
-              )}
-              <SplitFlapDisplay
-                key={`note:${messageKey}:${isScroll ? 'scroll' : notePage}`}
-                lines={isScroll ? noteScrollDisplay : rawNoteLines}
-                variant="note"
-              />
-            </>
-          )}
-          <RadioTicker
-            text={board.ticker}
-            enabled={visual.tickerEnabled}
-            speedMs={visual.tickerSpeedMs}
-            direction={visual.tickerDirection}
-            separator={visual.tickerSeparator}
-          />
-
-          <div className="sf-controls">
-            {!connected && !lost && (
-              <button type="button" onClick={() => void listenLive()}>
-                ▶ LISTEN LIVE
-              </button>
-            )}
-            {connected && (
-              <button type="button" onClick={stopListening}>
-                ■ STOP
-              </button>
-            )}
-            {showReconnect && (
-              <button type="button" onClick={() => void reconnect()}>
-                ↻ RECONNECT
-              </button>
-            )}
-            {needGesture && connected && (
-              <button type="button" onClick={() => void startAudio()}>
-                AUTORISER L'AUDIO
-              </button>
-            )}
-            {connected && (
-              <div className="sf-vol">
-                <ListenerVolume
-                  volume={listenerVolume}
-                  muted={muted}
-                  trimMinus30Db={trimMinus30Db}
-                  onVolumeChange={setListenerVolume}
-                  onToggleMute={toggleMute}
-                  onToggleTrimMinus30Db={toggleTrimMinus30Db}
-                />
-              </div>
-            )}
-            <AudioRxStats rx={audioRx} active={isLive} />
-          </div>
+      {/* Hero : très grand titre + métadonnées */}
+      <section className="pub-hero">
+        <h1 className="pub-title">SIGNAL&nbsp;INDEX</h1>
+        <div className="pub-meta">
+          <span>ROOM<b>{ROOM_NAME}</b></span>
+          <span>ENGINE<b>{engine}</b></span>
+          <span>STATUS<b>{statusLabel}</b></span>
+          <span>RX<b>{rxKbps === '—' ? '—' : `${rxKbps} kbps`}</b></span>
+          <span>UPDATED<b>{broadcast?.updatedAt ?? '—'}</b></span>
         </div>
-      </SplitFlapVisualProvider>
+      </section>
 
-      {lost && phase === 'disconnected' && (
-        <p style={{ color: '#b45309', fontFamily: 'var(--mono)', fontSize: 12 }}>
-          ⚠ Connexion perdue. {reconnecting ? 'Reconnexion…' : 'Tentatives épuisées.'}
-        </p>
-      )}
-      {error && (
-        <p style={{ color: '#ef4444', fontFamily: 'var(--mono)', fontSize: 12 }}>❌ {error}</p>
-      )}
+      <div className="pub-grid">
+        {/* Rail gauche — index passif (sticky desktop) */}
+        <aside className="pub-rail" aria-label="Index de transmission">
+          <div className="pub-rail__block">
+            <h2 className="pub-rail__title">Index</h2>
+            <div className="pub-row"><span>Mode</span><span>Public listener</span></div>
+            <div className="pub-row"><span>Theme</span><span>{theme === 'dark' ? 'Night' : 'Day'}</span></div>
+            <div className="pub-row"><span>Stream</span><span>{statusLabel}</span></div>
+            <div className="pub-row"><span>Engine</span><span>{engine}</span></div>
+          </div>
 
-      <p className="sf-footer">RADIO BLACKHOLE · PIRATE WEBRTC · LISTEN LIVE</p>
+          <div className="pub-rail__block">
+            <h2 className="pub-rail__title">Audio</h2>
+            <div className="pub-row"><span>Signal</span><span>{connected ? 'Connected' : 'Disconnected'}</span></div>
+            <div className="pub-row"><span>RX</span><span>{rxKbps === '—' ? '—' : `${rxKbps} kbps`}</span></div>
+            <div className="pub-row"><span>Jitter</span><span>{rxJitter === '—' ? '—' : `${rxJitter} ms`}</span></div>
+            <div className="pub-row"><span>Loss</span><span>{rxLoss === '—' ? '—' : `${rxLoss} %`}</span></div>
+            <p className="pub-rail__note">Trafic réseau entrant WebRTC — ≠ niveau sonore.</p>
+          </div>
 
-      {/* Audio Monitor (visualisations temps réel sur le flux LiveKit, sans
-          l'altérer). Repliable par défaut → rAF stoppé tant que fermé. */}
-      <AudioMonitorPanel analyser={analyser} active={phase === 'listening'} />
+          <div className="pub-rail__block">
+            <h2 className="pub-rail__title">Sections</h2>
+            <nav className="pub-rail__nav" aria-label="Sections de page">
+              <a href="#display">Signal display</a>
+              <a href="#monitor">Audio monitor</a>
+              <a href="#info">Info</a>
+            </nav>
+          </div>
+        </aside>
+
+        {/* Contenu principal */}
+        <div className="pub-main">
+          <section id="display" className="pub-section">
+            <div className="pub-section__head">
+              <span className="pub-section__label">Signal Display</span>
+              <span className="pub-section__meta">Current transmission</span>
+              <span className="pub-section__id">#{messageKey.slice(0, 12) || 'default'}</span>
+            </div>
+
+            {/* Le brandLabel du header du board reste piloté par l'alignement
+                performer (brandAlign). On l'affiche au-dessus du cabinet comme
+                étiquette de la station, alignée pareil. */}
+            <div style={{ textAlign: visual.layout.brandAlign, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--text)' }}>
+              {brandLabel}
+            </div>
+
+            {/* Board split-flap : écran sombre continu (zone HotFX/internal +
+                ticker). Wrapper flex colonne → board flex:1 remnit la hauteur
+                hero ; scroll horizontal sur petit écran. */}
+            <SplitFlapVisualProvider value={settings}>
+              <div className="pub-boardwrap">
+                <div className={`sf-cabinet ${presetClass(visual.preset)} ${fxClasses}`.trim()} style={cabinetStyle}>
+                  {useHotFx && hotfx ? (
+                    <>
+                      <HotFxSplitFlap
+                        className="sf-hotfx sf-hotfx--title"
+                        text={hotfx.titleText}
+                        width={cols}
+                        height={hotfx.titleHeight}
+                        durationMs={visual.hotfxDurationMs}
+                        characters={visual.hotfxCharacters}
+                      />
+                      {hotfx.secondaryHeight > 0 && (
+                        <HotFxSplitFlap
+                          className="sf-hotfx sf-hotfx--secondary"
+                          text={hotfx.secondaryText}
+                          width={cols}
+                          height={hotfx.secondaryHeight}
+                          durationMs={visual.hotfxDurationMs}
+                          characters={visual.hotfxCharacters}
+                        />
+                      )}
+                      <HotFxSplitFlap
+                        className="sf-hotfx sf-hotfx--note"
+                        text={isScroll ? noteScrollDisplay.join('\n') : rawNoteLines.join('\n')}
+                        width={cols}
+                        height={noteHeight}
+                        durationMs={visual.hotfxDurationMs}
+                        characters={visual.hotfxCharacters}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <SplitFlapDisplay key={`title:${messageKey}`} lines={titleLines} variant="title" />
+                      {showSecondary && (
+                        <SplitFlapDisplay key={`secondary:${messageKey}`} lines={secondaryLines} variant="secondary" />
+                      )}
+                      <SplitFlapDisplay
+                        key={`note:${messageKey}:${isScroll ? 'scroll' : notePage}`}
+                        lines={isScroll ? noteScrollDisplay : rawNoteLines}
+                        variant="note"
+                      />
+                    </>
+                  )}
+                  <RadioTicker
+                    text={board.ticker}
+                    enabled={visual.tickerEnabled}
+                    speedMs={visual.tickerSpeedMs}
+                    direction={visual.tickerDirection}
+                    separator={visual.tickerSeparator}
+                  />
+                </div>
+              </div>
+            </SplitFlapVisualProvider>
+
+            {/* Ligne de contrôles listener — compacte, type instrument panel.
+                Fonctions intactes : listen/stop/reconnect/autoriser + volume
+                (clic mute, double-clic PAD -30 dB). RX déplacé dans le rail. */}
+            <div className="pub-controls">
+              {!connected && !lost && (
+                <button type="button" data-variant="primary" onClick={() => void listenLive()}>
+                  ▶ Listen live
+                </button>
+              )}
+              {connected && (
+                <button type="button" onClick={stopListening}>
+                  ■ Stop
+                </button>
+              )}
+              {showReconnect && (
+                <button type="button" onClick={() => void reconnect()}>
+                  ↻ Reconnect
+                </button>
+              )}
+              {needGesture && connected && (
+                <button type="button" onClick={() => void startAudio()}>
+                  Autoriser l’audio
+                </button>
+              )}
+              {connected && (
+                <div className="sf-vol">
+                  <ListenerVolume
+                    volume={listenerVolume}
+                    muted={muted}
+                    trimMinus30Db={trimMinus30Db}
+                    onVolumeChange={setListenerVolume}
+                    onToggleMute={toggleMute}
+                    onToggleTrimMinus30Db={toggleTrimMinus30Db}
+                  />
+                </div>
+              )}
+            </div>
+
+            {lost && phase === 'disconnected' && (
+              <p className="pub-alert pub-alert--warn">
+                ⚠ Connexion perdue. {reconnecting ? 'Reconnexion…' : 'Tentatives épuisées.'}
+              </p>
+            )}
+            {error && <p className="pub-alert pub-alert--error">❌ {error}</p>}
+          </section>
+
+          {/* Audio Monitor : panneau éditorial. Visu et logique inchangées
+              (tabs, VU/dB/spectrum/spectrogram/stereo/spectral, resize). */}
+          <section id="monitor" className="pub-section">
+            <div className="pub-section__head">
+              <span className="pub-section__label">Audio Monitor</span>
+              <span className="pub-section__meta">Realtime analysis · local browser</span>
+              <span className="pub-section__id">≠ LUFS broadcast</span>
+            </div>
+            <AudioMonitorPanel analyser={analyser} active={phase === 'listening'} />
+          </section>
+
+          <footer id="info" className="pub-footer">
+            <span>RADIO BLACKHOLE</span>
+            <span>· <b>Pirate WebRTC stream</b></span>
+            <span>· Engine <b>{engine}</b></span>
+            <span>· Room <b>{ROOM_NAME}</b></span>
+            <span>· Listen live</span>
+          </footer>
+        </div>
+      </div>
 
       {/* Conteneur invisible pour les <audio> distants. */}
       <div ref={audioHostRef} style={{ width: 0, height: 0, overflow: 'hidden' }} />

@@ -1,15 +1,21 @@
+/* Thèmes Radio Blackhole. Dark = identité par défaut ; light via [data-theme].
+   L'inline script de index.html pose data-theme avant le paint (anti-FOUC).
+   --accent reste ambre dans les deux thèmes : le board split-flap et l'Audio
+   Monitor (écrans sombres) l'utilisent ; le chrome éditorial emploie --pub-accent
+   (ambre en dark, noir en light) pour ses lignes/labels. */
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  /* Accent = ambre Radio Blackhole (≠ violet SaaS du starter Vite). */
+  --text: #9ca3af;
+  --text-h: #efe9d6;
+  --bg: #06080c;
+  --border: #23262f;
+  --code-bg: #0e1117;
   --accent: #f5d76b;
   --accent-deep: #d8b32a;
   --accent-bright: #f2ead2;
-  --accent-bg: rgba(245, 215, 107, 0.14);
-  --accent-border: rgba(245, 215, 107, 0.5);
+  --pub-accent: #f5d76b;
+  --pub-line: #23262f;
+  --pub-live: #ef4444;
+  --pub-warn: #f59e0b;
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -17,7 +23,7 @@
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
-  color-scheme: light dark;
+  color-scheme: dark;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -30,17 +36,17 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #f5d76b;
-    --accent-bg: rgba(245, 215, 107, 0.16);
-    --accent-border: rgba(245, 215, 107, 0.5);
-  }
+[data-theme='light'] {
+  --text: #666666;
+  --text-h: #111111;
+  --bg: #ececec;
+  --border: #c6c6c6;
+  --code-bg: #f7f7f7;
+  --pub-accent: #111111;
+  --pub-line: #a9a9a9;
+  /* --accent / --accent-deep / --accent-bright laissés ambre : board + monitor
+     (écrans sombres) les utilisent et restent cohérents dans les deux thèmes. */
+  color-scheme: light;
 }
 
 /* Chaque page gère sa propre largeur/centrage : pas de largeur magique ni de
@@ -144,4 +150,368 @@ code {
   .cr-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
   }
+}
+
+/* === Page publique éditoriale (home / listener) — « signal index » ===
+   Layout type index technique : header fin, gros titre, rail gauche + contenu.
+   Thèmes via [data-theme] sur <html> (cf. inline script index.html + useTheme).
+   Le board split-flap (.sf-cabinet) reste un écran sombre dans les deux thèmes,
+   comme l'Audio Monitor — seuls les chrome et lignes basculent light/dark. */
+
+.pub {
+  background: var(--bg);
+  color: var(--text-h);
+  font-family: var(--mono);
+  min-height: 100svh;
+  box-sizing: border-box;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+/* Header fin */
+.pub-header {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.pub-logo {
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--text-h);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.pub-logo:hover {
+  color: var(--pub-accent);
+}
+.pub-nav {
+  display: flex;
+  gap: 18px;
+}
+.pub-nav a {
+  color: var(--text);
+  text-decoration: none;
+}
+.pub-nav a:hover {
+  color: var(--pub-accent);
+}
+.pub-header__right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pub-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.pub-status .sf-dot {
+  width: 8px;
+  height: 8px;
+}
+
+/* Toggle thème */
+.pub-theme {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-h);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pub-theme:hover {
+  border-color: var(--pub-accent);
+  color: var(--pub-accent);
+}
+
+/* Hero : très grand titre + métadonnées */
+.pub-hero {
+  padding: 30px 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+.pub-title {
+  margin: 0;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: clamp(44px, 10vw, 104px);
+  line-height: 0.92;
+  letter-spacing: -2px;
+  color: var(--text-h);
+}
+.pub-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 28px;
+  margin-top: 18px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.pub-meta b {
+  color: var(--text-h);
+  font-weight: 600;
+  margin-left: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Grille 2 colonnes : rail index | contenu */
+.pub-grid {
+  display: grid;
+  grid-template-columns: 224px minmax(0, 1fr);
+  gap: 32px;
+  padding-top: 26px;
+}
+@media (max-width: 880px) {
+  .pub-grid {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+}
+
+/* Rail gauche — index passif */
+.pub-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  position: sticky;
+  top: 16px;
+  align-self: start;
+}
+@media (max-width: 880px) {
+  .pub-rail {
+    position: static;
+  }
+}
+.pub-rail__block {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.pub-rail__title {
+  margin: 0 0 4px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text);
+}
+.pub-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+.pub-row > span:first-child {
+  color: var(--text);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+.pub-row > span:last-child {
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-size: 12px;
+}
+.pub-rail__note {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text);
+  margin: 2px 0 0;
+}
+.pub-rail__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.pub-rail__nav a {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.pub-rail__nav a:hover {
+  color: var(--pub-accent);
+}
+
+/* Sections principales */
+.pub-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.pub-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 36px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 36px;
+  scroll-margin-top: 16px;
+}
+.pub-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+.pub-section__head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.pub-section__label {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-h);
+}
+.pub-section__meta {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.pub-section__id {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+
+/* Board split-flap : écran sombre (reste .sf-cabinet, inchangé). Le wrapper
+   reproduit le comportement flex colonne de l'ancien .sf-page (board flex:1
+   qui remplit la hauteur hero) + scroll horizontal sur petit écran. */
+.pub-boardwrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 58svh;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+.pub-boardwrap .sf-cabinet {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Ligne de contrôles listener — compacte, type instrument panel. */
+.pub-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+}
+.pub-controls button {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-h);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.pub-controls button:hover {
+  border-color: var(--pub-accent);
+  color: var(--pub-accent);
+}
+.pub-controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.pub-controls button[data-variant='primary'] {
+  border-color: var(--pub-accent);
+  color: var(--pub-accent);
+}
+.pub-controls .sf-vol {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pub-controls .sf-vol input[type='range'] {
+  flex: 1;
+  min-width: 120px;
+  accent-color: var(--pub-accent);
+}
+.pub-controls .sf-vol span {
+  font-size: 12px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Alertes (connexion perdue / erreur) */
+.pub-alert {
+  margin: 12px 0 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+.pub-alert--warn {
+  color: var(--pub-warn);
+}
+.pub-alert--error {
+  color: var(--pub-live);
+}
+
+/* Footer éditorial */
+.pub-footer {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+.pub-footer b {
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+/* Focus net sur la page publique */
+.pub a:focus-visible,
+.pub button:focus-visible,
+.pub-theme:focus-visible,
+.pub-controls button:focus-visible {
+  outline: 2px solid var(--pub-accent);
+  outline-offset: 2px;
+}
+
+/* Le board reste un écran sombre : ses propres contrôles (ticker, tiles) ne
+   basculent pas. On harmonise juste le focus du board avec le thème. */
+.pub-boardwrap .sf-cabinet:focus-within {
+  outline: none;
 }
