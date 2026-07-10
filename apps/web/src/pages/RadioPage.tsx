@@ -162,15 +162,10 @@ export function RadioPage() {
 
   return (
     <main className="pub">
-      {/* Header éditorial fin */}
+      {/* Header éditorial fin : nom de station (brandLabel, fallback RADIO
+          BLACKHOLE) + statut + toggle thème. Plus de nav. */}
       <header className="pub-header">
-        <a className="pub-logo" href="/">RADIO BLACKHOLE</a>
-        <nav className="pub-nav" aria-label="Navigation radio">
-          <a href="/">HOME</a>
-          <a href="/listen">LISTEN</a>
-          <a href="#monitor">MONITOR</a>
-          <a href="#info">INFO</a>
-        </nav>
+        <a className="pub-logo" href="/">{brandLabel}</a>
         <div className="pub-header__right">
           <span className="pub-status" title={`Statut flux : ${statusLabel}`}>
             <span className={`sf-dot${statusKey === 'live' ? ' live' : statusKey === 'connecting' ? ' connecting' : ''}`} />
@@ -180,22 +175,10 @@ export function RadioPage() {
         </div>
       </header>
 
-      {/* Signal Display : le board split-flap domine la page (plus de hero).
-          Contenu direct dans .pub — index technique déplacé en footer bas. */}
+      {/* Signal Display : le board split-flap domine — directement sous le
+          header. Plus de titre de section ni d'étiquette au-dessus du panneau
+          (le brandLabel est dans le header). Le panneau parle de lui-même. */}
       <section id="display" className="pub-section">
-            <div className="pub-section__head">
-              <span className="pub-section__label">Signal Display</span>
-              <span className="pub-section__meta">Current transmission</span>
-              <span className="pub-section__id">#{messageKey.slice(0, 12) || 'default'}</span>
-            </div>
-
-            {/* Le brandLabel du header du board reste piloté par l'alignement
-                performer (brandAlign). On l'affiche au-dessus du cabinet comme
-                étiquette de la station, alignée pareil. */}
-            <div style={{ textAlign: visual.layout.brandAlign, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--text)' }}>
-              {brandLabel}
-            </div>
-
             {/* Board split-flap : écran sombre continu (zone HotFX/internal +
                 ticker). Wrapper flex colonne → board flex:1 remnit la hauteur
                 hero ; scroll horizontal sur petit écran. */}

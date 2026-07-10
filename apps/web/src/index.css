@@ -226,17 +226,6 @@ code {
 .pub-logo:hover {
   color: var(--pub-accent);
 }
-.pub-nav {
-  display: flex;
-  gap: 18px;
-}
-.pub-nav a {
-  color: var(--text);
-  text-decoration: none;
-}
-.pub-nav a:hover {
-  color: var(--pub-accent);
-}
 .pub-header__right {
   margin-left: auto;
   display: flex;
