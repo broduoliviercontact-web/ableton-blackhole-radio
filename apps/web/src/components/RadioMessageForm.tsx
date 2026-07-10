@@ -19,6 +19,7 @@ import {
 import { SplitFlapPreview } from './splitflap/SplitFlapPreview'
 import { DEFAULT_VISUAL, parseColors } from './splitflap/visual'
 import { HelpTooltip } from './HelpTooltip'
+import { cr } from './controlRoom'
 
 interface Props {
   performerPassword: string
@@ -265,7 +266,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
 
   return (
     <section style={sectionStyle}>
-      <h2 style={h2Style}>Control room — message radio</h2>
+      <h2 style={h2Style}>Message radio &amp; affichage</h2>
       <p style={mutedStyle}>
         Pilote le message affiché sur la page publique <code>/</code>. Indépendant du
         broadcast audio — publiable même sans live. La page publique recharge le message
@@ -827,18 +828,18 @@ export function RadioMessageForm({ performerPassword }: Props) {
   )
 }
 
-const sectionStyle: CSSProperties = { borderTop: '1px solid #e5e7eb', marginTop: 16, paddingTop: 16 }
-const h2Style: CSSProperties = { fontSize: 18, margin: '0 0 8px' }
-const h3Style: CSSProperties = { fontSize: 15, margin: '12px 0 6px' }
-const h4Style: CSSProperties = { fontSize: 13, margin: '10px 0 4px', color: '#374151' }
-const mutedStyle: CSSProperties = { color: '#6b7280', fontSize: 14, margin: '0 0 8px' }
+const sectionStyle: CSSProperties = { background: cr.surface, border: `1px solid ${cr.border}`, borderRadius: 8, padding: 18, marginTop: 0 }
+const h2Style: CSSProperties = { margin: '0 0 6px', fontFamily: cr.mono, fontSize: 14, letterSpacing: 2, textTransform: 'uppercase', color: cr.accent, fontWeight: 600 }
+const h3Style: CSSProperties = { fontSize: 11, margin: '14px 0 6px', fontFamily: cr.mono, letterSpacing: 2, textTransform: 'uppercase', color: cr.textMuted, fontWeight: 600 }
+const h4Style: CSSProperties = { fontSize: 10, margin: '10px 0 4px', color: cr.textDim, fontFamily: cr.mono, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 600 }
+const mutedStyle: CSSProperties = { color: cr.textDim, fontSize: 13, margin: '0 0 8px', lineHeight: 1.5 }
 const gridStyle: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: 8,
+  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+  gap: 10,
   marginBottom: 8,
 }
-const labelStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, fontWeight: 600 }
+const labelStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', color: cr.textMuted }
 const fullLabelStyle: CSSProperties = { ...labelStyle, gridColumn: '1 / -1' }
 const checkLabelStyle: CSSProperties = {
   display: 'flex',
@@ -846,23 +847,26 @@ const checkLabelStyle: CSSProperties = {
   alignItems: 'center',
   gap: 6,
   fontSize: 13,
-  fontWeight: 600,
+  fontWeight: 500,
+  color: cr.text,
+  textTransform: 'none',
+  letterSpacing: 0,
 }
-const inputStyle: CSSProperties = { padding: '6px 8px', fontSize: 14, fontWeight: 400 }
-const textareaStyle: CSSProperties = { ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }
+const inputStyle: CSSProperties = { padding: '7px 9px', fontSize: 14, fontWeight: 400, fontFamily: cr.mono, color: cr.text, background: cr.surfaceSunken, border: `1px solid ${cr.borderStrong}`, borderRadius: 4 }
+const textareaStyle: CSSProperties = { ...inputStyle, fontFamily: cr.mono, resize: 'vertical' }
 const headStyle: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6 }
 const rowStyle: CSSProperties = { display: 'flex', gap: 8, marginTop: 8 }
-const okStyle: CSSProperties = { color: 'green', marginTop: 8 }
-const errorStyle: CSSProperties = { color: 'crimson', marginTop: 8 }
-const detailsStyle: CSSProperties = { marginTop: 8, marginBottom: 8, borderTop: '1px solid #e5e7eb', padding: '8px 0' }
-const summaryStyle: CSSProperties = { cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#374151' }
-const smallBtnStyle: CSSProperties = { padding: '4px 8px', fontSize: 12, cursor: 'pointer' }
+const okStyle: CSSProperties = { color: cr.ok, marginTop: 8, fontSize: 13 }
+const errorStyle: CSSProperties = { color: cr.err, marginTop: 8, fontSize: 13 }
+const detailsStyle: CSSProperties = { marginTop: 10, marginBottom: 8, borderTop: `1px solid ${cr.border}`, padding: '10px 0 0' }
+const summaryStyle: CSSProperties = { cursor: 'pointer', fontSize: 11, fontWeight: 600, color: cr.textMuted, letterSpacing: 1, textTransform: 'uppercase', fontFamily: cr.mono }
+const smallBtnStyle: CSSProperties = { padding: '4px 8px', fontSize: 11, cursor: 'pointer', fontFamily: cr.mono, letterSpacing: 1, textTransform: 'uppercase', color: cr.text, background: cr.surfaceRaised, border: `1px solid ${cr.borderStrong}`, borderRadius: 4 }
 const segGroupStyle: CSSProperties = { display: 'inline-flex', gap: 4 }
-const segBtnStyle: CSSProperties = { padding: '4px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #d1d5db', background: '#fff', color: '#374151' }
-const segBtnActiveStyle: CSSProperties = { ...segBtnStyle, border: '1px solid var(--accent, #f5d76b)', background: 'var(--accent, #f5d76b)', color: '#0e1117' }
-const publishBtnStyle: CSSProperties = { padding: '8px 16px', fontSize: 14, fontWeight: 700, cursor: 'pointer', border: '1px solid #d1d5db', background: 'var(--accent, #f5d76b)', color: '#0e1117' }
-const pubRowStyle: CSSProperties = { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 8 }
-const pubLinkStyle: CSSProperties = { fontSize: 13, fontWeight: 600 }
-const pubIdleStyle: CSSProperties = { fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 3, background: '#e5e7eb', color: '#374151' }
-const pubOkStyle: CSSProperties = { ...pubIdleStyle, background: '#dcfce7', color: '#15803d' }
-const pubErrStyle: CSSProperties = { ...pubIdleStyle, background: '#fee2e2', color: '#b91c1c' }
+const segBtnStyle: CSSProperties = { padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${cr.borderStrong}`, background: cr.surfaceRaised, color: cr.textMuted, fontFamily: cr.mono, borderRadius: 4 }
+const segBtnActiveStyle: CSSProperties = { ...segBtnStyle, border: `1px solid ${cr.accentDeep}`, background: cr.accent, color: '#0e1117' }
+const publishBtnStyle: CSSProperties = { padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', letterSpacing: 1, textTransform: 'uppercase', fontFamily: cr.mono, border: `1px solid ${cr.accentDeep}`, background: cr.accent, color: '#0e1117', borderRadius: 4 }
+const pubRowStyle: CSSProperties = { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 4 }
+const pubLinkStyle: CSSProperties = { fontSize: 12, fontWeight: 600, color: cr.accent, textTransform: 'uppercase', letterSpacing: 1, fontFamily: cr.mono, textDecoration: 'none' }
+const pubIdleStyle: CSSProperties = { fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 3, background: cr.surfaceSunken, color: cr.textMuted, fontFamily: cr.mono, letterSpacing: 1, textTransform: 'uppercase' }
+const pubOkStyle: CSSProperties = { ...pubIdleStyle, background: 'rgba(34,197,94,.18)', color: cr.ok }
+const pubErrStyle: CSSProperties = { ...pubIdleStyle, background: 'rgba(239,68,68,.18)', color: cr.err }

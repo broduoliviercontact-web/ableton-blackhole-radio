@@ -96,3 +96,52 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* Régie performer (Control Room) — portée à .cr (PerformerGate + Performer).
+   Les pages publiques / et /listen ne portent jamais .cr : leur identité
+   splitflap/hotfx reste inchangée. color-scheme dark rend natifs les selects,
+   scrollbars et checkboxes ; boutons stylés une fois ici (DRY) plutôt que
+   dupliqués en inline sur chaque bouton. */
+.cr {
+  color-scheme: dark;
+}
+.cr button {
+  padding: 7px 12px;
+  font: 600 13px/1.1 var(--mono, ui-monospace, Consolas, monospace);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #efe9d6;
+  background: #14161e;
+  border: 1px solid #2a2d36;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.cr button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.cr input[type='range'],
+.cr input[type='checkbox'] {
+  accent-color: #f5d76b;
+}
+.cr button:focus-visible,
+.cr input:focus-visible,
+.cr select:focus-visible,
+.cr textarea:focus-visible,
+.cr summary:focus-visible,
+.cr a:focus-visible {
+  outline: 2px solid #f5d76b;
+  outline-offset: 2px;
+}
+
+/* Grille 2 colonnes régie : chaîne audio | message. Empilée en mobile. */
+.cr-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 900px) {
+  .cr-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  }
+}

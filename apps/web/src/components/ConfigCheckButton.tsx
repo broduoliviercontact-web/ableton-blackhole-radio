@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { FAKE_CONFIG_HINT, fetchConfigCheck, type ConfigCheckResult } from '../api/config'
+import { cr } from './controlRoom'
 
 export function ConfigCheckButton() {
   const [result, setResult] = useState<ConfigCheckResult | null>(null)
@@ -21,8 +22,8 @@ export function ConfigCheckButton() {
 
   return (
     <div style={wrapStyle}>
-      <button type="button" onClick={check} disabled={loading}>
-        Check server config
+      <button type="button" onClick={check} disabled={loading} style={btnStyle}>
+        Vérifier config serveur
       </button>
       {error && <p style={errorStyle}>❌ {error}</p>}
       {result && (
@@ -39,6 +40,18 @@ export function ConfigCheckButton() {
 }
 
 const wrapStyle: CSSProperties = { marginTop: 8 }
-const listStyle: CSSProperties = { margin: '8px 0 0', paddingLeft: 20, fontSize: 14, lineHeight: 1.7 }
-const errorStyle: CSSProperties = { color: 'crimson', margin: '8px 0 0' }
-const warnStyle: CSSProperties = { color: '#b45309', margin: '8px 0 0', fontSize: 14 }
+const btnStyle: CSSProperties = {
+  padding: '8px 12px',
+  fontSize: 12,
+  fontFamily: cr.mono,
+  letterSpacing: 1,
+  textTransform: 'uppercase',
+  color: cr.text,
+  background: cr.surfaceRaised,
+  border: `1px solid ${cr.borderStrong}`,
+  borderRadius: 4,
+  cursor: 'pointer',
+}
+const listStyle: CSSProperties = { margin: '8px 0 0', paddingLeft: 18, fontSize: 13, lineHeight: 1.7, color: cr.textMuted, fontFamily: cr.mono }
+const errorStyle: CSSProperties = { color: cr.err, margin: '8px 0 0', fontSize: 13 }
+const warnStyle: CSSProperties = { color: cr.warn, margin: '8px 0 0', fontSize: 13, lineHeight: 1.5 }

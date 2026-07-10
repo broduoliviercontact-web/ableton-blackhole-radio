@@ -31,13 +31,13 @@ URLs :
 
 ## Broadcast audio
 
-- [ ] Performer : Autoriser l’audio → sélectionner la source → Start local
-      capture → Start broadcast → statut `live`.
+- [ ] Performer : Autoriser l’audio → sélectionner la source → Démarrer la
+      capture → Démarrer la diffusion → statut `live` (badge header « ON AIR »).
 - [ ] Page publique : Listen live → flux audio reçu (`🎧` / status `LIVE`).
 - [ ] Volume listener à 0 → muet ; 50 → demi-niveau ; 100 → niveau original
       (jamais de boost).
-- [ ] Stop broadcast côté performer → l’écoute publique s’arrête / status
-      repasse à `OFFLINE`.
+- [ ] Arrêter la diffusion côté performer → l’écoute publique s’arrête /
+      status repasse à `OFFLINE`.
 
 ## Messages radio
 

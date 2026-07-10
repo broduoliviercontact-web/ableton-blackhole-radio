@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import { AudioMeter as MeterEngine } from '../audio/audioMeter'
+import { cr } from './controlRoom'
 
 /**
  * VU-mètre piloté par refs DOM : la barre et le texte sont mis à jour
@@ -49,13 +50,21 @@ export function AudioMeter({ stream }: { stream: MediaStream | null }) {
 const barWrap: CSSProperties = {
   height: 16,
   width: '100%',
-  background: '#e5e7eb',
+  background: cr.surfaceSunken,
+  border: `1px solid ${cr.border}`,
   borderRadius: 4,
   overflow: 'hidden',
 }
 const barFill: CSSProperties = {
   height: '100%',
-  background: 'linear-gradient(90deg, #22c55e, #eab308 70%, #ef4444)',
+  background: 'linear-gradient(90deg, #3a4a1a, #d8b32a 70%, #d9822a 88%, #c0392b)',
   transition: 'width 50ms linear',
 }
-const valueStyle: CSSProperties = { fontVariantNumeric: 'tabular-nums', fontSize: 13 }
+const valueStyle: CSSProperties = {
+  display: 'block',
+  fontFamily: cr.mono,
+  fontVariantNumeric: 'tabular-nums',
+  fontSize: 12,
+  color: cr.textMuted,
+  marginTop: 4,
+}

@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { AudioInputDevice } from '../audio/mediaDevices'
+import { cr } from './controlRoom'
 
 interface Props {
   devices: AudioInputDevice[]
@@ -29,7 +30,7 @@ export function AudioDeviceSelect({ devices, selectedId, onSelect, onRefresh }: 
             </option>
           ))}
         </select>
-        <button type="button" onClick={onRefresh}>
+        <button type="button" onClick={onRefresh} style={refreshBtnStyle}>
           Rafraîchir
         </button>
       </div>
@@ -41,7 +42,36 @@ export function AudioDeviceSelect({ devices, selectedId, onSelect, onRefresh }: 
   )
 }
 
-const labelStyle: CSSProperties = { display: 'block', fontWeight: 600, marginBottom: 4 }
+const labelStyle: CSSProperties = {
+  display: 'block',
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: 1,
+  textTransform: 'uppercase',
+  color: cr.textMuted,
+  marginBottom: 6,
+}
 const rowStyle: CSSProperties = { display: 'flex', gap: 8 }
-const selectStyle: CSSProperties = { flex: 1 }
-const tipStyle: CSSProperties = { color: '#6b7280', marginTop: 8, fontSize: 13 }
+const selectStyle: CSSProperties = {
+  flex: 1,
+  padding: '8px 10px',
+  fontSize: 14,
+  fontFamily: cr.mono,
+  color: cr.text,
+  background: cr.surfaceSunken,
+  border: `1px solid ${cr.borderStrong}`,
+  borderRadius: 4,
+}
+const refreshBtnStyle: CSSProperties = {
+  padding: '8px 12px',
+  fontSize: 12,
+  fontFamily: cr.mono,
+  letterSpacing: 1,
+  textTransform: 'uppercase',
+  color: cr.text,
+  background: cr.surfaceRaised,
+  border: `1px solid ${cr.borderStrong}`,
+  borderRadius: 4,
+  cursor: 'pointer',
+}
+const tipStyle: CSSProperties = { color: cr.textDim, marginTop: 8, fontSize: 12, lineHeight: 1.5 }
