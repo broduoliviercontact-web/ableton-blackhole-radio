@@ -132,11 +132,10 @@ export function RadioPage() {
 
   // Thème Day / Night (toggle header, persisté localStorage). Cf. ThemeToggle.
   const { theme, toggle } = useTheme()
-  // Synthèse RX pour le hero + lignes détaillées du rail (trafic réseau entrant,
-  // ≠ niveau sonore).
+  // Débit audio WebRTC reçu (kbps) — trafic réseau entrant, ≠ niveau sonore.
+  // ponytail: jitter/loss retirés du chrome public (footer compact). Les stats Rx
+  // complètes restent visibles dans AudioMonitorPanel ; remettre si un onglet réseau revient.
   const rxKbps = isLive && audioRx.available ? `${audioRx.kbps ?? '—'}` : '—'
-  const rxJitter = isLive && audioRx.available ? `${audioRx.jitterMs ?? '—'}` : '—'
-  const rxLoss = isLive && audioRx.available && audioRx.lossPct != null ? audioRx.lossPct.toFixed(1) : '—'
 
   const rawNoteLines = trimEmptyDisplayLines(
     isScroll ? [] : visual.noteMode === 'static' ? notePages[0] : notePages[notePage] ?? notePages[0],
@@ -181,51 +180,9 @@ export function RadioPage() {
         </div>
       </header>
 
-      {/* Hero : très grand titre + métadonnées */}
-      <section className="pub-hero">
-        <h1 className="pub-title">SIGNAL&nbsp;INDEX</h1>
-        <div className="pub-meta">
-          <span>ROOM<b>{ROOM_NAME}</b></span>
-          <span>ENGINE<b>{engine}</b></span>
-          <span>STATUS<b>{statusLabel}</b></span>
-          <span>RX<b>{rxKbps === '—' ? '—' : `${rxKbps} kbps`}</b></span>
-          <span>UPDATED<b>{broadcast?.updatedAt ?? '—'}</b></span>
-        </div>
-      </section>
-
-      <div className="pub-grid">
-        {/* Rail gauche — index passif (sticky desktop) */}
-        <aside className="pub-rail" aria-label="Index de transmission">
-          <div className="pub-rail__block">
-            <h2 className="pub-rail__title">Index</h2>
-            <div className="pub-row"><span>Mode</span><span>Public listener</span></div>
-            <div className="pub-row"><span>Theme</span><span>{theme === 'dark' ? 'Night' : 'Day'}</span></div>
-            <div className="pub-row"><span>Stream</span><span>{statusLabel}</span></div>
-            <div className="pub-row"><span>Engine</span><span>{engine}</span></div>
-          </div>
-
-          <div className="pub-rail__block">
-            <h2 className="pub-rail__title">Audio</h2>
-            <div className="pub-row"><span>Signal</span><span>{connected ? 'Connected' : 'Disconnected'}</span></div>
-            <div className="pub-row"><span>RX</span><span>{rxKbps === '—' ? '—' : `${rxKbps} kbps`}</span></div>
-            <div className="pub-row"><span>Jitter</span><span>{rxJitter === '—' ? '—' : `${rxJitter} ms`}</span></div>
-            <div className="pub-row"><span>Loss</span><span>{rxLoss === '—' ? '—' : `${rxLoss} %`}</span></div>
-            <p className="pub-rail__note">Trafic réseau entrant WebRTC — ≠ niveau sonore.</p>
-          </div>
-
-          <div className="pub-rail__block">
-            <h2 className="pub-rail__title">Sections</h2>
-            <nav className="pub-rail__nav" aria-label="Sections de page">
-              <a href="#display">Signal display</a>
-              <a href="#monitor">Audio monitor</a>
-              <a href="#info">Info</a>
-            </nav>
-          </div>
-        </aside>
-
-        {/* Contenu principal */}
-        <div className="pub-main">
-          <section id="display" className="pub-section">
+      {/* Signal Display : le board split-flap domine la page (plus de hero).
+          Contenu direct dans .pub — index technique déplacé en footer bas. */}
+      <section id="display" className="pub-section">
             <div className="pub-section__head">
               <span className="pub-section__label">Signal Display</span>
               <span className="pub-section__meta">Current transmission</span>
@@ -355,15 +312,17 @@ export function RadioPage() {
             <AudioMonitorPanel analyser={analyser} active={phase === 'listening'} />
           </section>
 
-          <footer id="info" className="pub-footer">
-            <span>RADIO BLACKHOLE</span>
-            <span>· <b>Pirate WebRTC stream</b></span>
-            <span>· Engine <b>{engine}</b></span>
-            <span>· Room <b>{ROOM_NAME}</b></span>
-            <span>· Listen live</span>
-          </footer>
+      {/* Pied technique : index compact en bas (anciennement rail gauche).
+          Lignes fines, mono — présence réduite, pas de gros bloc, pas sticky. */}
+      <footer id="info" className="pub-techfoot">
+        <div className="pub-techfoot__meta">
+          <span>STREAM<b>{statusLabel}</b></span>
+          <span>ENGINE<b>{engine}</b></span>
+          <span>RX<b>{rxKbps === '—' ? '—' : `${rxKbps} kbps`}</b></span>
+          <span>UPDATED<b>{broadcast?.updatedAt ?? '—'}</b></span>
         </div>
-      </div>
+        <div className="pub-techfoot__brand">RADIO BLACKHOLE · PIRATE WEBRTC · LISTEN LIVE</div>
+      </footer>
 
       {/* Conteneur invisible pour les <audio> distants. */}
       <div ref={audioHostRef} style={{ width: 0, height: 0, overflow: 'hidden' }} />

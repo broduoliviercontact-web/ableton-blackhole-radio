@@ -273,6 +273,26 @@ export function RadioMessageForm({ performerPassword }: Props) {
         publié après quelques secondes.
       </p>
 
+      {/* ponytail: aperçu séparé des contrôles (panneau sticky). RadioMessageForm
+          reste la source unique de l'état — on ne fait que déplacer le JSX du
+          bloc ⑥ en tête de layout. Aperçu = écran principal, contrôles sur le côté. */}
+      <div className="rf-layout">
+        <div className="rf-preview">
+          <h3 style={h3Style}>Aperçu public</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+            <p style={{ ...mutedStyle, margin: 0, fontSize: 11 }}>Rendu split-flap · moteur = message.visual.splitFlapEngine</p>
+            <button type="button" onClick={() => setPreviewNonce((n) => n + 1)} style={smallBtnStyle}>
+              ↻ Relancer
+            </button>
+          </div>
+          <SplitFlapPreview key={previewNonce} message={previewMessage} />
+          <p style={mutedStyle}>Aperçu non publié — publier le message pour l’envoyer aux auditeurs.</p>
+          {published && (
+            <p style={mutedStyle}>Dernier message publié · updatedAt : {published.updatedAt}</p>
+          )}
+        </div>
+
+        <div className="rf-controls">
       {/* Bloc A — Publication : statut + actions + lien public (en haut pour publier vite). */}
       <h3 style={h3Style}>① Publication</h3>
       <div style={pubRowStyle}>
@@ -806,23 +826,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           </label>
         </div>
       </details>
-
-      {/* Bloc F — Aperçu public : montre exactement ce qui sera publié (rendu split-flap). */}
-      <h3 style={h3Style}>⑥ Aperçu public</h3>
-      <div style={{ marginTop: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <p style={{ ...mutedStyle, margin: 0 }}>Aperçu (rendu split-flap, moteur = message.visual.splitFlapEngine) :</p>
-          <button type="button" onClick={() => setPreviewNonce((n) => n + 1)} style={smallBtnStyle}>
-            ↻ Relancer preview
-          </button>
         </div>
-        <SplitFlapPreview key={previewNonce} message={previewMessage} />
-        <p style={mutedStyle}>
-          Aperçu non publié — publier le message pour l’envoyer aux auditeurs.
-        </p>
-        {published && (
-          <p style={mutedStyle}>Dernier message publié · updatedAt : {published.updatedAt}</p>
-        )}
       </div>
     </section>
   )
