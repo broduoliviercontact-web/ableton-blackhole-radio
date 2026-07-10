@@ -100,7 +100,11 @@ export const DEFAULT_VISUAL: ResolvedVisual = {
   hotfxHeightMode: 'auto',
   noteRowsMin: 2,
   noteRowsMax: 5,
-  hotfxDurationMs: 200,
+  // ponytail: 100 ms/clapet — flip rapide pour le mode Pages split-flap (la page
+  // s'installe vite puis reste fixe). 200 ms donnait l'impression que ça n'arrête
+  // jamais. N'affecte que les nouvelles sessions : les messages publiés gardent
+  // leur valeur stockée.
+  hotfxDurationMs: 100,
   hotfxCharacters: DEFAULT_HOTFX_CHARACTERS,
   hotfxGridGapPx: 3,
   flicker: false,

@@ -47,8 +47,8 @@ const TRANSITION_LABELS: Record<VisualTransition, string> = {
   instant: 'Instant',
 }
 const NOTE_MODE_LABELS: Record<VisualNoteMode, string> = {
-  paged: 'Paginé',
-  scroll: 'Déroulement',
+  paged: 'Pages split-flap',
+  scroll: 'Défilement continu',
   static: 'Statique',
 }
 const ENGINE_LABELS: Record<VisualEngine, string> = {
@@ -77,7 +77,7 @@ const TIPS = {
   type:
     "Catégorie du message : track = morceau, show = émission, announcement = annonce courte, note = texte explicatif.",
   noteMode:
-    "Contrôle la note longue : statique = fixe, paginé = pages successives, déroulement = texte qui avance dans les cases split-flap.",
+    "Mode de la note longue. Pages split-flap (recommandé) = découpe en pages, animation rapide puis pause lisible. Défilement continu = texte qui avance sans arrêt (effet bandeau, réanime souvent les cases avec HotFX). Statique = une seule page fixe.",
   mainTitle:
     "Champ requis. C’est le grand texte principal du panneau. Pour une note seule, utilise par exemple RADIO BLACKHOLE ou NOTE RADIO.",
   subtitle: "Texte secondaire sous le titre : épisode, contexte, lieu, numéro de session, etc.",
@@ -92,7 +92,7 @@ const TIPS = {
   transition: "Animation des lettres : flip mécanique, scramble, mélange des deux, ou instantané.",
   staggerDelay:
     "Décalage entre les tuiles. Plus la valeur est haute, plus la vague d’animation gauche→droite est visible.",
-  pageDuration: "Durée d’affichage d’une page de note avant de passer à la suivante.",
+  pageDuration: "Temps d’affichage d’une page en mode Pages split-flap avant le flip vers la suivante. La page reste fixe entre deux animations.",
   scrambleColors:
     "Couleurs utilisées pendant le mode scramble. Format hex séparé par virgule, ex : #e6c84f,#d94b45.",
   accentColors:
@@ -104,12 +104,12 @@ const TIPS = {
   tickerDirection: "Direction du bandeau : gauche ou droite.",
   tickerSeparator: "Texte placé entre deux répétitions du ticker. Exemple : · ou // ou —.",
   noteScrollSpeed:
-    "Vitesse du défilement dans les cases split-flap. Plus la valeur est basse, plus le texte avance vite.",
+    "Vitesse du défilement continu dans les cases split-flap. Plus la valeur est basse, plus le texte avance vite. Mode expérimental : réanime souvent les cases.",
   noteScrollStep:
     "Nombre de caractères avancés à chaque pas. 1 = très fluide, valeurs plus hautes = saut plus rapide.",
   noteScrollLoop: "Quand activé, le texte recommence au début après la fin.",
   hotfxDuration:
-    "Durée par chute de clapet. Attention : ce n’est pas la durée totale, car HotFX avance caractère par caractère dans son alphabet.",
+    "Durée par chute de clapet HotFX (ce n’est pas la durée totale : HotFX avance caractère par caractère dans son alphabet). Pour les notes paginées, utiliser une durée courte (80–120 ms) : flip rapide puis pause lisible.",
   hotfxCharacters:
     "Liste des caractères disponibles pour HotFX. Les caractères absents peuvent disparaître. Les accents français sont inclus par défaut.",
   hotfxGridGap: "Espace entre les clapets HotFX.",
@@ -443,7 +443,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           </select>
         </label>
         <label style={labelStyle}>
-          <FieldHead text="Page duration (ms)" tip={TIPS.pageDuration} />
+          <FieldHead text="Temps par page (ms)" tip={TIPS.pageDuration} />
           <input
             type="number"
             min={2000}
@@ -483,6 +483,20 @@ export function RadioMessageForm({ performerPassword }: Props) {
           />
         </label>
       </div>
+      {/* Aide contextuelle liée au mode de note choisi. ponytail: un bloc
+          conditionnel plutôt que de dupliquer les inputs (Temps par page est
+          ci-dessus, Vitesse clapet HotFX en ⑤) — on guide sans réinventer. */}
+      {visual.noteMode === 'scroll' ? (
+        <p style={{ ...mutedStyle, color: cr.warn }}>
+          ⚠ Ce mode anime en continu. Pour un texte long lisible, préfère Pages split-flap.
+        </p>
+      ) : visual.noteMode === 'paged' ? (
+        <p style={mutedStyle}>
+          Pages split-flap : la note est découpée en pages (cases/ligne × lignes). Chaque page
+          s’anime rapidement (règle la « Vitesse clapet HotFX » en ⑤, 80–120 ms) puis reste fixe
+          pendant le « Temps par page » avant la page suivante.
+        </p>
+      ) : null}
       <div style={rowStyle}>
         <button type="button" onClick={resetVisual}>
           Réinitialiser visuel
@@ -546,13 +560,13 @@ export function RadioMessageForm({ performerPassword }: Props) {
         </button>
       </div>
 
-      {/* Déroulement de la note — visible seulement en mode Déroulement. */}
+      {/* Défilement continu — visible seulement en mode Défilement continu. */}
       {visual.noteMode === 'scroll' && (
         <>
-          <h4 style={h4Style}>Déroulement de la note</h4>
+          <h4 style={h4Style}>Défilement continu</h4>
           <div style={gridStyle}>
             <label style={labelStyle}>
-              <FieldHead text={`Vitesse de défilement (ms) — ${visual.noteScrollSpeedMs ?? 180} ms`} tip={TIPS.noteScrollSpeed} />
+              <FieldHead text={`Vitesse défilement continu (ms) — ${visual.noteScrollSpeedMs ?? 180} ms`} tip={TIPS.noteScrollSpeed} />
               <input
                 type="range"
                 min={100}
@@ -654,7 +668,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
         <h4 style={h4Style}>HotFX natif</h4>
         <div style={gridStyle}>
           <label style={labelStyle}>
-            <FieldHead text="Duration HotFX (ms/clapet)" tip={TIPS.hotfxDuration} />
+            <FieldHead text="Vitesse clapet HotFX (ms)" tip={TIPS.hotfxDuration} />
             <input
               type="number"
               min={30}
