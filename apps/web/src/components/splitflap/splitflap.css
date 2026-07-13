@@ -160,18 +160,22 @@
 /* Aperçu performer : même panneau, plus petit (scaled down). Consomme les
    mêmes vars de layout que la page publique → reflète les scales live. */
 .sf-cabinet--preview {
-  max-width: 520px;
-  padding: 8px;
-  gap: 3px;
+  box-sizing: border-box;
+  contain: paint;
+  max-width: 1280px;
+  min-width: min(100%, 900px);
+  min-height: 300px;
+  padding: 14px;
+  gap: 4px;
   flex: 0 0 auto;
 }
-.sf-cabinet--preview .sf-region { gap: 2px; }
-.sf-cabinet--preview .sf-line { gap: 2px; }
-.sf-cabinet--preview .sf-tile { width: calc(14px * var(--sf-board-scale, 1)); border-radius: 2px; }
-.sf-cabinet--preview .sf-region--title .sf-tile { font-size: calc(12px * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); height: calc(22px * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); }
-.sf-cabinet--preview .sf-region--secondary .sf-tile { font-size: calc(8px * var(--sf-board-scale, 1) * var(--sf-secondary-scale, 1)); height: calc(16px * var(--sf-board-scale, 1) * var(--sf-secondary-scale, 1)); }
-.sf-cabinet--preview .sf-region--note .sf-tile { font-size: calc(9px * var(--sf-board-scale, 1) * var(--sf-note-scale, 1)); }
-.sf-cabinet--preview .sf-ticker { font-size: calc(10px * var(--sf-ticker-scale, 1)); letter-spacing: 2px; padding: 4px 0 1px; }
+.sf-cabinet--preview .sf-region { gap: 3px; }
+.sf-cabinet--preview .sf-line { gap: 3px; }
+.sf-cabinet--preview .sf-tile { width: calc(26px * var(--sf-board-scale, 1)); border-radius: 3px; }
+.sf-cabinet--preview .sf-region--title .sf-tile { font-size: calc(23px * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); height: calc(44px * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); }
+.sf-cabinet--preview .sf-region--secondary .sf-tile { font-size: calc(15px * var(--sf-board-scale, 1) * var(--sf-secondary-scale, 1)); height: calc(30px * var(--sf-board-scale, 1) * var(--sf-secondary-scale, 1)); }
+.sf-cabinet--preview .sf-region--note .sf-tile { font-size: calc(17px * var(--sf-board-scale, 1) * var(--sf-note-scale, 1)); }
+.sf-cabinet--preview .sf-ticker { contain: paint; font-size: calc(15px * var(--sf-ticker-scale, 1)); letter-spacing: 2px; padding: 8px 0 2px; }
 
 /* Bandeau contrôles audio intégré au panneau */
 .sf-controls {

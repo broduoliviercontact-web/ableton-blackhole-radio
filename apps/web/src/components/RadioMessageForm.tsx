@@ -296,12 +296,16 @@ export function RadioMessageForm({ performerPassword }: Props) {
         <div className="rf-preview">
           <h3 className="rf-h3">Aperçu public</h3>
           <div className="rf-preview__bar">
-            <p className="rf-preview__hint">Rendu split-flap · moteur = message.visual.splitFlapEngine</p>
+            <p className="rf-preview__hint">
+              Rendu public live · moteur {visualFull.splitFlapEngine ?? 'internal'} · {visualFull.layout?.boardColumns ?? DEFAULT_VISUAL.layout?.boardColumns ?? 32} colonnes
+            </p>
             <button type="button" onClick={() => setPreviewNonce((n) => n + 1)} className="rf-btn--small">
               ↻ Relancer
             </button>
           </div>
-          <SplitFlapPreview key={previewNonce} message={previewMessage} />
+          <div className="rf-preview__stage">
+            <SplitFlapPreview key={previewNonce} message={previewMessage} />
+          </div>
           <p className="rf-muted">Aperçu non publié — publier le message pour l’envoyer aux auditeurs.</p>
           {published && (
             <p className="rf-muted">Dernier message publié · updatedAt : {published.updatedAt}</p>

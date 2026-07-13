@@ -36,7 +36,7 @@ export function HelpTooltip({ text, label }: Props) {
       >
         ?
       </button>
-      <span id={id} role="tooltip" style={{ ...bubbleStyle, visibility: open ? 'visible' : 'hidden' }}>
+      <span id={id} role="tooltip" style={{ ...bubbleStyle, display: open ? 'block' : 'none' }}>
         {text}
       </span>
     </span>
