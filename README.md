@@ -154,9 +154,12 @@ courant via `GET /api/broadcast-message` (polling 5 s) et l'affiche en 4 zones
 (titre, métadonnées, note, ticker). Le message par défaut s'affiche tant
 qu'aucun message n'est publié.
 
-> MVP : le message est stocké **en mémoire** côté serveur — il est perdu au
-> redémarrage de Render. L'affichage split-flap est rendu en HTML/CSS, sans
-> dépendance externe. Plus tard : Supabase / Redis / LiveKit room metadata.
+Le message courant est persisté côté serveur dans un fichier JSON
+(`BROADCAST_MESSAGE_STORE_PATH`, défaut `server/data/broadcast-message.json`).
+Sur Render, utiliser un Disk persistant si le message doit survivre aux
+redéploiements / changements d'instance. L'affichage split-flap est rendu en
+HTML/CSS, sans dépendance externe. Plus tard : Supabase / Redis / LiveKit room
+metadata.
 
 ### MIDI Message Bridge (Ableton → Max → Radio)
 
