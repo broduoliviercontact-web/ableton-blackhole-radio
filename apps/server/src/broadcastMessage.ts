@@ -28,6 +28,9 @@ export type Visualization =
   | 'packet-stream'
   | 'pixel-mosaic'
   | 'analog-persistence'
+  | 'shader-radio'
+export type ShaderPreset = 'spectral-bloom' | 'liquid-scope' | 'feedback-tunnel' | 'interference-field' | 'phosphor-plasma' | 'signal-aurora'
+export type ShaderQuality = 'low' | 'balanced' | 'high'
 export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'
 export type TickerDirection = 'left' | 'right'
@@ -58,6 +61,8 @@ export interface BroadcastVisual {
   visualIntensity?: number
   visualGlow?: number
   visualPalette?: 'amber' | 'phosphor' | 'ice' | 'signal' | 'mono'
+  shaderPreset?: ShaderPreset
+  shaderQuality?: ShaderQuality
   preset?: VisualPreset
   transition?: VisualTransition
   noteMode?: VisualNoteMode
@@ -132,13 +137,15 @@ const visualSchema = z
       'split-flap', 'crt-terminal', 'ascii-wave', 'signal-scope',
       'teletext', 'spectrum-waterfall', 'stereo-orbit', 'event-horizon',
       'radar-transmission', 'dot-matrix', 'kinetic-type', 'tape-machine',
-      'constellation-radio', 'packet-stream', 'pixel-mosaic', 'analog-persistence',
+      'constellation-radio', 'packet-stream', 'pixel-mosaic', 'analog-persistence', 'shader-radio',
     ]).optional(),
     visualDensity: z.coerce.number().optional(),
     visualSpeed: z.coerce.number().optional(),
     visualIntensity: z.coerce.number().optional(),
     visualGlow: z.coerce.number().optional(),
     visualPalette: z.enum(['amber', 'phosphor', 'ice', 'signal', 'mono']).optional(),
+    shaderPreset: z.enum(['spectral-bloom', 'liquid-scope', 'feedback-tunnel', 'interference-field', 'phosphor-plasma', 'signal-aurora']).optional(),
+    shaderQuality: z.enum(['low', 'balanced', 'high']).optional(),
     preset: z.enum(['pirate-industrial', 'airport-classic', 'terminal-amber', 'minimal-black']).optional(),
     transition: z.enum(['flip', 'scramble', 'flip-scramble', 'instant']).optional(),
     noteMode: z.enum(['paged', 'scroll', 'static']).optional(),
@@ -216,6 +223,8 @@ const visualSchema = z
     if (v.visualIntensity != null) out.visualIntensity = clampInt(v.visualIntensity, 1, 100)
     if (v.visualGlow != null) out.visualGlow = clampInt(v.visualGlow, 0, 100)
     if (v.visualPalette) out.visualPalette = v.visualPalette
+    if (v.shaderPreset) out.shaderPreset = v.shaderPreset
+    if (v.shaderQuality) out.shaderQuality = v.shaderQuality
     if (v.preset) out.preset = v.preset
     if (v.transition) out.transition = v.transition
     if (v.noteMode) out.noteMode = v.noteMode

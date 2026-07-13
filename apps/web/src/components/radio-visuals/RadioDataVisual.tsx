@@ -8,6 +8,7 @@ import { DotMatrixVisual, PacketStreamVisual, TeletextVisual } from './engines/I
 import { AnalogPersistenceVisual, SpectrumWaterfallVisual, StereoOrbitVisual } from './engines/AudioVisuals'
 import { ConstellationRadioVisual, EventHorizonVisual, PixelMosaicVisual, RadarTransmissionVisual } from './engines/GenerativeVisuals'
 import { KineticTypeVisual, TapeMachineVisual } from './engines/EditorialVisuals'
+import { ShaderRadioVisual } from './shader/ShaderRadioVisual'
 import './radio-visuals.css'
 
 /**
@@ -34,5 +35,6 @@ export function RadioDataVisual({ kind, message, visual, status, analyser, previ
     case 'pixel-mosaic': return <PixelMosaicVisual {...props} />
     case 'kinetic-type': return <KineticTypeVisual {...props} />
     case 'tape-machine': return <TapeMachineVisual {...props} />
+    case 'shader-radio': return <ShaderRadioVisual {...props} />
   }
 }

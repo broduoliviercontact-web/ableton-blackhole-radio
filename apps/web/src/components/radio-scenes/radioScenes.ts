@@ -141,6 +141,11 @@ export const BUILT_IN_SCENES: RadioScene[] = [
     form: { type: 'show', brandLabel: 'RADIO BLACKHOLE', mainTitle: 'AFTER HOURS TAPE', subtitle: 'SIDE A // 00:00-02:00', note: 'Deux heures de sélections, de prises longues et de transmissions sans montage.', ticker: 'AFTER HOURS TAPE · SIDE A · RADIO BLACKHOLE' },
     visual: { visualization: 'tape-machine', visualDensity: 46, visualSpeed: 35, visualIntensity: 57, visualPalette: 'amber', tickerEnabled: true },
   },
+  {
+    id: 'shader-bloom', name: 'Shader / Spectral Bloom', description: 'Scène WebGL réactive, pensée comme fond de titre pour la radio.', builtIn: true,
+    form: { type: 'show', brandLabel: 'RADIO BLACKHOLE', mainTitle: 'SPECTRAL BLOOM', subtitle: 'WEBGL AUDIO TRANSMISSION', note: 'Une scène de lumière qui répond aux graves, aux pics et à la largeur stéréo du signal.', ticker: 'SHADER RADIO · SPECTRAL BLOOM · LISTEN LIVE' },
+    visual: { visualization: 'shader-radio', shaderPreset: 'spectral-bloom', shaderQuality: 'balanced', visualDensity: 62, visualSpeed: 52, visualIntensity: 78, visualGlow: 74, visualPalette: 'signal', tickerEnabled: true },
+  },
 ]
 
 export function sceneVisualization(scene: RadioScene): Visualization {

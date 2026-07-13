@@ -9,6 +9,8 @@ import {
   type BroadcastVisual,
   type HotfxHeightMode,
   type PanelDensity,
+  type ShaderPreset,
+  type ShaderQuality,
   type TickerDirection,
   type TextAlign,
   type VisualEngine,
@@ -46,7 +48,10 @@ const VISUALIZATIONS: Visualization[] = [
   'teletext', 'dot-matrix', 'packet-stream', 'spectrum-waterfall', 'stereo-orbit',
   'analog-persistence', 'event-horizon', 'radar-transmission', 'constellation-radio',
   'pixel-mosaic', 'kinetic-type', 'tape-machine',
+  'shader-radio',
 ]
+const SHADER_PRESETS: ShaderPreset[] = ['spectral-bloom', 'liquid-scope', 'feedback-tunnel', 'interference-field', 'phosphor-plasma', 'signal-aurora']
+const SHADER_QUALITIES: ShaderQuality[] = ['low', 'balanced', 'high']
 const HEIGHT_MODES: HotfxHeightMode[] = ['auto', 'fixed']
 const DENSITIES: PanelDensity[] = ['compact', 'normal', 'large']
 const DIRECTIONS: TickerDirection[] = ['left', 'right']
@@ -89,6 +94,7 @@ const VISUALIZATION_LABELS: Record<Visualization, string> = {
   'packet-stream': 'Packet Stream',
   'pixel-mosaic': 'Pixel Mosaic',
   'analog-persistence': 'Analog Persistence',
+  'shader-radio': 'Shader Radio',
 }
 const HEIGHT_LABELS: Record<HotfxHeightMode, string> = {
   auto: 'Auto (suit le contenu)',
@@ -120,6 +126,7 @@ const VISUALIZATION_FAMILIES: Record<Visualization, string> = {
   'pixel-mosaic': 'Génératif',
   'kinetic-type': 'Éditorial',
   'tape-machine': 'Éditorial',
+  'shader-radio': 'WebGL',
 }
 const VISUALIZATION_DESCRIPTIONS: Record<Visualization, string> = {
   'split-flap': 'Panneau mécanique signature, Internal ou HotFX.',
@@ -138,7 +145,17 @@ const VISUALIZATION_DESCRIPTIONS: Record<Visualization, string> = {
   'pixel-mosaic': 'Mosaïque de pixels musicaux.',
   'kinetic-type': 'Titre vivant, pour les annonces.',
   'tape-machine': 'Machine à bande, cue ou live.',
+  'shader-radio': 'Six scènes GLSL réactives au flux radio.',
 }
+const SHADER_PRESET_LABELS: Record<ShaderPreset, string> = {
+  'spectral-bloom': 'Spectral Bloom',
+  'liquid-scope': 'Liquid Scope',
+  'feedback-tunnel': 'Feedback Tunnel',
+  'interference-field': 'Interference Field',
+  'phosphor-plasma': 'Phosphor Plasma',
+  'signal-aurora': 'Signal Aurora',
+}
+const SHADER_QUALITY_LABELS: Record<ShaderQuality, string> = { low: 'Éco', balanced: 'Équilibrée', high: 'Haute' }
 const VISUAL_PALETTES = ['amber', 'phosphor', 'ice', 'signal', 'mono'] as const
 const VISUAL_PALETTE_LABELS: Record<(typeof VISUAL_PALETTES)[number], string> = {
   amber: 'Ambre', phosphor: 'Phosphore', ice: 'Glace', signal: 'Signal', mono: 'Mono',
@@ -170,6 +187,8 @@ const TIPS = {
   visualIntensity: 'Niveau de réaction au signal et de contraste visuel.',
   visualGlow: 'Lueur appliquée aux tracés et aux sources lumineuses des moteurs compatibles.',
   visualPalette: 'Palette générale demandée au moteur. Les moteurs gardent une identité propre pour rester reconnaissables.',
+  shaderPreset: 'Scène GLSL du moteur Shader Radio. Le texte reste au-dessus du shader pour conserver une lecture nette.',
+  shaderQuality: 'Éco limite le rendu pour mobile. Équilibrée est recommandée. Haute privilégie la finesse sur machine récente.',
   preset: "Change l’ambiance du panneau : radio pirate, gare/aéroport, terminal ambre ou minimal noir.",
   transition: "Animation des lettres : flip mécanique, scramble, mélange des deux, ou instantané.",
   staggerDelay:
@@ -718,6 +737,22 @@ export function RadioMessageForm({ performerPassword }: Props) {
             {VISUAL_PALETTES.map((palette) => <option key={palette} value={palette}>{VISUAL_PALETTE_LABELS[palette]}</option>)}
           </select>
         </label>
+        {(visual.visualization ?? 'split-flap') === 'shader-radio' && (
+          <>
+            <label className="rf-label">
+              <FieldHead text="Scène Shader Radio" tip={TIPS.shaderPreset} />
+              <select value={visual.shaderPreset ?? DEFAULT_VISUAL.shaderPreset} onChange={(e) => setVis('shaderPreset', e.target.value as ShaderPreset)} className="rf-input">
+                {SHADER_PRESETS.map((preset) => <option key={preset} value={preset}>{SHADER_PRESET_LABELS[preset]}</option>)}
+              </select>
+            </label>
+            <label className="rf-label">
+              <FieldHead text="Qualité Shader Radio" tip={TIPS.shaderQuality} />
+              <select value={visual.shaderQuality ?? DEFAULT_VISUAL.shaderQuality} onChange={(e) => setVis('shaderQuality', e.target.value as ShaderQuality)} className="rf-input">
+                {SHADER_QUALITIES.map((quality) => <option key={quality} value={quality}>{SHADER_QUALITY_LABELS[quality]}</option>)}
+              </select>
+            </label>
+          </>
+        )}
         <label className="rf-label">
           <FieldHead text="Moteur split-flap" tip={TIPS.engine} />
           <select

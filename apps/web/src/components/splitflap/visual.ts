@@ -9,6 +9,8 @@ import type {
   HotfxHeightMode,
   PanelDensity,
   TickerDirection,
+  ShaderPreset,
+  ShaderQuality,
 } from '../../api/broadcastMessage'
 import type { TextAlign } from './format'
 
@@ -55,6 +57,8 @@ export interface ResolvedVisual {
   visualIntensity: number
   visualGlow: number
   visualPalette: 'amber' | 'phosphor' | 'ice' | 'signal' | 'mono'
+  shaderPreset: ShaderPreset
+  shaderQuality: ShaderQuality
   preset: VisualPreset
   transition: VisualTransition
   noteMode: VisualNoteMode
@@ -101,6 +105,8 @@ export const DEFAULT_VISUAL: ResolvedVisual = {
   visualIntensity: 62,
   visualGlow: 42,
   visualPalette: 'amber',
+  shaderPreset: 'spectral-bloom',
+  shaderQuality: 'balanced',
   preset: 'pirate-industrial',
   transition: 'flip',
   noteMode: 'paged',
@@ -183,6 +189,8 @@ export function resolveVisual(v?: BroadcastVisual): ResolvedVisual {
     visualIntensity: clamp(v.visualIntensity, DEFAULT_VISUAL.visualIntensity, 1, 100),
     visualGlow: clamp(v.visualGlow, DEFAULT_VISUAL.visualGlow, 0, 100),
     visualPalette: v.visualPalette ?? DEFAULT_VISUAL.visualPalette,
+    shaderPreset: v.shaderPreset ?? DEFAULT_VISUAL.shaderPreset,
+    shaderQuality: v.shaderQuality ?? DEFAULT_VISUAL.shaderQuality,
     preset: v.preset ?? DEFAULT_VISUAL.preset,
     transition: v.transition ?? DEFAULT_VISUAL.transition,
     noteMode: v.noteMode ?? DEFAULT_VISUAL.noteMode,

@@ -1,8 +1,8 @@
 # Radio Visualization Suite
 
 La page publique partage un seul message radio et peut maintenant l'afficher
-avec seize moteurs. Le Split-Flap reste le rendu signature et conserve ses
-moteurs Internal et HotFX. Les quinze autres moteurs sont rendus par
+avec dix-sept moteurs. Le Split-Flap reste le rendu signature et conserve ses
+moteurs Internal et HotFX. Les seize autres moteurs sont rendus par
 `RadioDataVisual`.
 
 ## Architecture
@@ -32,6 +32,7 @@ le DPR à 2 et sont redimensionnés avec `ResizeObserver`.
 | Audio | Signal Scope, Spectrum Waterfall, Stereo Orbit, Analog Persistence |
 | Génératif | Event Horizon, Radar Transmission, Constellation Radio, Pixel Mosaic |
 | Éditorial | Kinetic Type, Tape Machine |
+| WebGL | Shader Radio: Spectral Bloom, Liquid Scope, Feedback Tunnel, Interference Field, Phosphor Plasma, Signal Aurora |
 
 ## Réglages communs
 
@@ -40,6 +41,18 @@ réglages `visualDensity`, `visualSpeed`, `visualIntensity`, `visualGlow` et
 `visualPalette`. Tous sont optionnels, bornés par le serveur, puis résolus côté
 client. Les réglages Split-Flap existants restent disponibles uniquement quand
 ce moteur est choisi.
+
+## Shader Radio
+
+`shader-radio` est un canvas WebGL2 utilisé comme fond réactif. Le message radio
+reste une surcouche HTML afin de préserver lisibilité, accessibilité et
+traduction. Les presets `shaderPreset` sont `spectral-bloom`, `liquid-scope`,
+`feedback-tunnel`, `interference-field`, `phosphor-plasma` et `signal-aurora`.
+
+`shaderQuality` propose `low`, `balanced` et `high`. Le moteur plafonne le DPR
+et la cadence selon cette qualité, réduit la cadence en arrière-plan ou avec
+`prefers-reduced-motion`, puis bascule vers un fond CSS si WebGL2 est absent ou
+si le contexte est perdu.
 
 ## Ajouter un moteur
 

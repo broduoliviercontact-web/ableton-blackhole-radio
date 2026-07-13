@@ -24,6 +24,9 @@ export type Visualization =
   | 'packet-stream'
   | 'pixel-mosaic'
   | 'analog-persistence'
+  | 'shader-radio'
+export type ShaderPreset = 'spectral-bloom' | 'liquid-scope' | 'feedback-tunnel' | 'interference-field' | 'phosphor-plasma' | 'signal-aurora'
+export type ShaderQuality = 'low' | 'balanced' | 'high'
 export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'
 export type TickerDirection = 'left' | 'right'
@@ -55,6 +58,9 @@ export interface BroadcastVisual {
   visualIntensity?: number
   visualGlow?: number
   visualPalette?: 'amber' | 'phosphor' | 'ice' | 'signal' | 'mono'
+  // Moteur WebGL Shader Radio.
+  shaderPreset?: ShaderPreset
+  shaderQuality?: ShaderQuality
   preset?: VisualPreset
   transition?: VisualTransition
   noteMode?: VisualNoteMode

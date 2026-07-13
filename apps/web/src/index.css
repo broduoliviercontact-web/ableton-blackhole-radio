@@ -1103,6 +1103,7 @@ code {
 .rf-scene--spectrum-waterfall, .rf-scene--stereo-orbit, .rf-scene--analog-persistence { --scene-accent: #76d7ff; }
 .rf-scene--event-horizon, .rf-scene--radar-transmission, .rf-scene--constellation-radio, .rf-scene--pixel-mosaic { --scene-accent: #dc8cf5; }
 .rf-scene--kinetic-type, .rf-scene--tape-machine { --scene-accent: #f4d3a4; }
+.rf-scene--shader-radio { --scene-accent: #78a8ff; }
 .rf-scene__head, .rf-scene__actions {
   display: flex;
   align-items: center;
