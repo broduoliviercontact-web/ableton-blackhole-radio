@@ -345,6 +345,7 @@ Ces outils sont indépendants du projet et optionnels.
 - [`apps/docs/deploy.md`](apps/docs/deploy.md) — déploiement
 - [`apps/docs/manual-test-radio-production.md`](apps/docs/manual-test-radio-production.md) — checklist de test radio en production
 - [`apps/docs/manual-test-mac-audio-input-livekit.md`](apps/docs/manual-test-mac-audio-input-livekit.md) — test terrain
+- [`apps/docs/radio-visualization-suite.md`](apps/docs/radio-visualization-suite.md) — moteurs radio, contrat visuel et performance
 - [`apps/docs/bmad/`](apps/docs/bmad) — notes de conception
 
 ## Notes
