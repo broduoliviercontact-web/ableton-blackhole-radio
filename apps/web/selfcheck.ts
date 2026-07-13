@@ -66,6 +66,7 @@ assert(/^listener-[a-z0-9]{6}$/.test(l), `identity listener format: ${l}`)
 const { resolveVisual, DEFAULT_LAYOUT } = await import('./src/components/splitflap/visual')
 const { wrapCentered, wrapAligned, alignLine, trimEmptyDisplayLines } = await import('./src/components/splitflap/format')
 const def = resolveVisual()
+assert(def.visualization === 'split-flap', 'visualization défaut = split-flap')
 assert(def.layout.titleScale === DEFAULT_LAYOUT.titleScale, 'layout défaut sans visual')
 assert(def.layout.boardColumns === 32, 'boardColumns défaut 32')
 const lay = resolveVisual({
@@ -78,6 +79,7 @@ assert(lay.layout.titleRows === 3, 'client titleRows clamp 3')
 assert(lay.layout.secondaryRows === 0, 'client secondaryRows clamp 0')
 assert(lay.layout.boardColumns === 12, 'client boardColumns clamp 12')
 assert(resolveVisual({ layout: { boardColumns: 999 } }).layout.boardColumns === 64, 'boardColumns clamp 64')
+assert(resolveVisual({ visualization: 'crt-terminal' }).visualization === 'crt-terminal', 'visualization crt-terminal')
 
 // trimEmptyDisplayLines : retire les lignes vides en fin de bloc, garde ≥1,
 // conserve les lignes à contenu (espaces internes intacts).

@@ -5,6 +5,7 @@ import type {
   VisualTransition,
   VisualNoteMode,
   VisualEngine,
+  Visualization,
   HotfxHeightMode,
   PanelDensity,
   TickerDirection,
@@ -48,6 +49,7 @@ export const DEFAULT_LAYOUT: ResolvedLayout = {
 }
 
 export interface ResolvedVisual {
+  visualization: Visualization
   preset: VisualPreset
   transition: VisualTransition
   noteMode: VisualNoteMode
@@ -88,6 +90,7 @@ export interface ResolvedVisual {
 
 // Valeurs par défaut = preset « pirate-industrial » actuel.
 export const DEFAULT_VISUAL: ResolvedVisual = {
+  visualization: 'split-flap',
   preset: 'pirate-industrial',
   transition: 'flip',
   noteMode: 'paged',
@@ -164,6 +167,7 @@ export function resolveVisual(v?: BroadcastVisual): ResolvedVisual {
   const noteRowsMin = clamp(v.noteRowsMin, DEFAULT_VISUAL.noteRowsMin, 1, 8)
   const noteRowsMax = clamp(v.noteRowsMax, DEFAULT_VISUAL.noteRowsMax, 1, 12)
   return {
+    visualization: v.visualization ?? DEFAULT_VISUAL.visualization,
     preset: v.preset ?? DEFAULT_VISUAL.preset,
     transition: v.transition ?? DEFAULT_VISUAL.transition,
     noteMode: v.noteMode ?? DEFAULT_VISUAL.noteMode,

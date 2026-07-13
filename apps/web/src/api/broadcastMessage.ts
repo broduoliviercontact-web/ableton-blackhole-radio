@@ -7,6 +7,7 @@ export type VisualPreset = 'pirate-industrial' | 'airport-classic' | 'terminal-a
 export type VisualTransition = 'flip' | 'scramble' | 'flip-scramble' | 'instant'
 export type VisualNoteMode = 'paged' | 'scroll' | 'static'
 export type VisualEngine = 'internal' | 'hotfx'
+export type Visualization = 'split-flap' | 'crt-terminal' | 'ascii-wave' | 'signal-scope'
 export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'
 export type TickerDirection = 'left' | 'right'
@@ -31,6 +32,7 @@ export interface BroadcastLayout {
 }
 
 export interface BroadcastVisual {
+  visualization?: Visualization
   preset?: VisualPreset
   transition?: VisualTransition
   noteMode?: VisualNoteMode

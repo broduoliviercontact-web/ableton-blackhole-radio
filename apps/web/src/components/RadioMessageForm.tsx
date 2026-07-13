@@ -12,12 +12,14 @@ import {
   type TickerDirection,
   type TextAlign,
   type VisualEngine,
+  type Visualization,
   type VisualNoteMode,
   type VisualPreset,
   type VisualTransition,
 } from '../api/broadcastMessage'
 import { SplitFlapPreview } from './splitflap/SplitFlapPreview'
-import { DEFAULT_VISUAL, parseColors } from './splitflap/visual'
+import { DEFAULT_VISUAL, parseColors, resolveVisual } from './splitflap/visual'
+import { RadioDataVisual } from './radio-visuals/RadioDataVisual'
 import { HelpTooltip } from './HelpTooltip'
 import { MidiMessageBridge } from './MidiMessageBridge'
 import { cr } from './controlRoom'
@@ -31,6 +33,7 @@ const PRESETS: VisualPreset[] = ['pirate-industrial', 'airport-classic', 'termin
 const TRANSITIONS: VisualTransition[] = ['flip', 'scramble', 'flip-scramble', 'instant']
 const NOTE_MODES: VisualNoteMode[] = ['paged', 'scroll', 'static']
 const ENGINES: VisualEngine[] = ['internal', 'hotfx']
+const VISUALIZATIONS: Visualization[] = ['split-flap', 'crt-terminal', 'ascii-wave', 'signal-scope']
 const HEIGHT_MODES: HotfxHeightMode[] = ['auto', 'fixed']
 const DENSITIES: PanelDensity[] = ['compact', 'normal', 'large']
 const DIRECTIONS: TickerDirection[] = ['left', 'right']
@@ -55,6 +58,12 @@ const NOTE_MODE_LABELS: Record<VisualNoteMode, string> = {
 const ENGINE_LABELS: Record<VisualEngine, string> = {
   internal: 'Internal',
   hotfx: 'HotFX',
+}
+const VISUALIZATION_LABELS: Record<Visualization, string> = {
+  'split-flap': 'Split-flap',
+  'crt-terminal': 'CRT Terminal',
+  'ascii-wave': 'ASCII Wave',
+  'signal-scope': 'Signal Scope',
 }
 const HEIGHT_LABELS: Record<HotfxHeightMode, string> = {
   auto: 'Auto (suit le contenu)',
@@ -89,6 +98,8 @@ const TIPS = {
     "Texte explicatif affiché dans la grande zone du panneau. Peut être paginé ou déroulant selon le mode de note.",
   engine:
     "Internal = moteur maison très contrôlable. HotFX = rendu plus réaliste avec demi-clapets mécaniques.",
+  visualization:
+    "Choisit la famille visuelle de la page publique. Le preset garde sa fonction de palette et de patine. Split-flap utilise Internal ou HotFX ; CRT, ASCII et Scope exploitent les memes champs message et reagissent au son quand l'auditeur ecoute le live.",
   preset: "Change l’ambiance du panneau : radio pirate, gare/aéroport, terminal ambre ou minimal noir.",
   transition: "Animation des lettres : flip mécanique, scramble, mélange des deux, ou instantané.",
   staggerDelay:
@@ -161,7 +172,7 @@ type EditorModule = 'program' | 'display' | 'ticker' | 'advanced' | 'midi'
 type MessageTemplate = 'home' | 'track' | 'announcement'
 const EDITOR_MODULES: Array<{ id: EditorModule; label: string; description: string }> = [
   { id: 'program', label: 'Programme', description: 'Texte, metadata et message éditorial affichés sur le panneau.' },
-  { id: 'display', label: 'Affichage', description: 'Grille, moteur, preset, taille des zones et composition du panneau.' },
+  { id: 'display', label: 'Affichage', description: 'Visualisation, palette, grille et composition de la page publique.' },
   { id: 'ticker', label: 'Bandeau', description: 'Texte roulant, vitesse, direction et séparateur du ticker bas.' },
   { id: 'advanced', label: 'Avancé', description: 'Réglages HotFX fins, hauteur des zones et patine industrielle.' },
   { id: 'midi', label: 'MIDI', description: 'Génération de clip MIDI data pour publier depuis Ableton / Max.' },
@@ -343,14 +354,26 @@ export function RadioMessageForm({ performerPassword }: Props) {
           <h3 className="rf-h3">Aperçu public</h3>
           <div className="rf-preview__bar">
             <p className="rf-preview__hint">
-              Rendu public live · moteur {visualFull.splitFlapEngine ?? 'internal'} · {visualFull.layout?.boardColumns ?? DEFAULT_VISUAL.layout?.boardColumns ?? 32} colonnes
+              Rendu public · {VISUALIZATION_LABELS[visualFull.visualization ?? 'split-flap']}
+              {visualFull.visualization === 'split-flap' && ` · moteur ${visualFull.splitFlapEngine ?? 'internal'} · ${visualFull.layout?.boardColumns ?? DEFAULT_VISUAL.layout?.boardColumns ?? 32} colonnes`}
             </p>
             <button type="button" onClick={() => setPreviewNonce((n) => n + 1)} className="rf-btn--small">
               ↻ Relancer
             </button>
           </div>
           <div className="rf-preview__stage">
-            <SplitFlapPreview key={previewNonce} message={previewMessage} />
+            {visualFull.visualization === 'split-flap' ? (
+              <SplitFlapPreview key={previewNonce} message={previewMessage} />
+            ) : (
+              <RadioDataVisual
+                key={previewNonce}
+                kind={resolveVisual(visualFull).visualization}
+                message={previewMessage}
+                visual={resolveVisual(visualFull)}
+                status="preview"
+                preview
+              />
+            )}
           </div>
           <p className="rf-muted">Aperçu non publié — publier le message pour l’envoyer aux auditeurs.</p>
           {published && (
@@ -398,7 +421,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
         <p className={status === 'error' ? 'rf-error' : 'rf-ok'}>{status === 'error' ? `❌ ${feedback}` : `✅ ${feedback}`}</p>
       )}
 
-      <div className="rf-tabs" role="tablist" aria-label="Modules d’édition split-flap">
+      <div className="rf-tabs" role="tablist" aria-label="Modules d’édition radio">
         {EDITOR_MODULES.map((module) => (
           <button
             key={module.id}
@@ -504,11 +527,26 @@ export function RadioMessageForm({ performerPassword }: Props) {
       <div id="rf-module-display" role="tabpanel" hidden={activeModule !== 'display'} className="rf-module">
       <h3 className="rf-h3">Affichage public</h3>
       <div className="rf-grid">
+        <label className="rf-label rf-label--full">
+          <FieldHead text="Visualisation radio" tip={TIPS.visualization} />
+          <select
+            value={visual.visualization ?? 'split-flap'}
+            onChange={(e) => setVis('visualization', e.target.value as Visualization)}
+            className="rf-input"
+          >
+            {VISUALIZATIONS.map((kind) => (
+              <option key={kind} value={kind}>
+                {VISUALIZATION_LABELS[kind]}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="rf-label">
           <FieldHead text="Moteur split-flap" tip={TIPS.engine} />
           <select
             value={visual.splitFlapEngine ?? 'internal'}
             onChange={(e) => setVis('splitFlapEngine', e.target.value as VisualEngine)}
+            disabled={(visual.visualization ?? 'split-flap') !== 'split-flap'}
             className="rf-input"
           >
             {ENGINES.map((en) => (
@@ -537,6 +575,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           <select
             value={visual.transition ?? 'flip'}
             onChange={(e) => setVis('transition', e.target.value as VisualTransition)}
+            disabled={(visual.visualization ?? 'split-flap') !== 'split-flap'}
             className="rf-input"
           >
             {TRANSITIONS.map((t) => (
