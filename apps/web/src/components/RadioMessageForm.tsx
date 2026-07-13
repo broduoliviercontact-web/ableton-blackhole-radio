@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import {
+  clearBroadcastMessage,
   postBroadcastMessage,
   type BroadcastInput,
   type BroadcastLayout,
@@ -168,7 +169,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
   const [visual, setVisual] = useState<BroadcastVisual>(DEFAULT_VISUAL_FORM)
   const [scrambleColorsText, setScrambleColorsText] = useState('')
   const [accentColorsText, setAccentColorsText] = useState('')
-  const [status, setStatus] = useState<'idle' | 'publishing' | 'ok' | 'error'>('idle')
+  const [status, setStatus] = useState<'idle' | 'publishing' | 'clearing' | 'ok' | 'error'>('idle')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [published, setPublished] = useState<BroadcastMessage | null>(null)
   const [previewNonce, setPreviewNonce] = useState(0)
@@ -234,7 +235,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
   const previewMessage: BroadcastInput = { ...form, visual: visualFull }
 
   async function publish() {
-    if (!form.mainTitle.trim() || status === 'publishing') return
+    if (!form.mainTitle.trim() || status === 'publishing' || status === 'clearing') return
     setStatus('publishing')
     setFeedback(null)
     try {
@@ -242,6 +243,21 @@ export function RadioMessageForm({ performerPassword }: Props) {
       setPublished(msg)
       setStatus('ok')
       setFeedback('Message publié — visible sur la page publique après quelques secondes.')
+    } catch (e) {
+      setStatus('error')
+      setFeedback(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  async function clearMessage() {
+    if (status === 'publishing' || status === 'clearing') return
+    setStatus('clearing')
+    setFeedback(null)
+    try {
+      await clearBroadcastMessage(performerPassword)
+      setPublished(null)
+      setStatus('ok')
+      setFeedback('Message effacé — la page publique revient en standby après quelques secondes.')
     } catch (e) {
       setStatus('error')
       setFeedback(e instanceof Error ? e.message : String(e))
@@ -297,10 +313,31 @@ export function RadioMessageForm({ performerPassword }: Props) {
       <h3 className="rf-h3">① Publication</h3>
       <div className="rf-pub-row">
         <span className={status === 'ok' ? 'rf-pub-badge rf-pub-badge--ok' : status === 'error' ? 'rf-pub-badge rf-pub-badge--err' : 'rf-pub-badge'}>
-          {status === 'publishing' ? 'Publication…' : status === 'ok' ? 'Publié' : status === 'error' ? 'Erreur' : 'Brouillon'}
+          {status === 'publishing'
+            ? 'Publication…'
+            : status === 'clearing'
+              ? 'Off-air…'
+              : status === 'ok'
+                ? 'Publié'
+                : status === 'error'
+                  ? 'Erreur'
+                  : 'Brouillon'}
         </span>
-        <button type="button" onClick={publish} disabled={!form.mainTitle.trim() || status === 'publishing'} className="rf-btn--publish">
+        <button
+          type="button"
+          onClick={publish}
+          disabled={!form.mainTitle.trim() || status === 'publishing' || status === 'clearing'}
+          className="rf-btn--publish"
+        >
           {status === 'publishing' ? 'Publication…' : 'Publier le message'}
+        </button>
+        <button
+          type="button"
+          onClick={clearMessage}
+          disabled={status === 'publishing' || status === 'clearing'}
+          className="rf-btn--clear"
+        >
+          {status === 'clearing' ? 'Off-air…' : 'Passer off-air'}
         </button>
         <button type="button" onClick={reset}>Réinitialiser</button>
         <a href="/" target="_blank" rel="noopener noreferrer" className="rf-pub-link">

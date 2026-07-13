@@ -130,3 +130,21 @@ export async function postBroadcastMessage(
   const body = (await res.json()) as { ok: true; message: BroadcastMessage }
   return body.message
 }
+
+export async function clearBroadcastMessage(performerPassword: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/broadcast-message`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ performerPassword }),
+  })
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`
+    try {
+      const body = (await res.json()) as { error?: string }
+      if (body.error) detail = body.error
+    } catch {
+      // body non-JSON
+    }
+    throw new Error(detail)
+  }
+}

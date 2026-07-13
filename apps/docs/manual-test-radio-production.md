@@ -47,7 +47,8 @@ URLs :
 - [ ] Ticker bas affiche le texte publié et défile.
 - [ ] Note longue (> une page) → se pagine toutes les 6 s ; note courte → une
       seule page (pas de changement inutile).
-- [ ] Réinitialiser le message → retour au message par défaut côté public.
+- [ ] Bouton `Passer off-air` → `DELETE /api/broadcast-message` accepté, puis
+      retour au message par défaut côté public après polling (≤ 5 s).
 - [ ] Aucun mot de passe n’apparaît dans le message public, les logs ou
       `/api/config-check` (booléen `performerPasswordConfigured` uniquement).
 

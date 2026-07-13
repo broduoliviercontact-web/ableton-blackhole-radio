@@ -152,7 +152,9 @@ album, note longue, ticker, URL) depuis `/performer` → `POST /api/broadcast-me
 (protégé par `PERFORMER_PASSWORD`). La page publique `/` récupère le message
 courant via `GET /api/broadcast-message` (polling 5 s) et l'affiche en 4 zones
 (titre, métadonnées, note, ticker). Le message par défaut s'affiche tant
-qu'aucun message n'est publié.
+qu'aucun message n'est publié. Le performer peut aussi passer la radio en
+standby via `DELETE /api/broadcast-message` (même protection mot de passe), ce
+qui efface le message courant et supprime le fichier de persistance.
 
 Le message courant est persisté côté serveur dans un fichier JSON
 (`BROADCAST_MESSAGE_STORE_PATH`, défaut `server/data/broadcast-message.json`).
