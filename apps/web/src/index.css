@@ -78,6 +78,7 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  min-width: 0;
 }
 
 body {
@@ -241,6 +242,8 @@ code {
   font-family: var(--mono);
   min-height: 100svh;
   box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 24px 48px;
@@ -251,6 +254,7 @@ code {
   display: flex;
   align-items: center;
   gap: 22px;
+  min-width: 0;
   padding: 16px 0;
   border-bottom: 1px solid var(--border);
   font-size: 12px;
@@ -272,6 +276,7 @@ code {
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
 }
 .pub-status {
   display: inline-flex;
@@ -314,6 +319,7 @@ code {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 .pub-techfoot__meta {
   display: flex;
@@ -342,6 +348,7 @@ code {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-width: 0;
   padding-top: 10px;
   padding-bottom: 36px;
   border-bottom: 1px solid var(--border);
@@ -355,6 +362,7 @@ code {
 .pub-section__head {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 14px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--border);
@@ -377,6 +385,7 @@ code {
   font-size: 10px;
   color: var(--text);
   letter-spacing: 1px;
+  overflow-wrap: anywhere;
 }
 
 /* Board split-flap : écran sombre (reste .sf-cabinet, inchangé). Le wrapper
@@ -385,13 +394,19 @@ code {
 .pub-boardwrap {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 58svh;
   overflow-x: auto;
+  overflow-y: hidden;
   padding: 4px 0;
 }
 .pub-boardwrap .sf-cabinet {
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* Ligne de contrôles listener — compacte, type instrument panel. */
@@ -400,6 +415,7 @@ code {
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
+  min-width: 0;
   padding-top: 14px;
   border-top: 1px solid var(--border);
   font-family: var(--mono);
@@ -437,6 +453,36 @@ code {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+@media (max-width: 520px) {
+  .pub {
+    padding-inline: 16px;
+  }
+
+  .pub-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+  }
+
+  .pub-header__right {
+    margin-left: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .pub-boardwrap {
+    min-height: 48svh;
+  }
+
+  .pub-controls .sf-vol {
+    min-width: 100%;
+  }
+
+  .pub-techfoot__meta {
+    gap: 4px 12px;
+  }
 }
 .pub-controls .sf-vol input[type='range'] {
   flex: 1;

@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  checks:
+    name: Typecheck, build, lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            apps/package-lock.json
+            apps/web/package-lock.json
+
+      - name: Install app dependencies
+        working-directory: apps
+        run: npm ci
+
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Typecheck server
+        working-directory: apps
+        run: npm run typecheck:server
+
+      - name: Server self-check
+        working-directory: apps
+        run: npm run selfcheck:server
+
+      - name: Build web
+        working-directory: apps
+        run: npm run build:web
+
+      - name: Lint web
+        working-directory: apps
+        run: npm --prefix web run lint
+
+      - name: Web self-check
+        working-directory: apps
+        run: npm run selfcheck:web
