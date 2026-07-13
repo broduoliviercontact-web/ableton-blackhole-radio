@@ -11,7 +11,23 @@ export type VisualNoteMode = 'paged' | 'scroll' | 'static'
 export type VisualEngine = 'internal' | 'hotfx'
 // Le moteur de la page publique. Le preset reste une palette/patine, distincte
 // de la visualisation elle-meme.
-export type Visualization = 'split-flap' | 'crt-terminal' | 'ascii-wave' | 'signal-scope'
+export type Visualization =
+  | 'split-flap'
+  | 'crt-terminal'
+  | 'ascii-wave'
+  | 'signal-scope'
+  | 'teletext'
+  | 'spectrum-waterfall'
+  | 'stereo-orbit'
+  | 'event-horizon'
+  | 'radar-transmission'
+  | 'dot-matrix'
+  | 'kinetic-type'
+  | 'tape-machine'
+  | 'constellation-radio'
+  | 'packet-stream'
+  | 'pixel-mosaic'
+  | 'analog-persistence'
 export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'
 export type TickerDirection = 'left' | 'right'
@@ -37,6 +53,11 @@ export interface BroadcastLayout {
 
 export interface BroadcastVisual {
   visualization?: Visualization
+  visualDensity?: number
+  visualSpeed?: number
+  visualIntensity?: number
+  visualGlow?: number
+  visualPalette?: 'amber' | 'phosphor' | 'ice' | 'signal' | 'mono'
   preset?: VisualPreset
   transition?: VisualTransition
   noteMode?: VisualNoteMode
@@ -107,7 +128,17 @@ const clampInt = (n: number, min: number, max: number): number => Math.max(min, 
 // Schéma visual : clamp les nombres, filtre les couleurs. Tous champs optionnels.
 const visualSchema = z
   .object({
-    visualization: z.enum(['split-flap', 'crt-terminal', 'ascii-wave', 'signal-scope']).optional(),
+    visualization: z.enum([
+      'split-flap', 'crt-terminal', 'ascii-wave', 'signal-scope',
+      'teletext', 'spectrum-waterfall', 'stereo-orbit', 'event-horizon',
+      'radar-transmission', 'dot-matrix', 'kinetic-type', 'tape-machine',
+      'constellation-radio', 'packet-stream', 'pixel-mosaic', 'analog-persistence',
+    ]).optional(),
+    visualDensity: z.coerce.number().optional(),
+    visualSpeed: z.coerce.number().optional(),
+    visualIntensity: z.coerce.number().optional(),
+    visualGlow: z.coerce.number().optional(),
+    visualPalette: z.enum(['amber', 'phosphor', 'ice', 'signal', 'mono']).optional(),
     preset: z.enum(['pirate-industrial', 'airport-classic', 'terminal-amber', 'minimal-black']).optional(),
     transition: z.enum(['flip', 'scramble', 'flip-scramble', 'instant']).optional(),
     noteMode: z.enum(['paged', 'scroll', 'static']).optional(),
@@ -180,6 +211,11 @@ const visualSchema = z
     if (!v) return undefined
     const out: BroadcastVisual = {}
     if (v.visualization) out.visualization = v.visualization
+    if (v.visualDensity != null) out.visualDensity = clampInt(v.visualDensity, 1, 100)
+    if (v.visualSpeed != null) out.visualSpeed = clampInt(v.visualSpeed, 1, 100)
+    if (v.visualIntensity != null) out.visualIntensity = clampInt(v.visualIntensity, 1, 100)
+    if (v.visualGlow != null) out.visualGlow = clampInt(v.visualGlow, 0, 100)
+    if (v.visualPalette) out.visualPalette = v.visualPalette
     if (v.preset) out.preset = v.preset
     if (v.transition) out.transition = v.transition
     if (v.noteMode) out.noteMode = v.noteMode

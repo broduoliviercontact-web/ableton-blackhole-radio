@@ -7,7 +7,23 @@ export type VisualPreset = 'pirate-industrial' | 'airport-classic' | 'terminal-a
 export type VisualTransition = 'flip' | 'scramble' | 'flip-scramble' | 'instant'
 export type VisualNoteMode = 'paged' | 'scroll' | 'static'
 export type VisualEngine = 'internal' | 'hotfx'
-export type Visualization = 'split-flap' | 'crt-terminal' | 'ascii-wave' | 'signal-scope'
+export type Visualization =
+  | 'split-flap'
+  | 'crt-terminal'
+  | 'ascii-wave'
+  | 'signal-scope'
+  | 'teletext'
+  | 'spectrum-waterfall'
+  | 'stereo-orbit'
+  | 'event-horizon'
+  | 'radar-transmission'
+  | 'dot-matrix'
+  | 'kinetic-type'
+  | 'tape-machine'
+  | 'constellation-radio'
+  | 'packet-stream'
+  | 'pixel-mosaic'
+  | 'analog-persistence'
 export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'
 export type TickerDirection = 'left' | 'right'
@@ -33,6 +49,12 @@ export interface BroadcastLayout {
 
 export interface BroadcastVisual {
   visualization?: Visualization
+  // Reglages communs a tous les moteurs de visualisation radio.
+  visualDensity?: number
+  visualSpeed?: number
+  visualIntensity?: number
+  visualGlow?: number
+  visualPalette?: 'amber' | 'phosphor' | 'ice' | 'signal' | 'mono'
   preset?: VisualPreset
   transition?: VisualTransition
   noteMode?: VisualNoteMode

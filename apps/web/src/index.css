@@ -955,6 +955,36 @@ code {
 .rf-label--full {
   grid-column: 1 / -1;
 }
+.rf-visual-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 7px;
+  max-height: 390px;
+  padding: 2px;
+  overflow-y: auto;
+}
+.cr .rf-visual-card {
+  display: flex;
+  min-height: 106px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px;
+  border-color: var(--cr-border-strong);
+  border-radius: 5px;
+  color: var(--cr-text-muted);
+  background: var(--cr-surface-sunken);
+  text-align: left;
+}
+.cr .rf-visual-card:hover,
+.cr .rf-visual-card--active {
+  border-color: var(--cr-accent);
+  color: var(--cr-text);
+  background: color-mix(in srgb, var(--cr-accent) 10%, var(--cr-surface-sunken));
+}
+.rf-visual-card span { color: var(--cr-accent); font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.rf-visual-card strong { color: inherit; font-size: 12px; letter-spacing: .3px; }
+.rf-visual-card small { color: var(--cr-text-dim); font-size: 10px; line-height: 1.35; text-transform: none; letter-spacing: 0; }
 .rf-check {
   display: flex;
   flex-direction: row;
@@ -1069,6 +1099,10 @@ code {
 .rf-scene--ascii-wave { --scene-accent: #f5d76b; }
 .rf-scene--signal-scope { --scene-accent: #7dd3fc; }
 .rf-scene--split-flap { --scene-accent: #f5d76b; }
+.rf-scene--teletext, .rf-scene--dot-matrix, .rf-scene--packet-stream { --scene-accent: #f7a859; }
+.rf-scene--spectrum-waterfall, .rf-scene--stereo-orbit, .rf-scene--analog-persistence { --scene-accent: #76d7ff; }
+.rf-scene--event-horizon, .rf-scene--radar-transmission, .rf-scene--constellation-radio, .rf-scene--pixel-mosaic { --scene-accent: #dc8cf5; }
+.rf-scene--kinetic-type, .rf-scene--tape-machine { --scene-accent: #f4d3a4; }
 .rf-scene__head, .rf-scene__actions {
   display: flex;
   align-items: center;
@@ -1128,6 +1162,10 @@ code {
   .rf-scene-save,
   .rf-scene-grid {
     grid-template-columns: 1fr;
+  }
+  .rf-visual-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 420px;
   }
   .cr button.rf-tab {
     font-size: 10px;

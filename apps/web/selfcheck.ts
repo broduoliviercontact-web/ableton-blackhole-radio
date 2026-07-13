@@ -80,6 +80,14 @@ assert(lay.layout.secondaryRows === 0, 'client secondaryRows clamp 0')
 assert(lay.layout.boardColumns === 12, 'client boardColumns clamp 12')
 assert(resolveVisual({ layout: { boardColumns: 999 } }).layout.boardColumns === 64, 'boardColumns clamp 64')
 assert(resolveVisual({ visualization: 'crt-terminal' }).visualization === 'crt-terminal', 'visualization crt-terminal')
+assert(resolveVisual({ visualization: 'event-horizon' }).visualization === 'event-horizon', 'visualization event-horizon')
+const visualControls = resolveVisual({ visualDensity: 0, visualSpeed: 999, visualIntensity: -4, visualGlow: 999, visualPalette: 'ice' })
+assert(visualControls.visualDensity === 1 && visualControls.visualSpeed === 100, 'visual controls density/speed clamps')
+assert(visualControls.visualIntensity === 1 && visualControls.visualGlow === 100 && visualControls.visualPalette === 'ice', 'visual controls intensity/glow/palette')
+const { toRadioVisualData } = await import('./src/components/radio-visuals/visualData')
+const normalizedVisualData = toRadioVisualData({ type: 'track', mainTitle: '  TEST SIGNAL ', artist: 'Artist', note: ' Note ', ticker: 'Ticker' })
+assert(normalizedVisualData.title === 'TEST SIGNAL' && normalizedVisualData.secondary === 'Artist', 'radio visual data normalizes message fields')
+assert(normalizedVisualData.updatedAt === null, 'radio visual data accepts performer preview without updatedAt')
 
 // trimEmptyDisplayLines : retire les lignes vides en fin de bloc, garde ≥1,
 // conserve les lignes à contenu (espaces internes intacts).
@@ -422,9 +430,10 @@ assert(dur === notes.length * 62.5, 'midi: durée approx = notes × 62.5 ms (gri
 
 // Scenes radio : presets systeme et capture d'une configuration complete.
 const { BUILT_IN_SCENES, createCustomScene, sceneVisualization } = await import('./src/components/radio-scenes/radioScenes')
-assert(BUILT_IN_SCENES.length === 4, 'scenes: 4 scenes systeme')
+assert(BUILT_IN_SCENES.length === 16, 'scenes: 16 scenes systeme')
 assert(BUILT_IN_SCENES.every((scene) => scene.builtIn), 'scenes: presets marques systeme')
 assert(sceneVisualization(BUILT_IN_SCENES[0]) === 'crt-terminal', 'scenes: accueil = CRT')
+assert(new Set(BUILT_IN_SCENES.map((scene) => scene.visual.visualization)).size === 16, 'scenes: une scene par visualisation')
 const customScene = createCustomScene('  Ma scene  ', { type: 'note', mainTitle: 'TEST' }, { visualization: 'ascii-wave', layout: { boardColumns: 28 } })
 assert(customScene.name === 'Ma scene', 'scenes: nom nettoye')
 assert(customScene.visual.layout?.boardColumns === 28 && sceneVisualization(customScene) === 'ascii-wave', 'scenes: visual capture')

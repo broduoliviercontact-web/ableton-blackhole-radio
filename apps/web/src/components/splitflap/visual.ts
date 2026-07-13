@@ -50,6 +50,11 @@ export const DEFAULT_LAYOUT: ResolvedLayout = {
 
 export interface ResolvedVisual {
   visualization: Visualization
+  visualDensity: number
+  visualSpeed: number
+  visualIntensity: number
+  visualGlow: number
+  visualPalette: 'amber' | 'phosphor' | 'ice' | 'signal' | 'mono'
   preset: VisualPreset
   transition: VisualTransition
   noteMode: VisualNoteMode
@@ -91,6 +96,11 @@ export interface ResolvedVisual {
 // Valeurs par défaut = preset « pirate-industrial » actuel.
 export const DEFAULT_VISUAL: ResolvedVisual = {
   visualization: 'split-flap',
+  visualDensity: 56,
+  visualSpeed: 48,
+  visualIntensity: 62,
+  visualGlow: 42,
+  visualPalette: 'amber',
   preset: 'pirate-industrial',
   transition: 'flip',
   noteMode: 'paged',
@@ -168,6 +178,11 @@ export function resolveVisual(v?: BroadcastVisual): ResolvedVisual {
   const noteRowsMax = clamp(v.noteRowsMax, DEFAULT_VISUAL.noteRowsMax, 1, 12)
   return {
     visualization: v.visualization ?? DEFAULT_VISUAL.visualization,
+    visualDensity: clamp(v.visualDensity, DEFAULT_VISUAL.visualDensity, 1, 100),
+    visualSpeed: clamp(v.visualSpeed, DEFAULT_VISUAL.visualSpeed, 1, 100),
+    visualIntensity: clamp(v.visualIntensity, DEFAULT_VISUAL.visualIntensity, 1, 100),
+    visualGlow: clamp(v.visualGlow, DEFAULT_VISUAL.visualGlow, 0, 100),
+    visualPalette: v.visualPalette ?? DEFAULT_VISUAL.visualPalette,
     preset: v.preset ?? DEFAULT_VISUAL.preset,
     transition: v.transition ?? DEFAULT_VISUAL.transition,
     noteMode: v.noteMode ?? DEFAULT_VISUAL.noteMode,

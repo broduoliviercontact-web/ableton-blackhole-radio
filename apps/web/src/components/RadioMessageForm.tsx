@@ -41,7 +41,12 @@ const PRESETS: VisualPreset[] = ['pirate-industrial', 'airport-classic', 'termin
 const TRANSITIONS: VisualTransition[] = ['flip', 'scramble', 'flip-scramble', 'instant']
 const NOTE_MODES: VisualNoteMode[] = ['paged', 'scroll', 'static']
 const ENGINES: VisualEngine[] = ['internal', 'hotfx']
-const VISUALIZATIONS: Visualization[] = ['split-flap', 'crt-terminal', 'ascii-wave', 'signal-scope']
+const VISUALIZATIONS: Visualization[] = [
+  'split-flap', 'crt-terminal', 'ascii-wave', 'signal-scope',
+  'teletext', 'dot-matrix', 'packet-stream', 'spectrum-waterfall', 'stereo-orbit',
+  'analog-persistence', 'event-horizon', 'radar-transmission', 'constellation-radio',
+  'pixel-mosaic', 'kinetic-type', 'tape-machine',
+]
 const HEIGHT_MODES: HotfxHeightMode[] = ['auto', 'fixed']
 const DENSITIES: PanelDensity[] = ['compact', 'normal', 'large']
 const DIRECTIONS: TickerDirection[] = ['left', 'right']
@@ -72,6 +77,18 @@ const VISUALIZATION_LABELS: Record<Visualization, string> = {
   'crt-terminal': 'CRT Terminal',
   'ascii-wave': 'ASCII Wave',
   'signal-scope': 'Signal Scope',
+  teletext: 'Teletext',
+  'spectrum-waterfall': 'Spectrum Waterfall',
+  'stereo-orbit': 'Stereo Orbit',
+  'event-horizon': 'Event Horizon',
+  'radar-transmission': 'Radar Transmission',
+  'dot-matrix': 'Dot Matrix',
+  'kinetic-type': 'Kinetic Type',
+  'tape-machine': 'Tape Machine',
+  'constellation-radio': 'Constellation Radio',
+  'packet-stream': 'Packet Stream',
+  'pixel-mosaic': 'Pixel Mosaic',
+  'analog-persistence': 'Analog Persistence',
 }
 const HEIGHT_LABELS: Record<HotfxHeightMode, string> = {
   auto: 'Auto (suit le contenu)',
@@ -85,6 +102,46 @@ const DENSITY_LABELS: Record<PanelDensity, string> = {
 const DIRECTION_LABELS: Record<TickerDirection, string> = {
   left: 'Gauche → (défaut)',
   right: '← Droite',
+}
+const VISUALIZATION_FAMILIES: Record<Visualization, string> = {
+  'split-flap': 'Signature',
+  'crt-terminal': 'Information',
+  'ascii-wave': 'Information',
+  'signal-scope': 'Audio',
+  teletext: 'Information',
+  'dot-matrix': 'Information',
+  'packet-stream': 'Information',
+  'spectrum-waterfall': 'Audio',
+  'stereo-orbit': 'Audio',
+  'analog-persistence': 'Audio',
+  'event-horizon': 'Génératif',
+  'radar-transmission': 'Génératif',
+  'constellation-radio': 'Génératif',
+  'pixel-mosaic': 'Génératif',
+  'kinetic-type': 'Éditorial',
+  'tape-machine': 'Éditorial',
+}
+const VISUALIZATION_DESCRIPTIONS: Record<Visualization, string> = {
+  'split-flap': 'Panneau mécanique signature, Internal ou HotFX.',
+  'crt-terminal': 'Terminal phosphore éditorial.',
+  'ascii-wave': 'Onde audio typographique.',
+  'signal-scope': 'Oscilloscope lisible et direct.',
+  teletext: 'Page d information radio rétro.',
+  'dot-matrix': 'Affiche LED dense et nerveuse.',
+  'packet-stream': 'Flux de paquets en mouvement.',
+  'spectrum-waterfall': 'Carte temps-fréquence continue.',
+  'stereo-orbit': 'Image stéréo en orbite.',
+  'analog-persistence': 'Trace analogique persistante.',
+  'event-horizon': 'Gravité visuelle du signal.',
+  'radar-transmission': 'Balayage et contacts de transmission.',
+  'constellation-radio': 'Réseau de points sensibles au son.',
+  'pixel-mosaic': 'Mosaïque de pixels musicaux.',
+  'kinetic-type': 'Titre vivant, pour les annonces.',
+  'tape-machine': 'Machine à bande, cue ou live.',
+}
+const VISUAL_PALETTES = ['amber', 'phosphor', 'ice', 'signal', 'mono'] as const
+const VISUAL_PALETTE_LABELS: Record<(typeof VISUAL_PALETTES)[number], string> = {
+  amber: 'Ambre', phosphor: 'Phosphore', ice: 'Glace', signal: 'Signal', mono: 'Mono',
 }
 
 // Textes des tooltips d'aide (accessibles au hover/focus/clic). Remplacent les
@@ -107,7 +164,12 @@ const TIPS = {
   engine:
     "Internal = moteur maison très contrôlable. HotFX = rendu plus réaliste avec demi-clapets mécaniques.",
   visualization:
-    "Choisit la famille visuelle de la page publique. Le preset garde sa fonction de palette et de patine. Split-flap utilise Internal ou HotFX ; CRT, ASCII et Scope exploitent les memes champs message et reagissent au son quand l'auditeur ecoute le live.",
+    "Choisit la famille visuelle de la page publique. Le preset garde sa fonction de palette et de patine. Tous les moteurs lisent les mêmes champs message et réagissent au son quand l'auditeur écoute le live.",
+  visualDensity: 'Densité des éléments graphiques. Une valeur modérée est plus lisible sur mobile.',
+  visualSpeed: 'Vitesse des mouvements continus. Le mode réduire les animations limite automatiquement les cadences.',
+  visualIntensity: 'Niveau de réaction au signal et de contraste visuel.',
+  visualGlow: 'Lueur appliquée aux tracés et aux sources lumineuses des moteurs compatibles.',
+  visualPalette: 'Palette générale demandée au moteur. Les moteurs gardent une identité propre pour rester reconnaissables.',
   preset: "Change l’ambiance du panneau : radio pirate, gare/aéroport, terminal ambre ou minimal noir.",
   transition: "Animation des lettres : flip mécanique, scramble, mélange des deux, ou instantané.",
   staggerDelay:
@@ -407,7 +469,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
             ) : (
               <RadioDataVisual
                 key={previewNonce}
-                kind={resolveVisual(visualFull).visualization}
+                kind={resolveVisual(visualFull).visualization as Exclude<Visualization, 'split-flap'>}
                 message={previewMessage}
                 visual={resolveVisual(visualFull)}
                 status="preview"
@@ -612,18 +674,48 @@ export function RadioMessageForm({ performerPassword }: Props) {
       <div id="rf-module-display" role="tabpanel" hidden={activeModule !== 'display'} className="rf-module">
       <h3 className="rf-h3">Affichage public</h3>
       <div className="rf-grid">
-        <label className="rf-label rf-label--full">
+        <div className="rf-label rf-label--full">
           <FieldHead text="Visualisation radio" tip={TIPS.visualization} />
-          <select
-            value={visual.visualization ?? 'split-flap'}
-            onChange={(e) => setVis('visualization', e.target.value as Visualization)}
-            className="rf-input"
-          >
-            {VISUALIZATIONS.map((kind) => (
-              <option key={kind} value={kind}>
-                {VISUALIZATION_LABELS[kind]}
-              </option>
-            ))}
+          <div className="rf-visual-picker" role="radiogroup" aria-label="Visualisation radio">
+            {VISUALIZATIONS.map((kind) => {
+              const selected = (visual.visualization ?? 'split-flap') === kind
+              return (
+                <button
+                  key={kind}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setVis('visualization', kind)}
+                  className={selected ? 'rf-visual-card rf-visual-card--active' : 'rf-visual-card'}
+                >
+                  <span>{VISUALIZATION_FAMILIES[kind]}</span>
+                  <strong>{VISUALIZATION_LABELS[kind]}</strong>
+                  <small>{VISUALIZATION_DESCRIPTIONS[kind]}</small>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <label className="rf-label">
+          <FieldHead text={`Densité visuelle — ${visual.visualDensity ?? DEFAULT_VISUAL.visualDensity}%`} tip={TIPS.visualDensity} />
+          <input type="range" min={1} max={100} value={visual.visualDensity ?? DEFAULT_VISUAL.visualDensity} onChange={(e) => setVis('visualDensity', Number(e.target.value))} className="rf-input" />
+        </label>
+        <label className="rf-label">
+          <FieldHead text={`Vitesse visuelle — ${visual.visualSpeed ?? DEFAULT_VISUAL.visualSpeed}%`} tip={TIPS.visualSpeed} />
+          <input type="range" min={1} max={100} value={visual.visualSpeed ?? DEFAULT_VISUAL.visualSpeed} onChange={(e) => setVis('visualSpeed', Number(e.target.value))} className="rf-input" />
+        </label>
+        <label className="rf-label">
+          <FieldHead text={`Intensité signal — ${visual.visualIntensity ?? DEFAULT_VISUAL.visualIntensity}%`} tip={TIPS.visualIntensity} />
+          <input type="range" min={1} max={100} value={visual.visualIntensity ?? DEFAULT_VISUAL.visualIntensity} onChange={(e) => setVis('visualIntensity', Number(e.target.value))} className="rf-input" />
+        </label>
+        <label className="rf-label">
+          <FieldHead text={`Lueur visuelle — ${visual.visualGlow ?? DEFAULT_VISUAL.visualGlow}%`} tip={TIPS.visualGlow} />
+          <input type="range" min={0} max={100} value={visual.visualGlow ?? DEFAULT_VISUAL.visualGlow} onChange={(e) => setVis('visualGlow', Number(e.target.value))} className="rf-input" />
+        </label>
+        <label className="rf-label">
+          <FieldHead text="Palette moteur" tip={TIPS.visualPalette} />
+          <select value={visual.visualPalette ?? DEFAULT_VISUAL.visualPalette} onChange={(e) => setVis('visualPalette', e.target.value as BroadcastVisual['visualPalette'])} className="rf-input">
+            {VISUAL_PALETTES.map((palette) => <option key={palette} value={palette}>{VISUAL_PALETTE_LABELS[palette]}</option>)}
           </select>
         </label>
         <label className="rf-label">

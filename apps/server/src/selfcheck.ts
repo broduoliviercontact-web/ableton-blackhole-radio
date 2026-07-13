@@ -135,6 +135,14 @@ async function main(): Promise<void> {
   })
   assert(vis.visual?.preset === 'terminal-amber', 'visual preset')
   assert(vis.visual?.visualization === 'crt-terminal', 'visualization crt-terminal')
+  const newVisualization = parseBroadcastMessage({ type: 'track', mainTitle: 'Visual', visual: { visualization: 'event-horizon', visualDensity: 0, visualSpeed: 101, visualIntensity: -2, visualGlow: 101, visualPalette: 'ice' } })
+  assert(newVisualization.visual?.visualization === 'event-horizon', 'visualization event-horizon')
+  assert(newVisualization.visual?.visualDensity === 1 && newVisualization.visual?.visualSpeed === 100, 'visual controls density/speed clamp')
+  assert(newVisualization.visual?.visualIntensity === 1 && newVisualization.visual?.visualGlow === 100 && newVisualization.visual?.visualPalette === 'ice', 'visual controls palette clamp')
+  const visualizationIds = ['split-flap', 'crt-terminal', 'ascii-wave', 'signal-scope', 'teletext', 'spectrum-waterfall', 'stereo-orbit', 'event-horizon', 'radar-transmission', 'dot-matrix', 'kinetic-type', 'tape-machine', 'constellation-radio', 'packet-stream', 'pixel-mosaic', 'analog-persistence'] as const
+  for (const visualization of visualizationIds) {
+    assert(parseBroadcastMessage({ type: 'track', mainTitle: visualization, visual: { visualization } }).visual?.visualization === visualization, `visualization ${visualization} acceptée`)
+  }
   assert(vis.visual?.scrambleDurationMs === 3000, 'scrambleDurationMs clamp 3000')
   assert(vis.visual?.staggerDelayMs === 0, 'staggerDelayMs clamp 0')
   assert(vis.visual?.pageDurationMs === 2000, 'pageDurationMs clamp 2000')
