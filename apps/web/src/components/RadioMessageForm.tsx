@@ -157,6 +157,15 @@ function FieldHead({ text, tip }: { text: string; tip: string }) {
 const empty: BroadcastInput = { type: 'track', mainTitle: '' }
 // Defaults = preset pirate-industrial (bouton « Réinitialiser visuel »).
 const DEFAULT_VISUAL_FORM: BroadcastVisual = { ...DEFAULT_VISUAL }
+type EditorModule = 'program' | 'display' | 'ticker' | 'advanced' | 'midi'
+type MessageTemplate = 'home' | 'track' | 'announcement'
+const EDITOR_MODULES: Array<{ id: EditorModule; label: string; description: string }> = [
+  { id: 'program', label: 'Programme', description: 'Texte, metadata et message éditorial affichés sur le panneau.' },
+  { id: 'display', label: 'Affichage', description: 'Grille, moteur, preset, taille des zones et composition du panneau.' },
+  { id: 'ticker', label: 'Bandeau', description: 'Texte roulant, vitesse, direction et séparateur du ticker bas.' },
+  { id: 'advanced', label: 'Avancé', description: 'Réglages HotFX fins, hauteur des zones et patine industrielle.' },
+  { id: 'midi', label: 'MIDI', description: 'Génération de clip MIDI data pour publier depuis Ableton / Max.' },
+]
 
 /**
  * Section « Radio Message » : publie le message + réglages visuels split-flap
@@ -173,6 +182,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
   const [feedback, setFeedback] = useState<string | null>(null)
   const [published, setPublished] = useState<BroadcastMessage | null>(null)
   const [previewNonce, setPreviewNonce] = useState(0)
+  const [activeModule, setActiveModule] = useState<EditorModule>('program')
 
   const set = <K extends keyof BroadcastInput>(key: K, value: BroadcastInput[K]) =>
     setForm((f) => ({ ...f, [key]: value }))
@@ -233,6 +243,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
     accentColors: parseColors(accentColorsText),
   }
   const previewMessage: BroadcastInput = { ...form, visual: visualFull }
+  const activeModuleDescription = EDITOR_MODULES.find((m) => m.id === activeModule)?.description
 
   async function publish() {
     if (!form.mainTitle.trim() || status === 'publishing' || status === 'clearing') return
@@ -278,6 +289,41 @@ export function RadioMessageForm({ performerPassword }: Props) {
     setVisual(DEFAULT_VISUAL_FORM)
     setScrambleColorsText('')
     setAccentColorsText('')
+  }
+
+  function applyMessageTemplate(template: MessageTemplate) {
+    if (template === 'home') {
+      setForm({
+        type: 'announcement',
+        brandLabel: 'RADIO BLACKHOLE',
+        mainTitle: 'RADIO BLACKHOLE',
+        subtitle: 'LIVE WEB AUDIO STREAM',
+        note: 'Une radio pirate pour Ableton, textures brutes, fragments de studio et signaux venus du bord.',
+        ticker: 'RADIO BLACKHOLE · LIVE FROM THE CONTROL ROOM · NEXT TRANSMISSION SOON',
+      })
+      setVisual((v) => ({ ...v, splitFlapEngine: 'hotfx', preset: 'pirate-industrial', noteMode: 'paged' }))
+    } else if (template === 'track') {
+      setForm({
+        type: 'track',
+        brandLabel: form.brandLabel || 'RADIO BLACKHOLE',
+        mainTitle: 'MORCEAU RANDOM',
+        artist: 'Various Artist',
+        note: 'Sélection en direct depuis la control room.',
+        ticker: 'NOW PLAYING · RADIO BLACKHOLE · LISTEN LIVE',
+      })
+      setVisual((v) => ({ ...v, splitFlapEngine: 'hotfx', preset: v.preset ?? 'pirate-industrial', noteMode: 'paged' }))
+    } else {
+      setForm({
+        type: 'announcement',
+        brandLabel: form.brandLabel || 'RADIO BLACKHOLE',
+        mainTitle: 'ANNONCE RADIO',
+        subtitle: 'CONTROL ROOM MESSAGE',
+        note: 'Message spécial à afficher sur le panneau public.',
+        ticker: 'SPECIAL ANNOUNCEMENT · RADIO BLACKHOLE',
+      })
+      setVisual((v) => ({ ...v, splitFlapEngine: 'hotfx', preset: 'terminal-amber', noteMode: 'static' }))
+    }
+    setPreviewNonce((n) => n + 1)
   }
 
   return (
@@ -352,8 +398,37 @@ export function RadioMessageForm({ performerPassword }: Props) {
         <p className={status === 'error' ? 'rf-error' : 'rf-ok'}>{status === 'error' ? `❌ ${feedback}` : `✅ ${feedback}`}</p>
       )}
 
+      <div className="rf-tabs" role="tablist" aria-label="Modules d’édition split-flap">
+        {EDITOR_MODULES.map((module) => (
+          <button
+            key={module.id}
+            type="button"
+            role="tab"
+            aria-selected={activeModule === module.id}
+            aria-controls={`rf-module-${module.id}`}
+            className={activeModule === module.id ? 'rf-tab rf-tab--active' : 'rf-tab'}
+            onClick={() => setActiveModule(module.id)}
+          >
+            {module.label}
+          </button>
+        ))}
+      </div>
+      {activeModuleDescription && <p className="rf-module-hint">{activeModuleDescription}</p>}
+
       {/* Bloc B — Contenu radio */}
-      <h3 className="rf-h3">② Contenu radio</h3>
+      <div id="rf-module-program" role="tabpanel" hidden={activeModule !== 'program'} className="rf-module">
+      <h3 className="rf-h3">Programme</h3>
+      <div className="rf-template-row" aria-label="Templates de message">
+        <button type="button" onClick={() => applyMessageTemplate('home')}>
+          Accueil radio
+        </button>
+        <button type="button" onClick={() => applyMessageTemplate('track')}>
+          Now playing
+        </button>
+        <button type="button" onClick={() => applyMessageTemplate('announcement')}>
+          Annonce
+        </button>
+      </div>
       <div className="rf-grid">
         <label className="rf-label rf-label--full">
           <FieldHead text="Nom de la radio (header public)" tip={TIPS.brandLabel} />
@@ -423,9 +498,11 @@ export function RadioMessageForm({ performerPassword }: Props) {
           />
         </label>
       </div>
+      </div>
 
       {/* Bloc C — Affichage public : moteur, preset, transition, mode note, alignements, tailles. */}
-      <h3 className="rf-h3">③ Affichage public</h3>
+      <div id="rf-module-display" role="tabpanel" hidden={activeModule !== 'display'} className="rf-module">
+      <h3 className="rf-h3">Affichage public</h3>
       <div className="rf-grid">
         <label className="rf-label">
           <FieldHead text="Moteur split-flap" tip={TIPS.engine} />
@@ -642,9 +719,11 @@ export function RadioMessageForm({ performerPassword }: Props) {
           </div>
         </>
       )}
+      </div>
 
       {/* Bloc D — Bandeau roulant (ticker) : texte + vitesse + sens + séparateur + activation. */}
-      <h3 className="rf-h3">④ Bandeau roulant</h3>
+      <div id="rf-module-ticker" role="tabpanel" hidden={activeModule !== 'ticker'} className="rf-module">
+      <h3 className="rf-h3">Bandeau roulant</h3>
       <div className="rf-grid">
         <label className="rf-label rf-label--full">
           <FieldHead text="Texte du bandeau" tip={TIPS.tickerText} />
@@ -701,10 +780,11 @@ export function RadioMessageForm({ performerPassword }: Props) {
           />
         </label>
       </div>
+      </div>
 
       {/* Bloc E — Détails avancés (HotFX, hauteur, style industriel) — fermé par défaut. */}
-      <details className="rf-details">
-        <summary className="rf-summary">⑤ Détails avancés (HotFX, hauteur, style industriel)</summary>
+      <div id="rf-module-advanced" role="tabpanel" hidden={activeModule !== 'advanced'} className="rf-module">
+        <h3 className="rf-h3">Avancé HotFX & style</h3>
 
         <h4 className="rf-h4">HotFX natif</h4>
         <div className="rf-grid">
@@ -880,15 +960,15 @@ export function RadioMessageForm({ performerPassword }: Props) {
             />
           </label>
         </div>
-      </details>
+      </div>
 
       {/* Bloc F — MIDI Message Bridge : génère un clip MIDI « data » (canal 16)
           encodant le message courant (previewMessage = form + visualFull). Parallèle
           à la publication manuelle, n'oblige pas à republier pour générer le .mid. */}
-      <details className="rf-details">
-        <summary className="rf-summary">⑥ MIDI Message Bridge (Ableton → Max)</summary>
+      <div id="rf-module-midi" role="tabpanel" hidden={activeModule !== 'midi'} className="rf-module">
+        <h3 className="rf-h3">MIDI Message Bridge</h3>
         <MidiMessageBridge message={previewMessage} />
-      </details>
+      </div>
         </div>
       </div>
     </section>

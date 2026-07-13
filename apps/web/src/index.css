@@ -224,7 +224,7 @@ code {
 }
 @media (min-width: 900px) {
   .rf-layout {
-    grid-template-columns: minmax(760px, 1fr) minmax(330px, 380px);
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
   }
   .rf-preview {
     position: sticky;
@@ -232,6 +232,11 @@ code {
     max-height: calc(100svh - 96px);
     overflow: auto;
     align-self: start;
+  }
+}
+@media (min-width: 1600px) {
+  .rf-layout {
+    grid-template-columns: minmax(760px, 1fr) minmax(330px, 380px);
   }
 }
 
@@ -984,6 +989,74 @@ code {
   display: flex;
   gap: 8px;
   margin-top: 8px;
+}
+.rf-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  margin: 14px 0 8px;
+  padding: 4px;
+  border: 1px solid var(--cr-border);
+  border-radius: 6px;
+  background: var(--cr-surface-sunken);
+}
+.cr button.rf-tab {
+  min-width: 0;
+  padding: 8px 6px;
+  font-size: 10px;
+  color: var(--cr-text-muted);
+  border-color: transparent;
+  background: transparent;
+  white-space: nowrap;
+}
+.cr button.rf-tab--active {
+  color: #0e1117;
+  background: var(--cr-accent);
+  border-color: var(--cr-accent-deep);
+}
+.rf-module-hint {
+  margin: 0 0 8px;
+  color: var(--cr-text-dim);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.rf-module {
+  padding-top: 2px;
+}
+.rf-module[hidden] {
+  display: none;
+}
+.rf-template-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+.cr .rf-template-row button {
+  padding: 8px 6px;
+  font-size: 10px;
+  color: var(--cr-accent);
+  border-color: rgba(245, 215, 107, 0.28);
+  background: rgba(245, 215, 107, 0.06);
+}
+@media (max-width: 520px) {
+  .rf-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .rf-template-row {
+    grid-template-columns: 1fr;
+  }
+  .cr button.rf-tab {
+    font-size: 10px;
+  }
+}
+@media (min-width: 900px) and (max-width: 1500px) {
+  .rf-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .rf-template-row {
+    grid-template-columns: 1fr;
+  }
 }
 .rf-ok {
   color: var(--cr-ok);
