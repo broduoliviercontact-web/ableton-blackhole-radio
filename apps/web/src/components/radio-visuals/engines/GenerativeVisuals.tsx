@@ -5,7 +5,7 @@ import type { RadioVisualProps } from '../radioVisualTypes'
 
 export function EventHorizonVisual({ data, status, visual, metrics, preview }: RadioVisualProps) {
   return (
-    <RadioVisualShell className="rdv--horizon" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--horizon" data={data} visual={visual} metrics={metrics} preview={preview}>
       <VisualCanvas className="rdv-horizon__canvas" label="Horizon d evenement radio" metrics={metrics} draw={({ ctx, width, height, time, metrics: m }) => {
         ctx.fillStyle = '#050308'; ctx.fillRect(0, 0, width, height)
         const cx = width * .5; const cy = height * .48; const core = Math.min(width, height) * (.12 + m.bass * .08)
@@ -34,7 +34,7 @@ export function EventHorizonVisual({ data, status, visual, metrics, preview }: R
 
 export function RadarTransmissionVisual({ data, status, visual, metrics, preview }: RadioVisualProps) {
   return (
-    <RadioVisualShell className="rdv--radar" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--radar" data={data} visual={visual} metrics={metrics} preview={preview}>
       <div className="rdv-radar__head"><span>RADAR TRANSMISSION / {status.toUpperCase()}</span><span>SECTOR {String(Math.round(metrics.centroid * 99)).padStart(2, '0')}</span></div>
       <VisualCanvas className="rdv-radar__canvas" label="Radar de transmission audio" metrics={metrics} draw={({ ctx, width, height, time, metrics: m }) => {
         ctx.fillStyle = '#03100c'; ctx.fillRect(0, 0, width, height)
@@ -61,7 +61,7 @@ export function RadarTransmissionVisual({ data, status, visual, metrics, preview
 
 export function ConstellationRadioVisual({ data, status, visual, metrics, preview }: RadioVisualProps) {
   return (
-    <RadioVisualShell className="rdv--constellation" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--constellation" data={data} visual={visual} metrics={metrics} preview={preview}>
       <VisualCanvas className="rdv-constellation__canvas" label="Constellation radio reactive" metrics={metrics} draw={({ ctx, width, height, time, metrics: m }) => {
         ctx.fillStyle = '#060815'; ctx.fillRect(0, 0, width, height)
         const count = 22 + Math.round(visual.visualDensity * .45)
@@ -83,7 +83,7 @@ export function ConstellationRadioVisual({ data, status, visual, metrics, previe
 
 export function PixelMosaicVisual({ data, status, visual, metrics, preview }: RadioVisualProps) {
   return (
-    <RadioVisualShell className="rdv--mosaic" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--mosaic" data={data} visual={visual} metrics={metrics} preview={preview}>
       <VisualCanvas className="rdv-mosaic__canvas" label="Mosaique de pixels reactive" metrics={metrics} draw={({ ctx, width, height, time, metrics: m }) => {
         ctx.fillStyle = '#0a0810'; ctx.fillRect(0, 0, width, height)
         const cols = 10 + Math.round(visual.visualDensity * .34); const rows = Math.max(8, Math.round(cols * height / width)); const cellW = width / cols; const cellH = height / rows

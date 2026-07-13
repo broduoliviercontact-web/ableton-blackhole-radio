@@ -5,7 +5,7 @@ import type { RadioVisualProps } from '../radioVisualTypes'
 export function KineticTypeVisual({ data, status, visual, metrics, preview }: RadioVisualProps) {
   const words = data.title.split(/\s+/).slice(0, 5)
   return (
-    <RadioVisualShell className="rdv--kinetic" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--kinetic" data={data} visual={visual} metrics={metrics} preview={preview}>
       <div className="rdv-kinetic__rail">KINETIC TYPE / {status.toUpperCase()} / BPM {String(Math.round(68 + metrics.rms * 90)).padStart(3, '0')}</div>
       <div className="rdv-kinetic__words" style={{ '--kinetic-drive': `${0.7 + metrics.rms * 2}` } as CSSProperties}>
         {words.map((word, index) => <span key={`${word}-${index}`} style={{ '--word-index': index } as CSSProperties}>{word}</span>)}
@@ -18,7 +18,7 @@ export function KineticTypeVisual({ data, status, visual, metrics, preview }: Ra
 export function TapeMachineVisual({ data, status, visual, metrics, preview }: RadioVisualProps) {
   const speed = 4 + metrics.rms * 10
   return (
-    <RadioVisualShell className="rdv--tape" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--tape" data={data} visual={visual} metrics={metrics} preview={preview}>
       <div className="rdv-tape__top"><span>BLACKHOLE TAPE MACHINE</span><span>{status.toUpperCase()} / {metrics.simulated ? 'CUE' : 'REC'}</span></div>
       <div className="rdv-tape__deck">
         <div className="rdv-tape__reel" style={{ '--reel-speed': `${speed}s` } as CSSProperties}><i /><b /></div>

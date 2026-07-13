@@ -7,7 +7,7 @@ export function SignalScopeVisual({ data, status, visual, metrics, preview }: Ra
   const clock = useRadioClock()
   const accent = visual.accentColors[0] ?? '#8affb8'
   return (
-    <RadioVisualShell className="rdv--scope" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--scope" data={data} visual={visual} metrics={metrics} preview={preview}>
       <div className="rdv-scope__head"><span>BLACKHOLE / SIGNAL SCOPE</span><span>{status.toUpperCase()}</span><span>{clock.toLocaleTimeString('fr-FR', { hour12: false })}</span></div>
       <div className="rdv-scope__screen">
         <VisualCanvas

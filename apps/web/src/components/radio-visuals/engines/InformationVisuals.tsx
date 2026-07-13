@@ -7,7 +7,7 @@ function compact(value: string, size: number): string { return value.toUpperCase
 export function TeletextVisual({ data, status, visual, metrics, preview }: RadioVisualProps) {
   const level = Math.round(metrics.rms * 100)
   return (
-    <RadioVisualShell className="rdv--teletext" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--teletext" data={data} visual={visual} metrics={metrics} preview={preview}>
       <header className="rdv-teletext__bar"><span>BHX/CEEFAX 2026</span><span>P.101 {status.toUpperCase()}</span></header>
       <div className="rdv-teletext__content">
         <p className="rdv-teletext__kicker">RADIO BLACKHOLE // LIVE DATA SERVICE</p>
@@ -23,7 +23,7 @@ export function TeletextVisual({ data, status, visual, metrics, preview }: Radio
 export function DotMatrixVisual({ data, status, visual, metrics, preview }: RadioVisualProps) {
   const dots = Array.from({ length: Math.max(32, Math.round(72 * (visual.visualDensity / 100))) }, (_, index) => Math.round(metrics.spectrum[index % metrics.spectrum.length] / 64))
   return (
-    <RadioVisualShell className="rdv--dotmatrix" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--dotmatrix" data={data} visual={visual} metrics={metrics} preview={preview}>
       <div className="rdv-dotmatrix__head"><span>DOT MATRIX // {status.toUpperCase()}</span><span>PEAK {Math.round(metrics.peak * 100)}%</span></div>
       <div className="rdv-dotmatrix__title">{compact(data.title, 28)}</div>
       <div className="rdv-dotmatrix__sub">{compact(data.secondary, 48)}</div>
@@ -36,7 +36,7 @@ export function DotMatrixVisual({ data, status, visual, metrics, preview }: Radi
 export function PacketStreamVisual({ data, status, visual, metrics, preview }: RadioVisualProps) {
   const words = `${data.ticker} // ${data.title} // ${data.secondary}`.split(/\s+/).filter(Boolean)
   return (
-    <RadioVisualShell className="rdv--packets" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--packets" data={data} visual={visual} metrics={metrics} preview={preview}>
       <div className="rdv-packets__head"><span>PACKET STREAM</span><span>RX {metrics.simulated ? 'SIM' : 'LIVE'} / {status.toUpperCase()}</span></div>
       <VisualCanvas
         className="rdv-packets__canvas"

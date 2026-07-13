@@ -24,7 +24,7 @@ function asciiField(props: RadioVisualProps): string {
 export function AsciiWaveVisual(props: RadioVisualProps) {
   const { data, status, visual, preview } = props
   return (
-    <RadioVisualShell className="rdv--ascii" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--ascii" data={data} visual={visual} metrics={props.metrics} preview={preview}>
       <div className="rdv-ascii__head"><span>ASCII MODULATOR</span><span>{status.toUpperCase()} / CH 00.00</span></div>
       <div className="rdv-ascii__content">
         <pre className="rdv-ascii__field" aria-label="Onde audio convertie en caracteres">{asciiField(props)}</pre>

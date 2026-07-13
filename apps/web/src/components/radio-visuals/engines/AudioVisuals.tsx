@@ -5,7 +5,7 @@ import type { RadioVisualProps } from '../radioVisualTypes'
 
 export function SpectrumWaterfallVisual({ data, status, visual, metrics, preview }: RadioVisualProps) {
   return (
-    <RadioVisualShell className="rdv--waterfall" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--waterfall" data={data} visual={visual} metrics={metrics} preview={preview}>
       <div className="rdv-waterfall__head"><span>SPECTRUM WATERFALL</span><span>{status.toUpperCase()} / {Math.round(metrics.centroid * 100)}Hz INDEX</span></div>
       <VisualCanvas className="rdv-waterfall__canvas" label="Waterfall spectral audio" metrics={metrics} draw={({ ctx, width, height, time, metrics: m }) => {
         ctx.fillStyle = '#05070d'; ctx.fillRect(0, 0, width, height)
@@ -29,7 +29,7 @@ export function SpectrumWaterfallVisual({ data, status, visual, metrics, preview
 
 export function StereoOrbitVisual({ data, status, visual, metrics, preview }: RadioVisualProps) {
   return (
-    <RadioVisualShell className="rdv--orbit" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--orbit" data={data} visual={visual} metrics={metrics} preview={preview}>
       <div className="rdv-orbit__head"><span>STEREO ORBIT</span><span>WIDTH {Math.round(metrics.stereoWidth * 100)}%</span></div>
       <VisualCanvas className="rdv-orbit__canvas" label="Orbites stereo audio" metrics={metrics} draw={({ ctx, width, height, metrics: m }) => {
         ctx.fillStyle = '#040a0d'; ctx.fillRect(0, 0, width, height)
@@ -53,7 +53,7 @@ export function StereoOrbitVisual({ data, status, visual, metrics, preview }: Ra
 
 export function AnalogPersistenceVisual({ data, status, visual, metrics, preview }: RadioVisualProps) {
   return (
-    <RadioVisualShell className="rdv--persistence" data={data} visual={visual} preview={preview}>
+    <RadioVisualShell className="rdv--persistence" data={data} visual={visual} metrics={metrics} preview={preview}>
       <div className="rdv-persistence__head"><span>ANALOG PERSISTENCE</span><span>PEAK {Math.round(metrics.peak * 100)}%</span></div>
       <VisualCanvas className="rdv-persistence__canvas" label="Trace analogique persistante" metrics={metrics} draw={({ ctx, width, height, time, metrics: m }) => {
         ctx.fillStyle = 'rgba(3, 14, 9, .14)'; ctx.fillRect(0, 0, width, height)
