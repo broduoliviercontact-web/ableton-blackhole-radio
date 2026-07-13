@@ -296,6 +296,7 @@ export function useLiveKitListen(
 
   // Nettoie le timer + la room au démontage (US-4.1) — pas de retry orphelin.
   useEffect(() => {
+    const attachedAudioEls = audioEls.current
     return () => {
       if (retryTimer.current != null) clearTimeout(retryTimer.current)
       userStoppedRef.current = true
@@ -304,8 +305,8 @@ export function useLiveKitListen(
         room.removeAllListeners()
         void room.disconnect().catch(() => {})
       }
-      for (const [, el] of audioEls.current) el.remove()
-      audioEls.current.clear()
+      for (const [, el] of attachedAudioEls) el.remove()
+      attachedAudioEls.clear()
     }
   }, [])
 
