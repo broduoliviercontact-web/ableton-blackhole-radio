@@ -1,7 +1,13 @@
 // Self-check US-1.3 : signe un token performer + listener, vérifie les grants.
 // Lance : npm run selfcheck (depuis server/) ou `tsx server/src/selfcheck.ts` (racine).
 
-function ensureSelfcheckEnv(): boolean {
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
+function ensureSelfcheckEnv(): { storeDir: string; storePath: string; usedFallback: boolean } {
+  const storeDir = mkdtempSync(join(tmpdir(), 'radio-broadcast-store-'))
+  const storePath = join(storeDir, 'broadcast-message.json')
   const defaults: Record<string, string> = {
     LIVEKIT_URL: 'wss://selfcheck.example.com',
     LIVEKIT_API_KEY: 'selfcheck-api-key',
@@ -15,7 +21,8 @@ function ensureSelfcheckEnv(): boolean {
       usedFallback = true
     }
   }
-  return usedFallback
+  process.env.BROADCAST_MESSAGE_STORE_PATH = storePath
+  return { storeDir, storePath, usedFallback }
 }
 
 function assert(cond: boolean, label: string): void {
@@ -26,7 +33,7 @@ function assert(cond: boolean, label: string): void {
 }
 
 async function main(): Promise<void> {
-  const usedFallbackEnv = ensureSelfcheckEnv()
+  const selfcheckEnv = ensureSelfcheckEnv()
   const [
     { TokenVerifier },
     { createToken },
@@ -56,7 +63,7 @@ async function main(): Promise<void> {
   assert(l.video?.canPublish === false, 'listener canPublish false')
   assert(l.video?.canSubscribe === true, 'listener canSubscribe')
 
-  console.log(`✅ token grants OK (performer publish+subscribe, listener subscribe-only${usedFallbackEnv ? ' ; env selfcheck factice' : ''})`)
+  console.log(`✅ token grants OK (performer publish+subscribe, listener subscribe-only${selfcheckEnv.usedFallback ? ' ; env selfcheck factice' : ''})`)
 
   // Mot de passe performer : accepté si présent dans la liste autorisée, refusé sinon,
   // 503 si aucun configuré. Liste = PERFORMER_PASSWORD + PERFORMER_PASSWORDS (split/trim/filtre-vides).
@@ -102,7 +109,11 @@ async function main(): Promise<void> {
   assert(badUrl, 'url non-http refusée')
   setBroadcastMessage(msg)
   assert(getBroadcastMessage()?.mainTitle === 'Song', 'store round-trip')
+  assert(existsSync(selfcheckEnv.storePath), 'store fichier créé')
+  const persisted = JSON.parse(readFileSync(selfcheckEnv.storePath, 'utf8')) as { mainTitle?: string; updatedAt?: string }
+  assert(persisted.mainTitle === 'Song' && typeof persisted.updatedAt === 'string', 'store fichier contient message')
   setBroadcastMessage(null)
+  assert(!existsSync(selfcheckEnv.storePath), 'store fichier supprimé si message null')
 
   // Visual : optionnel, clamp des nombres, filtre des couleurs, max 8, objet vide → undefined.
   const noVisual = parseBroadcastMessage({ type: 'track', mainTitle: 'NoVis' })
@@ -285,7 +296,8 @@ async function main(): Promise<void> {
   // Anciens messages sans ticker/scroll restent valides.
   const old = parseBroadcastMessage({ type: 'track', mainTitle: 'OLD' })
   assert(old.visual === undefined && old.brandLabel === undefined, 'ancien message sans visual/brandLabel valide')
-  console.log('✅ broadcast message OK (parse, updatedAt serveur, store mémoire, visual clamp/filter, engine+hotfx+style, brandLabel+layout, ticker+scroll)')
+  console.log('✅ broadcast message OK (parse, updatedAt serveur, store mémoire+fichier, visual clamp/filter, engine+hotfx+style, brandLabel+layout, ticker+scroll)')
+  rmSync(selfcheckEnv.storeDir, { recursive: true, force: true })
 }
 
 main().catch((e) => {

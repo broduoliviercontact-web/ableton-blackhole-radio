@@ -1,3 +1,5 @@
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname, isAbsolute, resolve } from 'node:path'
 import { z } from 'zod'
 
 export type MessageType = 'track' | 'show' | 'announcement' | 'note'
@@ -240,30 +242,76 @@ const messageSchema = z
   })
   .strict()
 
+const persistedMessageSchema = messageSchema.extend({
+  updatedAt: z.string().min(1),
+})
+
+function cleanOptional(v: string | undefined): string | undefined {
+  return v && v.length > 0 ? v : undefined
+}
+
+function normalizeMessage(data: z.infer<typeof messageSchema>, updatedAt: string): BroadcastMessage {
+  return {
+    type: data.type,
+    mainTitle: data.mainTitle,
+    subtitle: cleanOptional(data.subtitle),
+    artist: cleanOptional(data.artist),
+    album: cleanOptional(data.album),
+    note: cleanOptional(data.note),
+    ticker: cleanOptional(data.ticker),
+    url: cleanOptional(data.url),
+    displayMode: data.displayMode,
+    visual: data.visual,
+    brandLabel: cleanOptional(data.brandLabel),
+    updatedAt,
+  }
+}
+
 // Valide et normalise un message entrant. updatedAt est forcé côté serveur.
 // Les champs optionnels vides deviennent undefined (pas de chaîne vide).
 export function parseBroadcastMessage(input: unknown): BroadcastMessage {
   const data = messageSchema.parse(input)
-  const clean = (v: string | undefined): string | undefined => (v && v.length > 0 ? v : undefined)
-  return {
-    type: data.type,
-    mainTitle: data.mainTitle,
-    subtitle: clean(data.subtitle),
-    artist: clean(data.artist),
-    album: clean(data.album),
-    note: clean(data.note),
-    ticker: clean(data.ticker),
-    url: clean(data.url),
-    displayMode: data.displayMode,
-    visual: data.visual,
-    brandLabel: clean(data.brandLabel),
-    updatedAt: new Date().toISOString(),
+  return normalizeMessage(data, new Date().toISOString())
+}
+
+const DEFAULT_STORE_PATH = 'server/data/broadcast-message.json'
+
+function resolveStorePath(): string {
+  const raw = process.env.BROADCAST_MESSAGE_STORE_PATH?.trim() || DEFAULT_STORE_PATH
+  return isAbsolute(raw) ? raw : resolve(process.cwd(), raw)
+}
+
+const storePath = resolveStorePath()
+
+function readStoredMessage(): BroadcastMessage | null {
+  if (!existsSync(storePath)) return null
+  try {
+    const parsed = persistedMessageSchema.parse(JSON.parse(readFileSync(storePath, 'utf8')))
+    return normalizeMessage(parsed, parsed.updatedAt)
+  } catch (err) {
+    console.warn(`broadcast message store ignored (${storePath}):`, err instanceof Error ? err.message : String(err))
+    return null
   }
 }
 
-// Store mémoire MVP : le message est perdu au redémarrage du serveur (Render).
-// Plus tard : Supabase / Redis / LiveKit room metadata.
-let current: BroadcastMessage | null = null
+function writeStoredMessage(message: BroadcastMessage | null): void {
+  try {
+    mkdirSync(dirname(storePath), { recursive: true })
+    if (!message) {
+      rmSync(storePath, { force: true })
+      return
+    }
+    const tmpPath = `${storePath}.tmp`
+    writeFileSync(tmpPath, `${JSON.stringify(message, null, 2)}\n`, 'utf8')
+    renameSync(tmpPath, storePath)
+  } catch (err) {
+    console.error(`broadcast message store write failed (${storePath}):`, err)
+  }
+}
+
+// Store mémoire hydraté depuis un fichier JSON. Sur Render, utiliser un Disk
+// persistant et BROADCAST_MESSAGE_STORE_PATH pour survivre aux redémarrages.
+let current: BroadcastMessage | null = readStoredMessage()
 
 export function getBroadcastMessage(): BroadcastMessage | null {
   return current
@@ -271,4 +319,5 @@ export function getBroadcastMessage(): BroadcastMessage | null {
 
 export function setBroadcastMessage(message: BroadcastMessage | null): void {
   current = message
+  writeStoredMessage(message)
 }

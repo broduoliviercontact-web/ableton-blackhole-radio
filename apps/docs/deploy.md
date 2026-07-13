@@ -35,6 +35,7 @@ Le serveur écoute `process.env.PORT` (fourni automatiquement par Render).
 | `WEB_ORIGIN` | `https://ton-frontend.vercel.app` (à renseigner **après** le déploiement Vercel) |
 | `PERFORMER_PASSWORD` | mot de passe protégeant les tokens performer (`canPublish`) — requis en production |
 | `PERFORMER_PASSWORDS` | optionnel : plusieurs mots de passe séparés par virgule (en plus du unique) |
+| `BROADCAST_MESSAGE_STORE_PATH` | optionnel : chemin JSON de persistance du message radio courant |
 
 > `LIVEKIT_API_SECRET` reste côté Render uniquement. Le frontend ne le reçoit jamais.
 >
@@ -55,8 +56,15 @@ Le serveur écoute `process.env.PORT` (fourni automatiquement par Render).
 le message courant affiché sur la page publique. `GET /api/broadcast-message` est
 public (polling 5 s côté listener).
 
-> MVP : le message est stocké **en mémoire** côté serveur — il est **perdu au
-> redémarrage** de Render. Plus tard : Supabase / Redis / LiveKit room metadata.
+Le message courant est persisté dans un fichier JSON côté serveur. Par défaut :
+`server/data/broadcast-message.json`. Le chemin peut être changé avec
+`BROADCAST_MESSAGE_STORE_PATH`.
+
+> Sur Render, le filesystem d'un Web Service n'est pas un stockage durable garanti
+> entre redéploiements / changements d'instance. Pour une vraie persistance prod,
+> monter un Render Disk et mettre `BROADCAST_MESSAGE_STORE_PATH` dans ce Disk
+> (ex. `/var/data/broadcast-message.json`). Plus tard : Supabase / Redis /
+> LiveKit room metadata.
 
 ## Frontend — Vercel
 
