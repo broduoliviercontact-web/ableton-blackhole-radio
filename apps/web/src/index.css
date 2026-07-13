@@ -1032,6 +1032,85 @@ code {
   gap: 6px;
   margin: 8px 0 12px;
 }
+.rf-scene-save {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+.cr .rf-scene-save button {
+  white-space: nowrap;
+  color: var(--cr-accent);
+  border-color: rgba(245, 215, 107, 0.34);
+}
+.rf-scene-feedback {
+  margin: 0 0 12px;
+  color: var(--cr-ok);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.rf-scene-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.rf-scene {
+  --scene-accent: var(--cr-accent);
+  display: flex;
+  min-width: 0;
+  min-height: 148px;
+  flex-direction: column;
+  border: 1px solid color-mix(in srgb, var(--scene-accent) 32%, var(--cr-border));
+  border-radius: 5px;
+  padding: 11px;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--scene-accent) 8%, transparent), transparent 58%), var(--cr-surface-sunken);
+}
+.rf-scene--crt-terminal { --scene-accent: #80e7a6; }
+.rf-scene--ascii-wave { --scene-accent: #f5d76b; }
+.rf-scene--signal-scope { --scene-accent: #7dd3fc; }
+.rf-scene--split-flap { --scene-accent: #f5d76b; }
+.rf-scene__head, .rf-scene__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.rf-scene__kind, .rf-scene__source {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+}
+.rf-scene__kind { color: var(--scene-accent); }
+.rf-scene__source { color: var(--cr-text-dim); }
+.rf-scene h4 {
+  margin: 13px 0 6px;
+  color: var(--cr-text);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.15;
+}
+.rf-scene p {
+  margin: 0;
+  color: var(--cr-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.rf-scene__actions {
+  margin-top: auto;
+  padding-top: 12px;
+}
+.cr .rf-scene__actions button {
+  padding: 5px 9px;
+  color: var(--scene-accent);
+  border-color: color-mix(in srgb, var(--scene-accent) 42%, var(--cr-border));
+  background: color-mix(in srgb, var(--scene-accent) 7%, transparent);
+}
+.cr .rf-scene__actions .rf-scene__delete {
+  width: 29px;
+  padding-inline: 0;
+  color: var(--cr-text-muted);
+}
 .cr .rf-template-row button {
   padding: 8px 6px;
   font-size: 10px;
@@ -1044,6 +1123,10 @@ code {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .rf-template-row {
+    grid-template-columns: 1fr;
+  }
+  .rf-scene-save,
+  .rf-scene-grid {
     grid-template-columns: 1fr;
   }
   .cr button.rf-tab {

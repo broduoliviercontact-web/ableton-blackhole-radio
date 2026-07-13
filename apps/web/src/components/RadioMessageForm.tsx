@@ -20,6 +20,14 @@ import {
 import { SplitFlapPreview } from './splitflap/SplitFlapPreview'
 import { DEFAULT_VISUAL, parseColors, resolveVisual } from './splitflap/visual'
 import { RadioDataVisual } from './radio-visuals/RadioDataVisual'
+import {
+  BUILT_IN_SCENES,
+  createCustomScene,
+  loadCustomScenes,
+  persistCustomScenes,
+  sceneVisualization,
+  type RadioScene,
+} from './radio-scenes/radioScenes'
 import { HelpTooltip } from './HelpTooltip'
 import { MidiMessageBridge } from './MidiMessageBridge'
 import { cr } from './controlRoom'
@@ -168,9 +176,10 @@ function FieldHead({ text, tip }: { text: string; tip: string }) {
 const empty: BroadcastInput = { type: 'track', mainTitle: '' }
 // Defaults = preset pirate-industrial (bouton « Réinitialiser visuel »).
 const DEFAULT_VISUAL_FORM: BroadcastVisual = { ...DEFAULT_VISUAL }
-type EditorModule = 'program' | 'display' | 'ticker' | 'advanced' | 'midi'
+type EditorModule = 'scenes' | 'program' | 'display' | 'ticker' | 'advanced' | 'midi'
 type MessageTemplate = 'home' | 'track' | 'announcement'
 const EDITOR_MODULES: Array<{ id: EditorModule; label: string; description: string }> = [
+  { id: 'scenes', label: 'Scenes', description: 'Configurations completes de message et de rendu, pretes a charger puis publier.' },
   { id: 'program', label: 'Programme', description: 'Texte, metadata et message éditorial affichés sur le panneau.' },
   { id: 'display', label: 'Affichage', description: 'Visualisation, palette, grille et composition de la page publique.' },
   { id: 'ticker', label: 'Bandeau', description: 'Texte roulant, vitesse, direction et séparateur du ticker bas.' },
@@ -193,7 +202,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
   const [feedback, setFeedback] = useState<string | null>(null)
   const [published, setPublished] = useState<BroadcastMessage | null>(null)
   const [previewNonce, setPreviewNonce] = useState(0)
-  const [activeModule, setActiveModule] = useState<EditorModule>('program')
+  const [activeModule, setActiveModule] = useState<EditorModule>('scenes')
+  const [customScenes, setCustomScenes] = useState<RadioScene[]>(() => loadCustomScenes())
+  const [sceneName, setSceneName] = useState('')
+  const [sceneFeedback, setSceneFeedback] = useState<string | null>(null)
 
   const set = <K extends keyof BroadcastInput>(key: K, value: BroadcastInput[K]) =>
     setForm((f) => ({ ...f, [key]: value }))
@@ -294,6 +306,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
     setStatus('idle')
     setFeedback(null)
     setPublished(null)
+    setSceneFeedback(null)
   }
 
   function resetVisual() {
@@ -335,6 +348,33 @@ export function RadioMessageForm({ performerPassword }: Props) {
       setVisual((v) => ({ ...v, splitFlapEngine: 'hotfx', preset: 'terminal-amber', noteMode: 'static' }))
     }
     setPreviewNonce((n) => n + 1)
+  }
+
+  const allScenes = [...BUILT_IN_SCENES, ...customScenes]
+
+  function applyScene(scene: RadioScene) {
+    setForm({ ...scene.form })
+    setVisual({ ...scene.visual, layout: scene.visual.layout ? { ...scene.visual.layout } : undefined })
+    setScrambleColorsText(scene.visual.scrambleColors?.join(',') ?? '')
+    setAccentColorsText(scene.visual.accentColors?.join(',') ?? '')
+    setSceneFeedback(`Scene chargee : ${scene.name}. Verifie l'apercu puis publie quand tu es pret.`)
+    setPreviewNonce((n) => n + 1)
+  }
+
+  function saveCurrentScene() {
+    const scene = createCustomScene(sceneName, form, visualFull)
+    const next = [scene, ...customScenes].slice(0, 24)
+    setCustomScenes(next)
+    persistCustomScenes(next)
+    setSceneName('')
+    setSceneFeedback(`Scene enregistree localement : ${scene.name}.`)
+  }
+
+  function deleteCustomScene(id: string) {
+    const next = customScenes.filter((scene) => scene.id !== id)
+    setCustomScenes(next)
+    persistCustomScenes(next)
+    setSceneFeedback('Scene personnelle supprimee.')
   }
 
   return (
@@ -437,6 +477,51 @@ export function RadioMessageForm({ performerPassword }: Props) {
         ))}
       </div>
       {activeModuleDescription && <p className="rf-module-hint">{activeModuleDescription}</p>}
+
+      <div id="rf-module-scenes" role="tabpanel" hidden={activeModule !== 'scenes'} className="rf-module">
+        <h3 className="rf-h3">Scenes radio</h3>
+        <div className="rf-scene-save">
+          <input
+            value={sceneName}
+            onChange={(e) => setSceneName(e.target.value)}
+            maxLength={48}
+            aria-label="Nom de la nouvelle scene"
+            placeholder="Nom de la scene"
+            className="rf-input"
+          />
+          <button type="button" onClick={saveCurrentScene}>Enregistrer la scene</button>
+        </div>
+        {sceneFeedback && <p className="rf-scene-feedback">{sceneFeedback}</p>}
+        <div className="rf-scene-grid">
+          {allScenes.map((scene) => {
+            const visualization = sceneVisualization(scene)
+            return (
+              <article key={scene.id} className={`rf-scene rf-scene--${visualization}`}>
+                <div className="rf-scene__head">
+                  <span className="rf-scene__kind">{VISUALIZATION_LABELS[visualization]}</span>
+                  <span className="rf-scene__source">{scene.builtIn ? 'SYSTEME' : 'LOCAL'}</span>
+                </div>
+                <h4>{scene.name}</h4>
+                <p>{scene.description}</p>
+                <div className="rf-scene__actions">
+                  <button type="button" onClick={() => applyScene(scene)}>Charger</button>
+                  {!scene.builtIn && (
+                    <button
+                      type="button"
+                      onClick={() => deleteCustomScene(scene.id)}
+                      className="rf-scene__delete"
+                      aria-label={`Supprimer la scene ${scene.name}`}
+                      title="Supprimer cette scene"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      </div>
 
       {/* Bloc B — Contenu radio */}
       <div id="rf-module-program" role="tabpanel" hidden={activeModule !== 'program'} className="rf-module">
