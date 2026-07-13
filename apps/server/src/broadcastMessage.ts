@@ -9,6 +9,9 @@ export type VisualPreset = 'pirate-industrial' | 'airport-classic' | 'terminal-a
 export type VisualTransition = 'flip' | 'scramble' | 'flip-scramble' | 'instant'
 export type VisualNoteMode = 'paged' | 'scroll' | 'static'
 export type VisualEngine = 'internal' | 'hotfx'
+// Le moteur de la page publique. Le preset reste une palette/patine, distincte
+// de la visualisation elle-meme.
+export type Visualization = 'split-flap' | 'crt-terminal' | 'ascii-wave' | 'signal-scope'
 export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'
 export type TickerDirection = 'left' | 'right'
@@ -33,6 +36,7 @@ export interface BroadcastLayout {
 }
 
 export interface BroadcastVisual {
+  visualization?: Visualization
   preset?: VisualPreset
   transition?: VisualTransition
   noteMode?: VisualNoteMode
@@ -103,6 +107,7 @@ const clampInt = (n: number, min: number, max: number): number => Math.max(min, 
 // Schéma visual : clamp les nombres, filtre les couleurs. Tous champs optionnels.
 const visualSchema = z
   .object({
+    visualization: z.enum(['split-flap', 'crt-terminal', 'ascii-wave', 'signal-scope']).optional(),
     preset: z.enum(['pirate-industrial', 'airport-classic', 'terminal-amber', 'minimal-black']).optional(),
     transition: z.enum(['flip', 'scramble', 'flip-scramble', 'instant']).optional(),
     noteMode: z.enum(['paged', 'scroll', 'static']).optional(),
@@ -174,6 +179,7 @@ const visualSchema = z
   .transform((v) => {
     if (!v) return undefined
     const out: BroadcastVisual = {}
+    if (v.visualization) out.visualization = v.visualization
     if (v.preset) out.preset = v.preset
     if (v.transition) out.transition = v.transition
     if (v.noteMode) out.noteMode = v.noteMode

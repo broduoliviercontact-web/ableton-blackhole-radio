@@ -12,12 +12,22 @@ import {
   type TickerDirection,
   type TextAlign,
   type VisualEngine,
+  type Visualization,
   type VisualNoteMode,
   type VisualPreset,
   type VisualTransition,
 } from '../api/broadcastMessage'
 import { SplitFlapPreview } from './splitflap/SplitFlapPreview'
-import { DEFAULT_VISUAL, parseColors } from './splitflap/visual'
+import { DEFAULT_VISUAL, parseColors, resolveVisual } from './splitflap/visual'
+import { RadioDataVisual } from './radio-visuals/RadioDataVisual'
+import {
+  BUILT_IN_SCENES,
+  createCustomScene,
+  loadCustomScenes,
+  persistCustomScenes,
+  sceneVisualization,
+  type RadioScene,
+} from './radio-scenes/radioScenes'
 import { HelpTooltip } from './HelpTooltip'
 import { MidiMessageBridge } from './MidiMessageBridge'
 import { cr } from './controlRoom'
@@ -31,6 +41,7 @@ const PRESETS: VisualPreset[] = ['pirate-industrial', 'airport-classic', 'termin
 const TRANSITIONS: VisualTransition[] = ['flip', 'scramble', 'flip-scramble', 'instant']
 const NOTE_MODES: VisualNoteMode[] = ['paged', 'scroll', 'static']
 const ENGINES: VisualEngine[] = ['internal', 'hotfx']
+const VISUALIZATIONS: Visualization[] = ['split-flap', 'crt-terminal', 'ascii-wave', 'signal-scope']
 const HEIGHT_MODES: HotfxHeightMode[] = ['auto', 'fixed']
 const DENSITIES: PanelDensity[] = ['compact', 'normal', 'large']
 const DIRECTIONS: TickerDirection[] = ['left', 'right']
@@ -55,6 +66,12 @@ const NOTE_MODE_LABELS: Record<VisualNoteMode, string> = {
 const ENGINE_LABELS: Record<VisualEngine, string> = {
   internal: 'Internal',
   hotfx: 'HotFX',
+}
+const VISUALIZATION_LABELS: Record<Visualization, string> = {
+  'split-flap': 'Split-flap',
+  'crt-terminal': 'CRT Terminal',
+  'ascii-wave': 'ASCII Wave',
+  'signal-scope': 'Signal Scope',
 }
 const HEIGHT_LABELS: Record<HotfxHeightMode, string> = {
   auto: 'Auto (suit le contenu)',
@@ -89,6 +106,8 @@ const TIPS = {
     "Texte explicatif affiché dans la grande zone du panneau. Peut être paginé ou déroulant selon le mode de note.",
   engine:
     "Internal = moteur maison très contrôlable. HotFX = rendu plus réaliste avec demi-clapets mécaniques.",
+  visualization:
+    "Choisit la famille visuelle de la page publique. Le preset garde sa fonction de palette et de patine. Split-flap utilise Internal ou HotFX ; CRT, ASCII et Scope exploitent les memes champs message et reagissent au son quand l'auditeur ecoute le live.",
   preset: "Change l’ambiance du panneau : radio pirate, gare/aéroport, terminal ambre ou minimal noir.",
   transition: "Animation des lettres : flip mécanique, scramble, mélange des deux, ou instantané.",
   staggerDelay:
@@ -157,6 +176,16 @@ function FieldHead({ text, tip }: { text: string; tip: string }) {
 const empty: BroadcastInput = { type: 'track', mainTitle: '' }
 // Defaults = preset pirate-industrial (bouton « Réinitialiser visuel »).
 const DEFAULT_VISUAL_FORM: BroadcastVisual = { ...DEFAULT_VISUAL }
+type EditorModule = 'scenes' | 'program' | 'display' | 'ticker' | 'advanced' | 'midi'
+type MessageTemplate = 'home' | 'track' | 'announcement'
+const EDITOR_MODULES: Array<{ id: EditorModule; label: string; description: string }> = [
+  { id: 'scenes', label: 'Scenes', description: 'Configurations completes de message et de rendu, pretes a charger puis publier.' },
+  { id: 'program', label: 'Programme', description: 'Texte, metadata et message éditorial affichés sur le panneau.' },
+  { id: 'display', label: 'Affichage', description: 'Visualisation, palette, grille et composition de la page publique.' },
+  { id: 'ticker', label: 'Bandeau', description: 'Texte roulant, vitesse, direction et séparateur du ticker bas.' },
+  { id: 'advanced', label: 'Avancé', description: 'Réglages HotFX fins, hauteur des zones et patine industrielle.' },
+  { id: 'midi', label: 'MIDI', description: 'Génération de clip MIDI data pour publier depuis Ableton / Max.' },
+]
 
 /**
  * Section « Radio Message » : publie le message + réglages visuels split-flap
@@ -173,6 +202,10 @@ export function RadioMessageForm({ performerPassword }: Props) {
   const [feedback, setFeedback] = useState<string | null>(null)
   const [published, setPublished] = useState<BroadcastMessage | null>(null)
   const [previewNonce, setPreviewNonce] = useState(0)
+  const [activeModule, setActiveModule] = useState<EditorModule>('scenes')
+  const [customScenes, setCustomScenes] = useState<RadioScene[]>(() => loadCustomScenes())
+  const [sceneName, setSceneName] = useState('')
+  const [sceneFeedback, setSceneFeedback] = useState<string | null>(null)
 
   const set = <K extends keyof BroadcastInput>(key: K, value: BroadcastInput[K]) =>
     setForm((f) => ({ ...f, [key]: value }))
@@ -233,6 +266,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
     accentColors: parseColors(accentColorsText),
   }
   const previewMessage: BroadcastInput = { ...form, visual: visualFull }
+  const activeModuleDescription = EDITOR_MODULES.find((m) => m.id === activeModule)?.description
 
   async function publish() {
     if (!form.mainTitle.trim() || status === 'publishing' || status === 'clearing') return
@@ -272,12 +306,75 @@ export function RadioMessageForm({ performerPassword }: Props) {
     setStatus('idle')
     setFeedback(null)
     setPublished(null)
+    setSceneFeedback(null)
   }
 
   function resetVisual() {
     setVisual(DEFAULT_VISUAL_FORM)
     setScrambleColorsText('')
     setAccentColorsText('')
+  }
+
+  function applyMessageTemplate(template: MessageTemplate) {
+    if (template === 'home') {
+      setForm({
+        type: 'announcement',
+        brandLabel: 'RADIO BLACKHOLE',
+        mainTitle: 'RADIO BLACKHOLE',
+        subtitle: 'LIVE WEB AUDIO STREAM',
+        note: 'Une radio pirate pour Ableton, textures brutes, fragments de studio et signaux venus du bord.',
+        ticker: 'RADIO BLACKHOLE · LIVE FROM THE CONTROL ROOM · NEXT TRANSMISSION SOON',
+      })
+      setVisual((v) => ({ ...v, splitFlapEngine: 'hotfx', preset: 'pirate-industrial', noteMode: 'paged' }))
+    } else if (template === 'track') {
+      setForm({
+        type: 'track',
+        brandLabel: form.brandLabel || 'RADIO BLACKHOLE',
+        mainTitle: 'MORCEAU RANDOM',
+        artist: 'Various Artist',
+        note: 'Sélection en direct depuis la control room.',
+        ticker: 'NOW PLAYING · RADIO BLACKHOLE · LISTEN LIVE',
+      })
+      setVisual((v) => ({ ...v, splitFlapEngine: 'hotfx', preset: v.preset ?? 'pirate-industrial', noteMode: 'paged' }))
+    } else {
+      setForm({
+        type: 'announcement',
+        brandLabel: form.brandLabel || 'RADIO BLACKHOLE',
+        mainTitle: 'ANNONCE RADIO',
+        subtitle: 'CONTROL ROOM MESSAGE',
+        note: 'Message spécial à afficher sur le panneau public.',
+        ticker: 'SPECIAL ANNOUNCEMENT · RADIO BLACKHOLE',
+      })
+      setVisual((v) => ({ ...v, splitFlapEngine: 'hotfx', preset: 'terminal-amber', noteMode: 'static' }))
+    }
+    setPreviewNonce((n) => n + 1)
+  }
+
+  const allScenes = [...BUILT_IN_SCENES, ...customScenes]
+
+  function applyScene(scene: RadioScene) {
+    setForm({ ...scene.form })
+    setVisual({ ...scene.visual, layout: scene.visual.layout ? { ...scene.visual.layout } : undefined })
+    setScrambleColorsText(scene.visual.scrambleColors?.join(',') ?? '')
+    setAccentColorsText(scene.visual.accentColors?.join(',') ?? '')
+    setSceneFeedback(`Scene chargee : ${scene.name}. Verifie l'apercu puis publie quand tu es pret.`)
+    setPreviewNonce((n) => n + 1)
+  }
+
+  function saveCurrentScene() {
+    const scene = createCustomScene(sceneName, form, visualFull)
+    const next = [scene, ...customScenes].slice(0, 24)
+    setCustomScenes(next)
+    persistCustomScenes(next)
+    setSceneName('')
+    setSceneFeedback(`Scene enregistree localement : ${scene.name}.`)
+  }
+
+  function deleteCustomScene(id: string) {
+    const next = customScenes.filter((scene) => scene.id !== id)
+    setCustomScenes(next)
+    persistCustomScenes(next)
+    setSceneFeedback('Scene personnelle supprimee.')
   }
 
   return (
@@ -296,12 +393,28 @@ export function RadioMessageForm({ performerPassword }: Props) {
         <div className="rf-preview">
           <h3 className="rf-h3">Aperçu public</h3>
           <div className="rf-preview__bar">
-            <p className="rf-preview__hint">Rendu split-flap · moteur = message.visual.splitFlapEngine</p>
+            <p className="rf-preview__hint">
+              Rendu public · {VISUALIZATION_LABELS[visualFull.visualization ?? 'split-flap']}
+              {visualFull.visualization === 'split-flap' && ` · moteur ${visualFull.splitFlapEngine ?? 'internal'} · ${visualFull.layout?.boardColumns ?? DEFAULT_VISUAL.layout?.boardColumns ?? 32} colonnes`}
+            </p>
             <button type="button" onClick={() => setPreviewNonce((n) => n + 1)} className="rf-btn--small">
               ↻ Relancer
             </button>
           </div>
-          <SplitFlapPreview key={previewNonce} message={previewMessage} />
+          <div className="rf-preview__stage">
+            {visualFull.visualization === 'split-flap' ? (
+              <SplitFlapPreview key={previewNonce} message={previewMessage} />
+            ) : (
+              <RadioDataVisual
+                key={previewNonce}
+                kind={resolveVisual(visualFull).visualization}
+                message={previewMessage}
+                visual={resolveVisual(visualFull)}
+                status="preview"
+                preview
+              />
+            )}
+          </div>
           <p className="rf-muted">Aperçu non publié — publier le message pour l’envoyer aux auditeurs.</p>
           {published && (
             <p className="rf-muted">Dernier message publié · updatedAt : {published.updatedAt}</p>
@@ -348,8 +461,82 @@ export function RadioMessageForm({ performerPassword }: Props) {
         <p className={status === 'error' ? 'rf-error' : 'rf-ok'}>{status === 'error' ? `❌ ${feedback}` : `✅ ${feedback}`}</p>
       )}
 
+      <div className="rf-tabs" role="tablist" aria-label="Modules d’édition radio">
+        {EDITOR_MODULES.map((module) => (
+          <button
+            key={module.id}
+            type="button"
+            role="tab"
+            aria-selected={activeModule === module.id}
+            aria-controls={`rf-module-${module.id}`}
+            className={activeModule === module.id ? 'rf-tab rf-tab--active' : 'rf-tab'}
+            onClick={() => setActiveModule(module.id)}
+          >
+            {module.label}
+          </button>
+        ))}
+      </div>
+      {activeModuleDescription && <p className="rf-module-hint">{activeModuleDescription}</p>}
+
+      <div id="rf-module-scenes" role="tabpanel" hidden={activeModule !== 'scenes'} className="rf-module">
+        <h3 className="rf-h3">Scenes radio</h3>
+        <div className="rf-scene-save">
+          <input
+            value={sceneName}
+            onChange={(e) => setSceneName(e.target.value)}
+            maxLength={48}
+            aria-label="Nom de la nouvelle scene"
+            placeholder="Nom de la scene"
+            className="rf-input"
+          />
+          <button type="button" onClick={saveCurrentScene}>Enregistrer la scene</button>
+        </div>
+        {sceneFeedback && <p className="rf-scene-feedback">{sceneFeedback}</p>}
+        <div className="rf-scene-grid">
+          {allScenes.map((scene) => {
+            const visualization = sceneVisualization(scene)
+            return (
+              <article key={scene.id} className={`rf-scene rf-scene--${visualization}`}>
+                <div className="rf-scene__head">
+                  <span className="rf-scene__kind">{VISUALIZATION_LABELS[visualization]}</span>
+                  <span className="rf-scene__source">{scene.builtIn ? 'SYSTEME' : 'LOCAL'}</span>
+                </div>
+                <h4>{scene.name}</h4>
+                <p>{scene.description}</p>
+                <div className="rf-scene__actions">
+                  <button type="button" onClick={() => applyScene(scene)}>Charger</button>
+                  {!scene.builtIn && (
+                    <button
+                      type="button"
+                      onClick={() => deleteCustomScene(scene.id)}
+                      className="rf-scene__delete"
+                      aria-label={`Supprimer la scene ${scene.name}`}
+                      title="Supprimer cette scene"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Bloc B — Contenu radio */}
-      <h3 className="rf-h3">② Contenu radio</h3>
+      <div id="rf-module-program" role="tabpanel" hidden={activeModule !== 'program'} className="rf-module">
+      <h3 className="rf-h3">Programme</h3>
+      <div className="rf-template-row" aria-label="Templates de message">
+        <button type="button" onClick={() => applyMessageTemplate('home')}>
+          Accueil radio
+        </button>
+        <button type="button" onClick={() => applyMessageTemplate('track')}>
+          Now playing
+        </button>
+        <button type="button" onClick={() => applyMessageTemplate('announcement')}>
+          Annonce
+        </button>
+      </div>
       <div className="rf-grid">
         <label className="rf-label rf-label--full">
           <FieldHead text="Nom de la radio (header public)" tip={TIPS.brandLabel} />
@@ -419,15 +606,32 @@ export function RadioMessageForm({ performerPassword }: Props) {
           />
         </label>
       </div>
+      </div>
 
       {/* Bloc C — Affichage public : moteur, preset, transition, mode note, alignements, tailles. */}
-      <h3 className="rf-h3">③ Affichage public</h3>
+      <div id="rf-module-display" role="tabpanel" hidden={activeModule !== 'display'} className="rf-module">
+      <h3 className="rf-h3">Affichage public</h3>
       <div className="rf-grid">
+        <label className="rf-label rf-label--full">
+          <FieldHead text="Visualisation radio" tip={TIPS.visualization} />
+          <select
+            value={visual.visualization ?? 'split-flap'}
+            onChange={(e) => setVis('visualization', e.target.value as Visualization)}
+            className="rf-input"
+          >
+            {VISUALIZATIONS.map((kind) => (
+              <option key={kind} value={kind}>
+                {VISUALIZATION_LABELS[kind]}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="rf-label">
           <FieldHead text="Moteur split-flap" tip={TIPS.engine} />
           <select
             value={visual.splitFlapEngine ?? 'internal'}
             onChange={(e) => setVis('splitFlapEngine', e.target.value as VisualEngine)}
+            disabled={(visual.visualization ?? 'split-flap') !== 'split-flap'}
             className="rf-input"
           >
             {ENGINES.map((en) => (
@@ -456,6 +660,7 @@ export function RadioMessageForm({ performerPassword }: Props) {
           <select
             value={visual.transition ?? 'flip'}
             onChange={(e) => setVis('transition', e.target.value as VisualTransition)}
+            disabled={(visual.visualization ?? 'split-flap') !== 'split-flap'}
             className="rf-input"
           >
             {TRANSITIONS.map((t) => (
@@ -638,9 +843,11 @@ export function RadioMessageForm({ performerPassword }: Props) {
           </div>
         </>
       )}
+      </div>
 
       {/* Bloc D — Bandeau roulant (ticker) : texte + vitesse + sens + séparateur + activation. */}
-      <h3 className="rf-h3">④ Bandeau roulant</h3>
+      <div id="rf-module-ticker" role="tabpanel" hidden={activeModule !== 'ticker'} className="rf-module">
+      <h3 className="rf-h3">Bandeau roulant</h3>
       <div className="rf-grid">
         <label className="rf-label rf-label--full">
           <FieldHead text="Texte du bandeau" tip={TIPS.tickerText} />
@@ -697,10 +904,11 @@ export function RadioMessageForm({ performerPassword }: Props) {
           />
         </label>
       </div>
+      </div>
 
       {/* Bloc E — Détails avancés (HotFX, hauteur, style industriel) — fermé par défaut. */}
-      <details className="rf-details">
-        <summary className="rf-summary">⑤ Détails avancés (HotFX, hauteur, style industriel)</summary>
+      <div id="rf-module-advanced" role="tabpanel" hidden={activeModule !== 'advanced'} className="rf-module">
+        <h3 className="rf-h3">Avancé HotFX & style</h3>
 
         <h4 className="rf-h4">HotFX natif</h4>
         <div className="rf-grid">
@@ -876,15 +1084,15 @@ export function RadioMessageForm({ performerPassword }: Props) {
             />
           </label>
         </div>
-      </details>
+      </div>
 
       {/* Bloc F — MIDI Message Bridge : génère un clip MIDI « data » (canal 16)
           encodant le message courant (previewMessage = form + visualFull). Parallèle
           à la publication manuelle, n'oblige pas à republier pour générer le .mid. */}
-      <details className="rf-details">
-        <summary className="rf-summary">⑥ MIDI Message Bridge (Ableton → Max)</summary>
+      <div id="rf-module-midi" role="tabpanel" hidden={activeModule !== 'midi'} className="rf-module">
+        <h3 className="rf-h3">MIDI Message Bridge</h3>
         <MidiMessageBridge message={previewMessage} />
-      </details>
+      </div>
         </div>
       </div>
     </section>

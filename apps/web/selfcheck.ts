@@ -66,6 +66,7 @@ assert(/^listener-[a-z0-9]{6}$/.test(l), `identity listener format: ${l}`)
 const { resolveVisual, DEFAULT_LAYOUT } = await import('./src/components/splitflap/visual')
 const { wrapCentered, wrapAligned, alignLine, trimEmptyDisplayLines } = await import('./src/components/splitflap/format')
 const def = resolveVisual()
+assert(def.visualization === 'split-flap', 'visualization défaut = split-flap')
 assert(def.layout.titleScale === DEFAULT_LAYOUT.titleScale, 'layout défaut sans visual')
 assert(def.layout.boardColumns === 32, 'boardColumns défaut 32')
 const lay = resolveVisual({
@@ -78,6 +79,7 @@ assert(lay.layout.titleRows === 3, 'client titleRows clamp 3')
 assert(lay.layout.secondaryRows === 0, 'client secondaryRows clamp 0')
 assert(lay.layout.boardColumns === 12, 'client boardColumns clamp 12')
 assert(resolveVisual({ layout: { boardColumns: 999 } }).layout.boardColumns === 64, 'boardColumns clamp 64')
+assert(resolveVisual({ visualization: 'crt-terminal' }).visualization === 'crt-terminal', 'visualization crt-terminal')
 
 // trimEmptyDisplayLines : retire les lignes vides en fin de bloc, garde ≥1,
 // conserve les lignes à contenu (espaces internes intacts).
@@ -418,4 +420,13 @@ assert(mid[mid.length - 3] === 0xff && mid[mid.length - 2] === 0x2f && mid[mid.l
 const dur = radioMidiClipDurationMs(notes.length)
 assert(dur === notes.length * 62.5, 'midi: durée approx = notes × 62.5 ms (grille 1/32, 120 BPM)')
 
-console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered+boardColumns+trim, ticker+scroll, paged note+resolveVisual, trim -30 dB, accents HotFX, audio monitor, audio rx stats, resizable panel clamp, radio-midi protocol roundtrip+rejets, midi file writer canal 16)')
+// Scenes radio : presets systeme et capture d'une configuration complete.
+const { BUILT_IN_SCENES, createCustomScene, sceneVisualization } = await import('./src/components/radio-scenes/radioScenes')
+assert(BUILT_IN_SCENES.length === 4, 'scenes: 4 scenes systeme')
+assert(BUILT_IN_SCENES.every((scene) => scene.builtIn), 'scenes: presets marques systeme')
+assert(sceneVisualization(BUILT_IN_SCENES[0]) === 'crt-terminal', 'scenes: accueil = CRT')
+const customScene = createCustomScene('  Ma scene  ', { type: 'note', mainTitle: 'TEST' }, { visualization: 'ascii-wave', layout: { boardColumns: 28 } })
+assert(customScene.name === 'Ma scene', 'scenes: nom nettoye')
+assert(customScene.visual.layout?.boardColumns === 28 && sceneVisualization(customScene) === 'ascii-wave', 'scenes: visual capture')
+
+console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered+boardColumns+trim, ticker+scroll, paged note+resolveVisual, trim -30 dB, accents HotFX, audio monitor, audio rx stats, resizable panel clamp, radio-midi protocol roundtrip+rejets, midi file writer, scenes)')

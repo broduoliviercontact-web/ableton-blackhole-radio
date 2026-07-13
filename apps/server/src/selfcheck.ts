@@ -123,6 +123,7 @@ async function main(): Promise<void> {
     mainTitle: 'Vis',
     visual: {
       preset: 'terminal-amber',
+      visualization: 'crt-terminal',
       transition: 'flip-scramble',
       noteMode: 'static',
       scrambleDurationMs: 99999, // > max 3000 → clamp 3000
@@ -133,6 +134,7 @@ async function main(): Promise<void> {
     },
   })
   assert(vis.visual?.preset === 'terminal-amber', 'visual preset')
+  assert(vis.visual?.visualization === 'crt-terminal', 'visualization crt-terminal')
   assert(vis.visual?.scrambleDurationMs === 3000, 'scrambleDurationMs clamp 3000')
   assert(vis.visual?.staggerDelayMs === 0, 'staggerDelayMs clamp 0')
   assert(vis.visual?.pageDurationMs === 2000, 'pageDurationMs clamp 2000')
@@ -149,6 +151,13 @@ async function main(): Promise<void> {
     badPreset = true
   }
   assert(badPreset, 'preset invalide refusé')
+  let badVisualization = false
+  try {
+    parseBroadcastMessage({ type: 'track', mainTitle: 'x', visual: { visualization: 'nope' } })
+  } catch {
+    badVisualization = true
+  }
+  assert(badVisualization, 'visualization invalide refusée')
 
   // Moteur split-flap persistant + réglages HotFX + style industriel.
   const eng = parseBroadcastMessage({ type: 'track', mainTitle: 'Eng', visual: { splitFlapEngine: 'hotfx' } })

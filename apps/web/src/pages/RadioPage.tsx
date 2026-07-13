@@ -23,6 +23,7 @@ import { useScrollingTextWindow } from '../components/splitflap/useScrollingText
 import { SplitFlapVisualProvider, type SplitFlapVisualSettings } from '../components/splitflap/SplitFlapContext'
 import { HotFxSplitFlap } from '../components/hotfx/HotFxSplitFlap'
 import { hotfxLayout, noteHeightFor } from '../components/hotfx/layout'
+import { RadioDataVisual } from '../components/radio-visuals/RadioDataVisual'
 import type { VisualEngine } from '../api/broadcastMessage'
 import '../components/splitflap/splitflap.css'
 import '../components/hotfx/hotfx.css'
@@ -189,9 +190,10 @@ export function RadioPage() {
             {/* Board split-flap : écran sombre continu (zone HotFX/internal +
                 ticker). Wrapper flex colonne → board flex:1 remnit la hauteur
                 hero ; scroll horizontal sur petit écran. */}
-            <SplitFlapVisualProvider value={settings}>
-              <div className="pub-boardwrap">
-                <div className={`sf-cabinet ${presetClass(visual.preset)} ${fxClasses}`.trim()} style={cabinetStyle}>
+            <div className="pub-boardwrap">
+              {visual.visualization === 'split-flap' ? (
+                <SplitFlapVisualProvider value={settings}>
+                  <div className={`sf-cabinet ${presetClass(visual.preset)} ${fxClasses}`.trim()} style={cabinetStyle}>
                   {useHotFx && hotfx ? (
                     <>
                       <HotFxSplitFlap
@@ -241,9 +243,12 @@ export function RadioPage() {
                     direction={visual.tickerDirection}
                     separator={visual.tickerSeparator}
                   />
-                </div>
-              </div>
-            </SplitFlapVisualProvider>
+                  </div>
+                </SplitFlapVisualProvider>
+              ) : (
+                <RadioDataVisual kind={visual.visualization} message={broadcast} visual={visual} status={statusKey} analyser={analyser} />
+              )}
+            </div>
 
             {/* Ligne de contrôles listener — compacte, type instrument panel.
                 Fonctions intactes : listen/stop/reconnect/autoriser + volume
@@ -308,6 +313,7 @@ export function RadioPage() {
         <div className="pub-techfoot__meta">
           <span>STREAM<b>{statusLabel}</b></span>
           <span>ENGINE<b>{engine}</b></span>
+          <span>VISUAL<b>{visual.visualization}</b></span>
           <span>RX<b>{rxKbps === '—' ? '—' : `${rxKbps} kbps`}</b></span>
           <span>UPDATED<b>{broadcast?.updatedAt ?? '—'}</b></span>
         </div>

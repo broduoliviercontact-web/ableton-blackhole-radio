@@ -69,12 +69,12 @@ hotfx-split-flap::part(char) {
   animation: sf-hotfx-flicker 4.5s linear infinite;
 }
 
-/* Aperçu performer : même panneau, plus petit. Reflète les scales live.
-   Largeur de case uniforme (14px × board) comme l'internal preview. */
-.sf-cabinet--preview hotfx-split-flap::part(char) { width: calc(14px * var(--sf-board-scale, 1)); }
-.sf-cabinet--preview .sf-hotfx--title { font-size: calc(12px * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); }
-.sf-cabinet--preview .sf-hotfx--secondary { font-size: calc(8px * var(--sf-board-scale, 1) * var(--sf-secondary-scale, 1)); }
-.sf-cabinet--preview .sf-hotfx--note { font-size: calc(9px * var(--sf-board-scale, 1) * var(--sf-note-scale, 1)); }
+/* Aperçu performer : grand moniteur de régie. Reflète les scales live avec une
+   base plus lisible que l'ancien thumbnail. */
+.sf-cabinet--preview hotfx-split-flap::part(char) { width: calc(26px * var(--sf-board-scale, 1)); }
+.sf-cabinet--preview .sf-hotfx--title { font-size: calc(23px * var(--sf-board-scale, 1) * var(--sf-title-scale, 1)); }
+.sf-cabinet--preview .sf-hotfx--secondary { font-size: calc(15px * var(--sf-board-scale, 1) * var(--sf-secondary-scale, 1)); }
+.sf-cabinet--preview .sf-hotfx--note { font-size: calc(17px * var(--sf-board-scale, 1) * var(--sf-note-scale, 1)); }
 
 @media (max-width: 760px) {
   hotfx-split-flap::part(char) { width: 9px; }
