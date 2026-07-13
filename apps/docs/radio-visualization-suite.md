@@ -32,7 +32,7 @@ le DPR à 2 et sont redimensionnés avec `ResizeObserver`.
 | Audio | Signal Scope, Spectrum Waterfall, Stereo Orbit, Analog Persistence |
 | Génératif | Event Horizon, Radar Transmission, Constellation Radio, Pixel Mosaic |
 | Éditorial | Kinetic Type, Tape Machine |
-| WebGL | Shader Radio: Spectral Bloom, Liquid Scope, Feedback Tunnel, Interference Field, Phosphor Plasma, Signal Aurora |
+| WebGL | Shader Radio: 20 scènes audio-réactives |
 
 ## Réglages communs
 
@@ -46,8 +46,12 @@ ce moteur est choisi.
 
 `shader-radio` est un canvas WebGL2 utilisé comme fond réactif. Le message radio
 reste une surcouche HTML afin de préserver lisibilité, accessibilité et
-traduction. Les presets `shaderPreset` sont `spectral-bloom`, `liquid-scope`,
-`feedback-tunnel`, `interference-field`, `phosphor-plasma` et `signal-aurora`.
+traduction. Sa bibliothèque originale, inspirée des techniques de shader live,
+propose 20 presets `shaderPreset` : `spectral-bloom`, `liquid-scope`,
+`feedback-tunnel`, `interference-field`, `phosphor-plasma`, `signal-aurora`,
+`chroma-grid`, `neon-lattice`, `starfield-drive`, `molten-orbit`, `digital-rain`,
+`circuit-veil`, `prism-ripple`, `void-scan`, `sonar-bloom`, `fractal-pulse`,
+`wireframe-sun`, `cosmic-dust`, `plasma-cells` et `tape-noise`.
 
 `shaderQuality` propose `low`, `balanced` et `high`. Le moteur plafonne le DPR
 et la cadence selon cette qualité, réduit la cadence en arrière-plan ou avec

@@ -29,7 +29,10 @@ export type Visualization =
   | 'pixel-mosaic'
   | 'analog-persistence'
   | 'shader-radio'
-export type ShaderPreset = 'spectral-bloom' | 'liquid-scope' | 'feedback-tunnel' | 'interference-field' | 'phosphor-plasma' | 'signal-aurora'
+export type ShaderPreset =
+  | 'spectral-bloom' | 'liquid-scope' | 'feedback-tunnel' | 'interference-field' | 'phosphor-plasma' | 'signal-aurora'
+  | 'chroma-grid' | 'neon-lattice' | 'starfield-drive' | 'molten-orbit' | 'digital-rain' | 'circuit-veil' | 'prism-ripple'
+  | 'void-scan' | 'sonar-bloom' | 'fractal-pulse' | 'wireframe-sun' | 'cosmic-dust' | 'plasma-cells' | 'tape-noise'
 export type ShaderQuality = 'low' | 'balanced' | 'high'
 export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'
@@ -144,7 +147,7 @@ const visualSchema = z
     visualIntensity: z.coerce.number().optional(),
     visualGlow: z.coerce.number().optional(),
     visualPalette: z.enum(['amber', 'phosphor', 'ice', 'signal', 'mono']).optional(),
-    shaderPreset: z.enum(['spectral-bloom', 'liquid-scope', 'feedback-tunnel', 'interference-field', 'phosphor-plasma', 'signal-aurora']).optional(),
+    shaderPreset: z.enum(['spectral-bloom', 'liquid-scope', 'feedback-tunnel', 'interference-field', 'phosphor-plasma', 'signal-aurora', 'chroma-grid', 'neon-lattice', 'starfield-drive', 'molten-orbit', 'digital-rain', 'circuit-veil', 'prism-ripple', 'void-scan', 'sonar-bloom', 'fractal-pulse', 'wireframe-sun', 'cosmic-dust', 'plasma-cells', 'tape-noise']).optional(),
     shaderQuality: z.enum(['low', 'balanced', 'high']).optional(),
     preset: z.enum(['pirate-industrial', 'airport-classic', 'terminal-amber', 'minimal-black']).optional(),
     transition: z.enum(['flip', 'scramble', 'flip-scramble', 'instant']).optional(),

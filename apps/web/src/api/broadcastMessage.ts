@@ -25,7 +25,10 @@ export type Visualization =
   | 'pixel-mosaic'
   | 'analog-persistence'
   | 'shader-radio'
-export type ShaderPreset = 'spectral-bloom' | 'liquid-scope' | 'feedback-tunnel' | 'interference-field' | 'phosphor-plasma' | 'signal-aurora'
+export type ShaderPreset =
+  | 'spectral-bloom' | 'liquid-scope' | 'feedback-tunnel' | 'interference-field' | 'phosphor-plasma' | 'signal-aurora'
+  | 'chroma-grid' | 'neon-lattice' | 'starfield-drive' | 'molten-orbit' | 'digital-rain' | 'circuit-veil' | 'prism-ripple'
+  | 'void-scan' | 'sonar-bloom' | 'fractal-pulse' | 'wireframe-sun' | 'cosmic-dust' | 'plasma-cells' | 'tape-noise'
 export type ShaderQuality = 'low' | 'balanced' | 'high'
 export type HotfxHeightMode = 'auto' | 'fixed'
 export type PanelDensity = 'compact' | 'normal' | 'large'

@@ -50,7 +50,11 @@ const VISUALIZATIONS: Visualization[] = [
   'pixel-mosaic', 'kinetic-type', 'tape-machine',
   'shader-radio',
 ]
-const SHADER_PRESETS: ShaderPreset[] = ['spectral-bloom', 'liquid-scope', 'feedback-tunnel', 'interference-field', 'phosphor-plasma', 'signal-aurora']
+const SHADER_PRESETS: ShaderPreset[] = [
+  'spectral-bloom', 'liquid-scope', 'feedback-tunnel', 'interference-field', 'phosphor-plasma', 'signal-aurora',
+  'chroma-grid', 'neon-lattice', 'starfield-drive', 'molten-orbit', 'digital-rain', 'circuit-veil', 'prism-ripple',
+  'void-scan', 'sonar-bloom', 'fractal-pulse', 'wireframe-sun', 'cosmic-dust', 'plasma-cells', 'tape-noise',
+]
 const SHADER_QUALITIES: ShaderQuality[] = ['low', 'balanced', 'high']
 const HEIGHT_MODES: HotfxHeightMode[] = ['auto', 'fixed']
 const DENSITIES: PanelDensity[] = ['compact', 'normal', 'large']
@@ -145,7 +149,7 @@ const VISUALIZATION_DESCRIPTIONS: Record<Visualization, string> = {
   'pixel-mosaic': 'Mosaïque de pixels musicaux.',
   'kinetic-type': 'Titre vivant, pour les annonces.',
   'tape-machine': 'Machine à bande, cue ou live.',
-  'shader-radio': 'Six scènes GLSL réactives au flux radio.',
+  'shader-radio': '20 scènes GLSL réactives au flux radio.',
 }
 const SHADER_PRESET_LABELS: Record<ShaderPreset, string> = {
   'spectral-bloom': 'Spectral Bloom',
@@ -154,6 +158,20 @@ const SHADER_PRESET_LABELS: Record<ShaderPreset, string> = {
   'interference-field': 'Interference Field',
   'phosphor-plasma': 'Phosphor Plasma',
   'signal-aurora': 'Signal Aurora',
+  'chroma-grid': 'Chroma Grid',
+  'neon-lattice': 'Neon Lattice',
+  'starfield-drive': 'Starfield Drive',
+  'molten-orbit': 'Molten Orbit',
+  'digital-rain': 'Digital Rain',
+  'circuit-veil': 'Circuit Veil',
+  'prism-ripple': 'Prism Ripple',
+  'void-scan': 'Void Scan',
+  'sonar-bloom': 'Sonar Bloom',
+  'fractal-pulse': 'Fractal Pulse',
+  'wireframe-sun': 'Wireframe Sun',
+  'cosmic-dust': 'Cosmic Dust',
+  'plasma-cells': 'Plasma Cells',
+  'tape-noise': 'Tape Noise',
 }
 const SHADER_QUALITY_LABELS: Record<ShaderQuality, string> = { low: 'Éco', balanced: 'Équilibrée', high: 'Haute' }
 const VISUAL_PALETTES = ['amber', 'phosphor', 'ice', 'signal', 'mono'] as const

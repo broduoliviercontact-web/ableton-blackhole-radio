@@ -139,8 +139,8 @@ async function main(): Promise<void> {
   assert(newVisualization.visual?.visualization === 'event-horizon', 'visualization event-horizon')
   assert(newVisualization.visual?.visualDensity === 1 && newVisualization.visual?.visualSpeed === 100, 'visual controls density/speed clamp')
   assert(newVisualization.visual?.visualIntensity === 1 && newVisualization.visual?.visualGlow === 100 && newVisualization.visual?.visualPalette === 'ice', 'visual controls palette clamp')
-  const shader = parseBroadcastMessage({ type: 'track', mainTitle: 'Shader', visual: { visualization: 'shader-radio', shaderPreset: 'signal-aurora', shaderQuality: 'high' } })
-  assert(shader.visual?.shaderPreset === 'signal-aurora' && shader.visual?.shaderQuality === 'high', 'shader preset/quality persistés')
+  const shader = parseBroadcastMessage({ type: 'track', mainTitle: 'Shader', visual: { visualization: 'shader-radio', shaderPreset: 'tape-noise', shaderQuality: 'high' } })
+  assert(shader.visual?.shaderPreset === 'tape-noise' && shader.visual?.shaderQuality === 'high', 'shader preset/quality persistés')
   const visualizationIds = ['split-flap', 'crt-terminal', 'ascii-wave', 'signal-scope', 'teletext', 'spectrum-waterfall', 'stereo-orbit', 'event-horizon', 'radar-transmission', 'dot-matrix', 'kinetic-type', 'tape-machine', 'constellation-radio', 'packet-stream', 'pixel-mosaic', 'analog-persistence', 'shader-radio'] as const
   for (const visualization of visualizationIds) {
     assert(parseBroadcastMessage({ type: 'track', mainTitle: visualization, visual: { visualization } }).visual?.visualization === visualization, `visualization ${visualization} acceptée`)
