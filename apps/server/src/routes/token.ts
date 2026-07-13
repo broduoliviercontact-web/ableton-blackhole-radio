@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { config } from '../config.js'
 import { createToken } from '../livekit.js'
 import { checkPerformerAccess, parseAllowedPasswords } from '../performerAuth.js'
+import { createRateLimit } from '../rateLimit.js'
 
 const bodySchema = z.object({
   roomName: z.string().min(1),
@@ -14,7 +15,14 @@ const bodySchema = z.object({
 
 export const tokenRouter = Router()
 
-tokenRouter.post('/token', async (req, res) => {
+const performerTokenRateLimit = createRateLimit({
+  keyPrefix: 'performer-token',
+  max: 20,
+  windowMs: 15 * 60 * 1000,
+  skip: (req) => req.body?.role !== 'performer',
+})
+
+tokenRouter.post('/token', performerTokenRateLimit, async (req, res) => {
   const parsed = bodySchema.safeParse(req.body)
   if (!parsed.success) {
     res

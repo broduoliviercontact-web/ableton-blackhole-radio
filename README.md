@@ -7,6 +7,16 @@ distinct via un simple lien.
 
 React · Vite · TypeScript · Node · Express · LiveKit · WebRTC · audioMotion-analyzer · Vercel · Render
 
+## Organisation du dépôt
+
+Le produit Radio Blackhole vit dans `apps/` :
+
+- `apps/web/` — frontend Vite/React déployé sur Vercel.
+- `apps/server/` — backend Express/LiveKit déployé sur Render.
+- `apps/docs/` — notes de déploiement, tests manuels et documentation technique.
+
+Les outils Max for Live liés au pont MIDI sont dans `tools/max/radio-midi-message-bridge/`.
+
 ## Démo
 
 Le projet est déployé en production :
@@ -127,7 +137,7 @@ URLs locales : http://localhost:5173/performer · http://localhost:5173/listen
 npm run selfcheck:web      # utils web (devices, identity)
 npm run build:web          # tsc -b + vite build
 npm run typecheck:server   # tsc serveur
-npm run selfcheck:server   # grants token
+npm run selfcheck:server   # grants token + validations serveur (env factice si .env absent)
 ```
 
 ## Déploiement

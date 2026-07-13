@@ -1,10 +1,22 @@
 // Self-check US-1.3 : signe un token performer + listener, vérifie les grants.
 // Lance : npm run selfcheck (depuis server/) ou `tsx server/src/selfcheck.ts` (racine).
-import { TokenVerifier } from 'livekit-server-sdk'
-import { createToken } from './livekit.js'
-import { config } from './config.js'
-import { checkPerformerAccess, parseAllowedPasswords } from './performerAuth.js'
-import { getBroadcastMessage, parseBroadcastMessage, setBroadcastMessage } from './broadcastMessage.js'
+
+function ensureSelfcheckEnv(): boolean {
+  const defaults: Record<string, string> = {
+    LIVEKIT_URL: 'wss://selfcheck.example.com',
+    LIVEKIT_API_KEY: 'selfcheck-api-key',
+    LIVEKIT_API_SECRET: 'selfcheck-api-secret',
+    PERFORMER_PASSWORD: 'selfcheck-main',
+  }
+  let usedFallback = false
+  for (const [key, value] of Object.entries(defaults)) {
+    if (!process.env[key]) {
+      process.env[key] = value
+      usedFallback = true
+    }
+  }
+  return usedFallback
+}
 
 function assert(cond: boolean, label: string): void {
   if (!cond) {
@@ -14,6 +26,21 @@ function assert(cond: boolean, label: string): void {
 }
 
 async function main(): Promise<void> {
+  const usedFallbackEnv = ensureSelfcheckEnv()
+  const [
+    { TokenVerifier },
+    { createToken },
+    { config },
+    { checkPerformerAccess, parseAllowedPasswords },
+    { getBroadcastMessage, parseBroadcastMessage, setBroadcastMessage },
+  ] = await Promise.all([
+    import('livekit-server-sdk'),
+    import('./livekit.js'),
+    import('./config.js'),
+    import('./performerAuth.js'),
+    import('./broadcastMessage.js'),
+  ])
+
   const verifier = new TokenVerifier(config.LIVEKIT_API_KEY, config.LIVEKIT_API_SECRET)
 
   const { token: pToken } = await createToken({ roomName: 'main', identity: 'performer-test', role: 'performer' })
@@ -28,6 +55,8 @@ async function main(): Promise<void> {
   assert(l.video?.roomJoin === true, 'listener roomJoin')
   assert(l.video?.canPublish === false, 'listener canPublish false')
   assert(l.video?.canSubscribe === true, 'listener canSubscribe')
+
+  console.log(`✅ token grants OK (performer publish+subscribe, listener subscribe-only${usedFallbackEnv ? ' ; env selfcheck factice' : ''})`)
 
   // Mot de passe performer : accepté si présent dans la liste autorisée, refusé sinon,
   // 503 si aucun configuré. Liste = PERFORMER_PASSWORD + PERFORMER_PASSWORDS (split/trim/filtre-vides).
@@ -48,7 +77,6 @@ async function main(): Promise<void> {
   const unconfigured = checkPerformerAccess('x', parseAllowedPasswords(undefined, ' , ,, '))
   assert(unconfigured.ok === false && unconfigured.status === 503, 'aucun password configuré → 503')
 
-  console.log('✅ token grants OK (performer publish+subscribe, listener subscribe-only)')
   console.log(`✅ performer password OK (multi-passwords, refus 401/503, accepté si dans la liste ; configuré=${allowed.length > 0})`)
 
   // Broadcast message : parsing + updatedAt serveur + store mémoire round-trip.

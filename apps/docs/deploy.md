@@ -44,6 +44,10 @@ Le serveur écoute `process.env.PORT` (fourni automatiquement par Render).
 > `/api/token` renvoie `503` pour les performers. **Les listeners restent publics**
 > (aucun mot de passe requis). Aucun mot de passe n’est jamais exposé côté frontend
 > ni retourné par `/api/config-check` (booléen `performerPasswordConfigured` uniquement).
+>
+> Les routes performer sensibles sont limitées par IP côté serveur : vérification
+> du mot de passe et émission de token performer (20 tentatives / 15 min), publication
+> du message radio (60 tentatives / 15 min). Les tokens listeners restent publics.
 
 ### Messages radio
 

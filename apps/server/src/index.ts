@@ -8,6 +8,8 @@ import { authRouter } from './routes/auth.js'
 import { broadcastMessageRouter } from './routes/broadcastMessage.js'
 
 const app = express()
+app.disable('x-powered-by')
+app.set('trust proxy', 1)
 app.use(express.json())
 
 // CORS : localhost en dev + origine frontend en prod si fournie. Pas de wildcard.
