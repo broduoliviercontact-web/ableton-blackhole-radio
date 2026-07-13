@@ -188,7 +188,10 @@ export class HotFXSplitFlap extends HTMLElement {
 
   // Setter for duration that reflects to the attribute with valdiation logic.
   set duration(value) {
-    if (typeof value !== 'number' || value <= 0) return this.#printNumberError('duration')
+    if (typeof value !== 'number' || value <= 0) {
+      this.#printNumberError('duration')
+      return
+    }
     this.setAttribute('duration', value)
   }
 
