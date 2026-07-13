@@ -1025,6 +1025,17 @@ code {
   color: #0e1117;
   border: 1px solid var(--cr-accent-deep);
 }
+.cr button.rf-btn--clear {
+  padding: 8px 12px;
+  font-weight: 700;
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.42);
+}
+.cr button.rf-btn--clear:hover:not(:disabled) {
+  color: #fff1f2;
+  background: rgba(239, 68, 68, 0.22);
+}
 .cr button.rf-btn--small {
   padding: 4px 8px;
   font-size: 11px;

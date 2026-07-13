@@ -48,12 +48,14 @@ Le serveur écoute `process.env.PORT` (fourni automatiquement par Render).
 >
 > Les routes performer sensibles sont limitées par IP côté serveur : vérification
 > du mot de passe et émission de token performer (20 tentatives / 15 min), publication
-> du message radio (60 tentatives / 15 min). Les tokens listeners restent publics.
+> ou effacement du message radio (60 tentatives / 15 min). Les tokens listeners restent publics.
 
 ### Messages radio
 
 `POST /api/broadcast-message` est protégé par `PERFORMER_PASSWORD` et met à jour
-le message courant affiché sur la page publique. `GET /api/broadcast-message` est
+le message courant affiché sur la page publique. `DELETE /api/broadcast-message`
+est protégé de la même façon et efface le message courant : la page publique
+revient alors au message standby par défaut. `GET /api/broadcast-message` est
 public (polling 5 s côté listener).
 
 Le message courant est persisté dans un fichier JSON côté serveur. Par défaut :
@@ -100,7 +102,7 @@ reste vide : Vite proxye `/api` vers `localhost:3001` (`vite.config.ts`).
 | `/performer` | Frontend | Page cachée, protégée par `PERFORMER_PASSWORD` (gate avant chargement) |
 | `/api/health` | Backend | Healthcheck (`{ok:true,...}`) |
 | `/api/config-check` | Backend | Booléens de config (`livekitConfigured`, `performerPasswordConfigured`…) — aucun secret |
-| `/api/broadcast-message` | Backend | `GET` public (message courant) · `POST` protégé par mot de passe performer |
+| `/api/broadcast-message` | Backend | `GET` public (message courant) · `POST` / `DELETE` protégés par mot de passe performer |
 
 `/api/config-check` expose `performerPasswordConfigured: true` en production
 si `PERFORMER_PASSWORD` (ou `PERFORMER_PASSWORDS`) est défini — booléen
