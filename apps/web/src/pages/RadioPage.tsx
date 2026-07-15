@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useLiveKitListen } from '../hooks/useLiveKitListen'
+import { useIcecastListen } from '../hooks/useIcecastListen'
 import { useBroadcastMessage } from '../hooks/useBroadcastMessage'
+import { useStreamSource } from '../hooks/useStreamSource'
 import { useListenerAudioAnalysis } from '../hooks/useListenerAudioAnalysis'
+import { useListenerPlaybackControls } from '../hooks/useListenerPlaybackControls'
 import { useAudioReceiverStats } from '../audio/audioReceiverStats'
+import { ICECAST_STREAM_URL, type StreamSource } from '../api/streamSource'
 import { ListenerVolume } from '../components/ListenerVolume'
 import { AudioMonitorPanel } from '../components/audio-monitor/AudioMonitorPanel'
 import { ThemeToggle } from '../components/ThemeToggle'
@@ -47,6 +51,20 @@ export function RadioPage() {
   })
   const audioHostRef = useRef<HTMLDivElement>(null)
   const analyser = useListenerAudioAnalysis()
+  const playback = useListenerPlaybackControls()
+  const streamSource = useStreamSource()
+  const icecastAvailable = ICECAST_STREAM_URL.length > 0
+  const effectiveSource: StreamSource =
+    streamSource.state.activeSource === 'icecast' && icecastAvailable ? 'icecast' : 'livekit'
+  const [userWantsAudio, setUserWantsAudio] = useState(false)
+  const livekit = useLiveKitListen(ROOM_NAME, myIdentity, audioHostRef, analyser, playback)
+  const icecast = useIcecastListen({
+    streamUrl: ICECAST_STREAM_URL,
+    audioHostRef,
+    analyser,
+    playback,
+  })
+  const activeListen = effectiveSource === 'icecast' ? icecast : livekit
   const {
     phase,
     error,
@@ -56,18 +74,51 @@ export function RadioPage() {
     listenerVolume,
     muted,
     trimMinus30Db,
-    listenLive,
-    stopListening,
-    reconnect,
     startAudio,
     setListenerVolume,
     toggleMute,
     toggleTrimMinus30Db,
     getAudioRxReport,
-  } = useLiveKitListen(ROOM_NAME, myIdentity, audioHostRef, analyser)
+  } = activeListen
   const { display: broadcast } = useBroadcastMessage()
+
+  useEffect(() => {
+    if (effectiveSource === 'icecast') livekit.stopListening()
+    else icecast.stopListening()
+
+    if (!userWantsAudio) return
+    if (effectiveSource === 'icecast' && icecast.phase === 'disconnected') void icecast.listenLive()
+    if (effectiveSource === 'livekit' && livekit.phase === 'disconnected') void livekit.listenLive()
+  }, [
+    effectiveSource,
+    userWantsAudio,
+    icecast.phase,
+    livekit.phase,
+    icecast.listenLive,
+    icecast.stopListening,
+    livekit.listenLive,
+    livekit.stopListening,
+  ])
+
+  const listenActiveSource = async () => {
+    setUserWantsAudio(true)
+    if (effectiveSource === 'icecast') await icecast.listenLive()
+    else await livekit.listenLive()
+  }
+
+  const stopActiveSource = () => {
+    setUserWantsAudio(false)
+    livekit.stopListening()
+    icecast.stopListening()
+  }
+
+  const reconnectActiveSource = async () => {
+    setUserWantsAudio(true)
+    if (effectiveSource === 'icecast') await icecast.reconnect()
+    else await livekit.reconnect()
+  }
   // Débit audio WebRTC reçu (kbps / jitter / loss) — trafic réseau entrant, ≠ niveau.
-  const audioRx = useAudioReceiverStats(getAudioRxReport, phase === 'listening')
+  const audioRx = useAudioReceiverStats(getAudioRxReport, phase === 'listening' && effectiveSource === 'livekit')
 
   const board = formatBroadcastMessage(broadcast)
   const visual = resolveVisual(broadcast?.visual)
@@ -137,6 +188,7 @@ export function RadioPage() {
       ? 'connecting'
       : 'offline'
   const statusLabel = statusKey === 'live' ? 'LIVE' : statusKey === 'connecting' ? 'CONNECTING' : 'OFFLINE'
+  const sourceLabel = effectiveSource === 'icecast' ? 'STUDIO · ICECAST' : 'MOBILE · LIVEKIT'
 
   // Thème Day / Night (toggle header, persisté localStorage). Cf. ThemeToggle.
   const { theme, toggle } = useTheme()
@@ -255,17 +307,17 @@ export function RadioPage() {
                 (clic mute, double-clic PAD -30 dB). RX déplacé dans le rail. */}
             <div className="pub-controls">
               {!connected && !lost && (
-                <button type="button" data-variant="primary" onClick={() => void listenLive()}>
+                <button type="button" data-variant="primary" onClick={() => void listenActiveSource()}>
                   ▶ Listen live
                 </button>
               )}
               {connected && (
-                <button type="button" onClick={stopListening}>
+                <button type="button" onClick={stopActiveSource}>
                   ■ Stop
                 </button>
               )}
               {showReconnect && (
-                <button type="button" onClick={() => void reconnect()}>
+                <button type="button" onClick={() => void reconnectActiveSource()}>
                   ↻ Reconnect
                 </button>
               )}
@@ -312,12 +364,15 @@ export function RadioPage() {
       <footer id="info" className="pub-techfoot">
         <div className="pub-techfoot__meta">
           <span>STREAM<b>{statusLabel}</b></span>
+          <span>SOURCE<b>{sourceLabel}</b></span>
           <span>ENGINE<b>{engine}</b></span>
           <span>VISUAL<b>{visual.visualization}</b></span>
-          <span>RX<b>{rxKbps === '—' ? '—' : `${rxKbps} kbps`}</b></span>
+          <span>RX<b>{effectiveSource === 'livekit' && rxKbps !== '—' ? `${rxKbps} kbps` : 'N/A'}</b></span>
           <span>UPDATED<b>{broadcast?.updatedAt ?? '—'}</b></span>
         </div>
-        <div className="pub-techfoot__brand">RADIO BLACKHOLE · PIRATE WEBRTC · LISTEN LIVE</div>
+        <div className="pub-techfoot__brand">
+          RADIO BLACKHOLE · {sourceLabel} · {streamSource.error ? 'SOURCE API LAST VALID' : 'LISTEN LIVE'}
+        </div>
       </footer>
 
       {/* Conteneur invisible pour les <audio> distants. */}

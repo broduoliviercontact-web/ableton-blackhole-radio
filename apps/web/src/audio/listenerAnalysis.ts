@@ -1,8 +1,9 @@
 // Bus d'analyse audio côté listener (US-audio-monitor). Tappe le flux LiveKit
 // SANS toucher à l'écoute : chaque remote track est aussi branchée sur un graphe
-// Web Audio dédié à l'analyse (AnalserNode = puits, jamais connecté à
-// destination → aucun doublage audible). Le <audio> de useLiveKitListen garde
-// son propre pipeline (volume / mute / PAD -30 dB inchangés).
+// Web Audio dédié à l'analyse (AnalyserNode = puits, jamais connecté à
+// destination → aucun doublage audible). Pour Icecast, le HTMLMediaElement est
+// routé dans ce même AudioContext : source → analyseurs + gain → destination.
+// Cela garde analyse et écoute synchronisées sans captureStream().
 //
 // AudioContext créé paresseusement au premier addTrack (donc après le geste
 // « Listen live » — respecte l'autoplay policy). Recréé proprement au stop.
@@ -14,9 +15,10 @@ export class ListenerAudioAnalyser {
   rightAnalyser: AnalyserNode | null = null
   private splitter: ChannelSplitterNode | null = null
   private sources = new Map<MediaStreamTrack, MediaStreamAudioSourceNode>()
+  private mediaSources = new Map<HTMLMediaElement, { source: MediaElementAudioSourceNode; gain: GainNode; connected: boolean }>()
 
   get active(): boolean {
-    return this.ctx != null && this.sources.size > 0
+    return this.ctx != null && (this.sources.size > 0 || [...this.mediaSources.values()].some((entry) => entry.connected))
   }
 
   get sampleRate(): number {
@@ -50,6 +52,51 @@ export class ListenerAudioAnalyser {
     this.sources.set(track, src)
   }
 
+  addMediaElement(element: HTMLMediaElement, outputGain: number): void {
+    this.ensureContext()
+    if (!this.ctx || !this.mainAnalyser || !this.splitter) return
+    void this.ctx.resume()
+    let entry = this.mediaSources.get(element)
+    if (!entry) {
+      entry = {
+        source: this.ctx.createMediaElementSource(element),
+        gain: this.ctx.createGain(),
+        connected: false,
+      }
+      this.mediaSources.set(element, entry)
+    }
+    entry.gain.gain.value = outputGain
+    if (entry.connected) return
+    entry.source.connect(this.mainAnalyser)
+    entry.source.connect(this.splitter)
+    entry.source.connect(entry.gain)
+    entry.gain.connect(this.ctx.destination)
+    entry.connected = true
+  }
+
+  setMediaElementGain(element: HTMLMediaElement, outputGain: number): void {
+    const entry = this.mediaSources.get(element)
+    if (!entry || !this.ctx) return
+    entry.gain.gain.setTargetAtTime(outputGain, this.ctx.currentTime, 0.01)
+  }
+
+  removeMediaElement(element: HTMLMediaElement): void {
+    const entry = this.mediaSources.get(element)
+    if (!entry) return
+    try {
+      entry.source.disconnect()
+    } catch {
+      // déjà déconnecté
+    }
+    try {
+      entry.gain.disconnect()
+    } catch {
+      // déjà déconnecté
+    }
+    entry.connected = false
+    this.mediaSources.delete(element)
+  }
+
   removeTrack(track: MediaStreamTrack): void {
     const src = this.sources.get(track)
     if (!src) return
@@ -71,6 +118,19 @@ export class ListenerAudioAnalyser {
       }
     }
     this.sources.clear()
+    for (const entry of this.mediaSources.values()) {
+      try {
+        entry.source.disconnect()
+      } catch {
+        // ignore
+      }
+      try {
+        entry.gain.disconnect()
+      } catch {
+        // ignore
+      }
+    }
+    this.mediaSources.clear()
     if (this.ctx) {
       try {
         void this.ctx.close()
