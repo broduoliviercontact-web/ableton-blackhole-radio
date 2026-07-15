@@ -168,6 +168,12 @@ assert(Math.abs(getEffectiveVolume(50, true) - DB_TRIM_GAIN / 2) < 1e-9, '50% tr
 assert(getEffectiveVolume(0, true) === 0 && getEffectiveVolume(0, false) === 0, '0% → 0 dans tous les cas')
 assert(getEffectiveVolume(150, false) === 1 && getEffectiveVolume(-20, true) === 0, 'borne 0–100 (pas de boost)')
 
+// Stream source : valeurs publiques strictes, défaut LiveKit côté client.
+const { DEFAULT_STREAM_SOURCE_STATE, isStreamSource } = await import('./src/api/streamSource')
+assert(DEFAULT_STREAM_SOURCE_STATE.activeSource === 'livekit', 'stream-source client défaut = livekit')
+assert(isStreamSource('livekit') && isStreamSource('icecast'), 'stream-source client accepte livekit/icecast')
+assert(!isStreamSource('shoutcast'), 'stream-source client refuse valeur inconnue')
+
 // Accents français dans l'alphabet HotFX par défaut : l'espace initial reste en
 // tête, les accents courants sont présents, la limite serveur (120) est tenue.
 // HotFX uppercasse le texte cible puis cherche chaque caractère dans
@@ -440,4 +446,4 @@ const customScene = createCustomScene('  Ma scene  ', { type: 'note', mainTitle:
 assert(customScene.name === 'Ma scene', 'scenes: nom nettoye')
 assert(customScene.visual.layout?.boardColumns === 28 && sceneVisualization(customScene) === 'ascii-wave', 'scenes: visual capture')
 
-console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered+boardColumns+trim, ticker+scroll, paged note+resolveVisual, trim -30 dB, accents HotFX, audio monitor, audio rx stats, resizable panel clamp, radio-midi protocol roundtrip+rejets, midi file writer, scenes)')
+console.log('✅ web utils self-check OK (devices, identity, layout+wrapCentered+boardColumns+trim, ticker+scroll, paged note+resolveVisual, trim -30 dB, stream source, accents HotFX, audio monitor, audio rx stats, resizable panel clamp, radio-midi protocol roundtrip+rejets, midi file writer, scenes)')

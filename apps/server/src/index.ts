@@ -6,6 +6,7 @@ import { tokenRouter } from './routes/token.js'
 import { configRouter } from './routes/config.js'
 import { authRouter } from './routes/auth.js'
 import { broadcastMessageRouter } from './routes/broadcastMessage.js'
+import { streamSourceRouter } from './routes/streamSource.js'
 
 const app = express()
 app.disable('x-powered-by')
@@ -22,6 +23,7 @@ app.use('/api', tokenRouter)
 app.use('/api', configRouter)
 app.use('/api', authRouter)
 app.use('/api', broadcastMessageRouter)
+app.use('/api', streamSourceRouter)
 
 app.listen(config.PORT, () => {
   console.log(`▶ serveur sur http://localhost:${config.PORT}`)

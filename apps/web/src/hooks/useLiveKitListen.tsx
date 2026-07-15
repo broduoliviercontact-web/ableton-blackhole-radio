@@ -5,6 +5,7 @@ import type { RemoteAudioTrack, RemoteTrack } from 'livekit-client'
 import { connectToRoom } from '../livekit/livekitClient'
 import { getEffectiveVolume } from '../audio/listenerVolume'
 import type { ListenerAudioAnalyser } from '../audio/listenerAnalysis'
+import type { ListenerPlaybackControls } from './useListenerPlaybackControls'
 
 export type ListenPhase = 'disconnected' | 'connecting' | 'connected' | 'listening' | 'error'
 
@@ -46,6 +47,7 @@ export function useLiveKitListen(
   identity: string,
   audioHostRef: RefObject<HTMLDivElement | null>,
   analyser?: ListenerAudioAnalyser | null,
+  playback?: ListenerPlaybackControls,
 ): UseLiveKitListenResult {
   const startingRef = useRef(false)
   const userStoppedRef = useRef(false)
@@ -70,6 +72,9 @@ export function useLiveKitListen(
   const [listenerVolume, setListenerVolumeState] = useState(100)
   const [muted, setMuted] = useState(false)
   const [trimMinus30Db, setTrimMinus30Db] = useState(false)
+  const currentVolume = playback?.listenerVolume ?? listenerVolume
+  const currentMuted = playback?.muted ?? muted
+  const currentTrimMinus30Db = playback?.trimMinus30Db ?? trimMinus30Db
 
   const clearRetry = useCallback(() => {
     if (retryTimer.current != null) {
@@ -248,26 +253,42 @@ export function useLiveKitListen(
   // Volume listener local 0–100 (jamais > 100 : pas de boost). Appliqué à tous
   // les <audio> existants et mémorisé pour les futurs (attachTrack). Mute = 0,
   // avec mémoire du niveau précédent pour le démute.
+  const applyEffectiveVolume = useCallback((volumePercent: number, trim: boolean) => {
+    const eff = getEffectiveVolume(volumePercent, trim)
+    for (const el of audioEls.current.values()) el.volume = eff
+  }, [])
+
+  useEffect(() => {
+    listenerVolumeRef.current = currentVolume
+    trimMinus30DbRef.current = currentTrimMinus30Db
+    applyEffectiveVolume(currentVolume, currentTrimMinus30Db)
+  }, [applyEffectiveVolume, currentVolume, currentTrimMinus30Db])
+
   const setListenerVolume = useCallback((volumePercent: number) => {
     const clamped = Math.max(0, Math.min(100, Math.round(volumePercent)))
     listenerVolumeRef.current = clamped
-    setListenerVolumeState(clamped)
-    // Volume effectif : intègre le trim -30 dB (mute = 0 ici car clamped=0).
-    const eff = getEffectiveVolume(clamped, trimMinus30DbRef.current)
-    for (const el of audioEls.current.values()) el.volume = eff
-    if (clamped > 0 && muted) setMuted(false)
-  }, [muted])
+    if (playback) {
+      playback.setListenerVolume(clamped)
+      if (clamped > 0) playback.setMuted(false)
+    } else {
+      setListenerVolumeState(clamped)
+      if (clamped > 0 && muted) setMuted(false)
+    }
+    applyEffectiveVolume(clamped, trimMinus30DbRef.current)
+  }, [applyEffectiveVolume, muted, playback])
 
   const toggleMute = useCallback(() => {
-    if (!muted) {
+    if (!currentMuted) {
       preMuteRef.current = listenerVolumeRef.current
       setListenerVolume(0)
-      setMuted(true)
+      if (playback) playback.setMuted(true)
+      else setMuted(true)
     } else {
-      setMuted(false)
+      if (playback) playback.setMuted(false)
+      else setMuted(false)
       setListenerVolume(preMuteRef.current || 100)
     }
-  }, [muted, setListenerVolume])
+  }, [currentMuted, playback, setListenerVolume])
 
   // Trim PAD -30 dB (double-clic haut-parleur) : indépendant du mute. Bascule le
   // gain et réapplique le volume effectif à tous les <audio> existants. Les
@@ -276,10 +297,10 @@ export function useLiveKitListen(
   const toggleTrimMinus30Db = useCallback(() => {
     const next = !trimMinus30DbRef.current
     trimMinus30DbRef.current = next
-    setTrimMinus30Db(next)
-    const eff = getEffectiveVolume(listenerVolumeRef.current, next)
-    for (const el of audioEls.current.values()) el.volume = eff
-  }, [])
+    if (playback) playback.setTrimMinus30Db(next)
+    else setTrimMinus30Db(next)
+    applyEffectiveVolume(listenerVolumeRef.current, next)
+  }, [applyEffectiveVolume, playback])
 
   // Stats WebRTC du premier receiver audio attaché (livekit-client expose
   // getRTCStatsReport sur RemoteTrack). Fallback propre (undefined) si pas de
@@ -318,9 +339,9 @@ export function useLiveKitListen(
     lost,
     reconnecting,
     needGesture,
-    listenerVolume,
-    muted,
-    trimMinus30Db,
+    listenerVolume: currentVolume,
+    muted: currentMuted,
+    trimMinus30Db: currentTrimMinus30Db,
     listenLive,
     stopListening,
     reconnect,

@@ -16,6 +16,8 @@ const envSchema = z.object({
   PERFORMER_PASSWORDS: z.string().optional(),
   // Optionnel : fichier JSON où persister le message radio courant.
   BROADCAST_MESSAGE_STORE_PATH: z.string().optional(),
+  // Optionnel : fichier JSON où persister la source diffusée aux auditeurs.
+  STREAM_SOURCE_STORE_PATH: z.string().optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)

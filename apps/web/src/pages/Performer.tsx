@@ -5,6 +5,8 @@ import { isMediaDevicesSupported, looksLikeBuiltInMic, requestAudioPermission } 
 import { useAudioDevices } from '../hooks/useAudioDevices'
 import { useLocalAudioCapture } from '../hooks/useLocalAudioCapture'
 import { useLiveKitBroadcast } from '../hooks/useLiveKitBroadcast'
+import { useStreamSource } from '../hooks/useStreamSource'
+import { ICECAST_STREAM_URL, type StreamSource } from '../api/streamSource'
 import { AudioDeviceSelect } from '../components/AudioDeviceSelect'
 import { AudioMeter } from '../components/AudioMeter'
 import { ConfigCheckButton } from '../components/ConfigCheckButton'
@@ -35,6 +37,9 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
   const { postFaderStream } = broadcast
   const [myIdentity] = useState(() => getOrCreateIdentity('performer'))
   const [masterVolume, setMasterVolume] = useState(100) // US-5 : fader master (défaut 100 %)
+  const streamSource = useStreamSource()
+  const [sourceSaveStatus, setSourceSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [sourceSaveError, setSourceSaveError] = useState<string | null>(null)
   // performerPassword vient du PerformerGate (validé côté backend). Jamais persisté.
 
   const capturing = capture.status === 'capturing'
@@ -89,6 +94,20 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
     }
   }
 
+  async function handleStreamSourceChange(activeSource: StreamSource) {
+    if (activeSource === 'icecast' && !ICECAST_STREAM_URL) return
+    setSourceSaveStatus('saving')
+    setSourceSaveError(null)
+    try {
+      await streamSource.update(activeSource, performerPassword)
+      setSourceSaveStatus('saved')
+      window.setTimeout(() => setSourceSaveStatus('idle'), 1800)
+    } catch (e) {
+      setSourceSaveStatus('error')
+      setSourceSaveError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
   const canStartBroadcast =
     capturing && (broadcast.status === 'disconnected' || broadcast.status === 'error')
   const canStopBroadcast =
@@ -123,6 +142,18 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
           Page publique ↗
         </a>
       </header>
+
+      <StreamSourcePanel
+        activeSource={streamSource.state.activeSource}
+        loading={streamSource.loading}
+        error={streamSource.error}
+        updatedAt={streamSource.state.updatedAt}
+        saveStatus={sourceSaveStatus}
+        saveError={sourceSaveError}
+        icecastAvailable={ICECAST_STREAM_URL.length > 0}
+        liveKitStatus={broadcast.status}
+        onChange={(source) => void handleStreamSourceChange(source)}
+      />
 
       <div className="cr-grid">
         {/* Colonne gauche — Chaîne audio */}
@@ -185,6 +216,12 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
 
           {permission === 'granted' && (
             <Card step="4" title="Diffusion LiveKit">
+              {streamSource.state.activeSource === 'icecast' && (
+                <p className="cr-tip cr-tip--warn">
+                  LiveKit peut rester prêt pour les directs mobiles, mais la source actuellement publiée
+                  aux auditeurs est Icecast.
+                </p>
+              )}
               {capturing && capture.deviceLabel && (
                 <p className="cr-muted">Source active : {capture.deviceLabel}</p>
               )}
@@ -292,6 +329,91 @@ export function Performer({ performerPassword }: { performerPassword: string }) 
         <a href="/" className="cr-home-link">← Retour à la radio</a>
       </p>
     </main>
+  )
+}
+
+function formatUpdatedAt(updatedAt: string): string {
+  if (!updatedAt) return '—'
+  const d = new Date(updatedAt)
+  if (Number.isNaN(d.getTime())) return updatedAt
+  return d.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'medium' })
+}
+
+function StreamSourcePanel({
+  activeSource,
+  loading,
+  error,
+  updatedAt,
+  saveStatus,
+  saveError,
+  icecastAvailable,
+  liveKitStatus,
+  onChange,
+}: {
+  activeSource: StreamSource
+  loading: boolean
+  error: string | null
+  updatedAt: string
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error'
+  saveError: string | null
+  icecastAvailable: boolean
+  liveKitStatus: string
+  onChange: (source: StreamSource) => void
+}) {
+  const statusText =
+    saveStatus === 'saving'
+      ? 'saving'
+      : saveStatus === 'saved'
+        ? 'saved'
+        : saveStatus === 'error'
+          ? 'error'
+          : 'idle'
+  return (
+    <section className="cr-card cr-source-panel">
+      <div className="cr-source-panel__head">
+        <h2 className="cr-source-panel__title">MODE DE DIFFUSION</h2>
+        <span className="cr-source-panel__current">
+          Publié : {activeSource === 'icecast' ? 'STUDIO · ICECAST' : 'MOBILE · LIVEKIT'}
+        </span>
+      </div>
+      <div className="cr-source-choices" role="group" aria-label="Mode de diffusion">
+        <button
+          type="button"
+          className="cr-source-choice"
+          data-active={activeSource === 'icecast'}
+          disabled={!icecastAvailable || saveStatus === 'saving'}
+          aria-pressed={activeSource === 'icecast'}
+          onClick={() => onChange('icecast')}
+        >
+          <span>Studio maison — Icecast</span>
+          <small>Ableton → BlackHole → BUTT → Icecast sur le Mac mini</small>
+          {!icecastAvailable && <em>Indisponible : VITE_ICECAST_STREAM_URL absent</em>}
+        </button>
+        <button
+          type="button"
+          className="cr-source-choice"
+          data-active={activeSource === 'livekit'}
+          disabled={saveStatus === 'saving'}
+          aria-pressed={activeSource === 'livekit'}
+          onClick={() => onChange('livekit')}
+        >
+          <span>Émission mobile — LiveKit</span>
+          <small>Micro ou carte son depuis le navigateur, adapté aux directs mobiles</small>
+        </button>
+      </div>
+      <div className="cr-source-meta">
+        <span>État API : {loading ? 'loading' : error ? 'dernière valeur valide' : 'ok'}</span>
+        <span>Sauvegarde : {statusText}</span>
+        <span>Dernière modification : {formatUpdatedAt(updatedAt)}</span>
+        <span>LiveKit performer : {liveKitStatus}</span>
+      </div>
+      <p className="cr-tip">
+        Changer la source ne démarre et n’arrête pas automatiquement BUTT, Icecast ou une
+        publication LiveKit.
+      </p>
+      {saveError && <p className="cr-error">❌ {saveError}</p>}
+      {error && <p className="cr-tip cr-tip--warn">Lecture source impossible : dernière valeur valide conservée.</p>}
+    </section>
   )
 }
 

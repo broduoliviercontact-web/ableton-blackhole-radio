@@ -8,6 +8,7 @@ import { join } from 'node:path'
 function ensureSelfcheckEnv(): { storeDir: string; storePath: string; usedFallback: boolean } {
   const storeDir = mkdtempSync(join(tmpdir(), 'radio-broadcast-store-'))
   const storePath = join(storeDir, 'broadcast-message.json')
+  const streamSourceStorePath = join(storeDir, 'stream-source.json')
   const defaults: Record<string, string> = {
     LIVEKIT_URL: 'wss://selfcheck.example.com',
     LIVEKIT_API_KEY: 'selfcheck-api-key',
@@ -22,6 +23,7 @@ function ensureSelfcheckEnv(): { storeDir: string; storePath: string; usedFallba
     }
   }
   process.env.BROADCAST_MESSAGE_STORE_PATH = storePath
+  process.env.STREAM_SOURCE_STORE_PATH = streamSourceStorePath
   return { storeDir, storePath, usedFallback }
 }
 
@@ -40,12 +42,14 @@ async function main(): Promise<void> {
     { config },
     { checkPerformerAccess, parseAllowedPasswords },
     { getBroadcastMessage, parseBroadcastMessage, setBroadcastMessage },
+    { DEFAULT_STREAM_SOURCE_STATE, getStreamSourceState, parseStreamSource, setStreamSource },
   ] = await Promise.all([
     import('livekit-server-sdk'),
     import('./livekit.js'),
     import('./config.js'),
     import('./performerAuth.js'),
     import('./broadcastMessage.js'),
+    import('./streamSource.js'),
   ])
 
   const verifier = new TokenVerifier(config.LIVEKIT_API_KEY, config.LIVEKIT_API_SECRET)
@@ -85,6 +89,23 @@ async function main(): Promise<void> {
   assert(unconfigured.ok === false && unconfigured.status === 503, 'aucun password configuré → 503')
 
   console.log(`✅ performer password OK (multi-passwords, refus 401/503, accepté si dans la liste ; configuré=${allowed.length > 0})`)
+
+  // Stream source : défaut livekit, enum strict, updatedAt serveur, store séparé.
+  assert(getStreamSourceState().activeSource === DEFAULT_STREAM_SOURCE_STATE.activeSource, 'stream-source défaut livekit')
+  assert(parseStreamSource('livekit') === 'livekit' && parseStreamSource('icecast') === 'icecast', 'stream-source valeurs acceptées')
+  let badStreamSource = false
+  try {
+    parseStreamSource('shoutcast')
+  } catch {
+    badStreamSource = true
+  }
+  assert(badStreamSource, 'stream-source valeur invalide refusée')
+  const icecastState = setStreamSource('icecast')
+  assert(icecastState.activeSource === 'icecast' && typeof icecastState.updatedAt === 'string', 'stream-source icecast persisté')
+  assert(getStreamSourceState().activeSource === 'icecast', 'stream-source store mémoire round-trip')
+  const livekitState = setStreamSource('livekit')
+  assert(livekitState.activeSource === 'livekit' && livekitState.updatedAt >= icecastState.updatedAt, 'stream-source retour livekit')
+  console.log('✅ stream source OK (défaut livekit, enum strict, store séparé)')
 
   // Broadcast message : parsing + updatedAt serveur + store mémoire round-trip.
   const msg = parseBroadcastMessage({ type: 'track', mainTitle: 'Song', subtitle: '', url: '' })
